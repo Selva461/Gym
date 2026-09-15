@@ -191,7 +191,7 @@ fun TodayScreen(
                 )
             }
         } else {
-            items(day.rows.reversed(), key = { it.logId }) { row ->
+            items(day.rows.reversed(), key = { "entry-${it.logId}" }) { row ->
                 EntryRow(
                     title = row.name,
                     detail = "${Training.formatWeight(row.quantity)} x ${row.unitLabel}   ${row.meal}",

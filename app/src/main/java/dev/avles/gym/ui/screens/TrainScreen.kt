@@ -178,7 +178,12 @@ private fun StartSessionPane(
         if (splits.isEmpty()) {
             item { EmptyNote("No splits yet. Build one and you never pick lifts from scratch again.") }
         } else {
-            items(splits, key = { it.id }) { plan ->
+            // Namespaced keys. These splits and the sessions further down live in the
+            // SAME LazyColumn, and Compose requires keys unique across the whole list,
+            // not per items() block. Both were keyed on a raw row id, so split 1 and
+            // session 1 collided and Compose threw on composition — the Train tab
+            // closed the app outright the moment you had one past session.
+            items(splits, key = { "split-${it.id}" }) { plan ->
                 SplitCard(
                     plan = plan,
                     onStart = { onStartFromSplit(plan) },
@@ -225,7 +230,7 @@ private fun StartSessionPane(
         if (state.recent.isEmpty()) {
             item { EmptyNote("No sessions yet. The first one is the only hard one.") }
         } else {
-            items(state.recent, key = { it.id }) { session ->
+            items(state.recent, key = { "session-${it.id}" }) { session ->
                 val summary = summaries[session.id]
                 val minutes = session.endedAt?.let { ((it - session.startedAt) / 60000).toInt() }
                 val detail = buildString {
@@ -467,7 +472,7 @@ private fun ActiveSessionPane(
         if (state.sets.isEmpty()) {
             item { EmptyNote("No sets logged. Pick a lift and put the first one in.") }
         } else {
-            items(state.sets, key = { it.setId }) { row ->
+            items(state.sets, key = { "set-${it.setId}" }) { row ->
                 val isPr = row.setId == prSetId
                 EntryRow(
                     title = row.exerciseName + if (isPr) "  best yet" else "",
@@ -661,7 +666,7 @@ private fun ExercisePicker(
                                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                             )
                         }
-                        items(inGroup, key = { it.id }) { exercise ->
+                        items(inGroup, key = { "lift-${it.id}" }) { exercise ->
                             Column(
                                 Modifier
                                     .fillMaxWidth()

@@ -165,7 +165,7 @@ fun FuelScreen(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
-            items(matches, key = { "m" + it.id }) { food ->
+            items(matches, key = { "match-${it.id}" }) { food ->
                 FoodPickRow(
                     food = food,
                     onTap = { pending = food },
@@ -184,7 +184,7 @@ fun FuelScreen(
                     EmptyNote("Search, or pick a category above. What you log most will surface here.")
                 } else {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(quickPicks, key = { "q" + it.id }) { food ->
+                        items(quickPicks, key = { "quick-${it.id}" }) { food ->
                             Box(
                                 Modifier
                                     .clip(RoundedCornerShape(10.dp))
@@ -244,7 +244,7 @@ fun FuelScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                 }
-                items(rows, key = { it.logId }) { row ->
+                items(rows, key = { "entry-${it.logId}" }) { row ->
                     EntryRow(
                         title = row.name,
                         detail = "${Training.formatWeight(row.quantity)} x ${row.unitLabel}",
