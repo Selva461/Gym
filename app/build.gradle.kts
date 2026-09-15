@@ -27,6 +27,28 @@ android {
     }
 
     signingConfigs {
+        /**
+         * A fixed debug key, committed to the repository on purpose.
+         *
+         * Without this, AGP generates ~/.android/debug.keystore on whatever machine
+         * is building — and a fresh CI runner has no such file, so it makes a new
+         * random one every run. Android refuses to install an APK over an existing
+         * app signed by a different key, so every build was un-installable over the
+         * last one: the only way to take an update was to uninstall first, losing
+         * every set and meal logged.
+         *
+         * Committing it costs nothing that matters. These are Android's own
+         * documented debug defaults, password and all, and a debug APK is debuggable
+         * regardless — the key protects nothing. It is not, and must never become,
+         * the release key: that one stays in repository secrets and never lands here.
+         */
+        getByName("debug") {
+            storeFile = file("keystore/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+
         if (canSignRelease) {
             create("release") {
                 storeFile = file(releaseKeystore!!)
