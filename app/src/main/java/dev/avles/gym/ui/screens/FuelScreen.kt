@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -35,6 +38,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.FoodItem
 import dev.avles.gym.data.Meals
+import dev.avles.gym.data.Micros
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.DayState
@@ -42,9 +46,11 @@ import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.Meter
+import dev.avles.gym.ui.components.NutrientPanel
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.theme.Bone
+import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
@@ -64,13 +70,26 @@ fun FuelScreen(
 ) {
     var meal by remember { mutableStateOf(defaultMealForNow()) }
     var query by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf<String?>(null) }
     var pending by remember { mutableStateOf<FoodItem?>(null) }
     var editing by remember { mutableStateOf<FoodItem?>(null) }
     var creating by remember { mutableStateOf(false) }
+    var nutrientsOpen by remember { mutableStateOf(false) }
 
-    val matches = remember(query, catalogue) {
-        if (query.isBlank()) emptyList()
-        else catalogue.filter { it.name.contains(query, ignoreCase = true) }.take(12)
+    val categories = remember(catalogue) {
+        catalogue.map { it.category }.distinct().sorted()
+    }
+
+    // Search wins over the category filter: typing is the specific intent, browsing is
+    // the vague one. The cap rises when a category is chosen, because then you really
+    // are looking at a list rather than picking the obvious match.
+    val matches = remember(query, category, catalogue) {
+        when {
+            query.isNotBlank() ->
+                catalogue.filter { it.name.contains(query, ignoreCase = true) }.take(20)
+            category != null -> catalogue.filter { it.category == category }
+            else -> emptyList()
+        }
     }
 
     LazyColumn(
@@ -97,7 +116,7 @@ fun FuelScreen(
                 accent = Sage
             )
             Spacer(Modifier.height(20.dp))
-            PillRow(Meals.ALL, meal, Sage, { meal = it })
+            PillRow(Meals.PICKABLE, meal, Sage, { meal = it })
             Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
@@ -107,10 +126,41 @@ fun FuelScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+            Spacer(Modifier.height(12.dp))
+
+            // Browsing by category is how you find the eighth dosa variety when you
+            // cannot remember what it is called.
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(categories, key = { it }) { name ->
+                    val on = category == name
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (on) Sage.copy(alpha = 0.18f) else Raised)
+                            .clickable { category = if (on) null else name }
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            name,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (on) Sage else Mute,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.height(14.dp))
         }
 
         if (matches.isNotEmpty()) {
+            item {
+                Text(
+                    "${matches.size} ${if (matches.size == 1) "match" else "matches"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
             items(matches, key = { "m" + it.id }) { food ->
                 FoodPickRow(
                     food = food,
@@ -119,7 +169,7 @@ fun FuelScreen(
                 )
             }
             item { Spacer(Modifier.height(10.dp)) }
-        } else if (query.isBlank()) {
+        } else if (query.isBlank() && category == null) {
             item {
                 SectionHeading(
                     "Usual suspects",
@@ -127,7 +177,7 @@ fun FuelScreen(
                 )
                 Spacer(Modifier.height(10.dp))
                 if (quickPicks.isEmpty()) {
-                    EmptyNote("Search for something to log. What you log most will surface here.")
+                    EmptyNote("Search, or pick a category above. What you log most will surface here.")
                 } else {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(quickPicks, key = { "q" + it.id }) { food ->
@@ -167,6 +217,15 @@ fun FuelScreen(
             Spacer(Modifier.height(10.dp))
             Hairline()
             Spacer(Modifier.height(18.dp))
+            NutrientPanel(
+                micros = day.totals.micros,
+                expanded = nutrientsOpen,
+                onToggle = { nutrientsOpen = !nutrientsOpen },
+                anythingLogged = day.rows.isNotEmpty()
+            )
+            Spacer(Modifier.height(18.dp))
+            Hairline()
+            Spacer(Modifier.height(18.dp))
         }
 
         Meals.ALL.forEach { slot ->
@@ -177,7 +236,7 @@ fun FuelScreen(
                     SectionHeading(
                         slot,
                         trailing = "${totals.proteinG.roundToInt()} g   ${totals.kcal.roundToInt()} kcal",
-                        accent = Sage
+                        accent = if (slot == Meals.SUPPLEMENT) Brass else Sage
                     )
                     Spacer(Modifier.height(8.dp))
                 }
@@ -186,7 +245,7 @@ fun FuelScreen(
                         title = row.name,
                         detail = "${Training.formatWeight(row.quantity)} x ${row.unitLabel}",
                         trailing = "${(row.proteinG * row.quantity).roundToInt()} p",
-                        accent = Sage,
+                        accent = if (row.isSupplement) Brass else Sage,
                         onClick = { onRemove(row.logId) },
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
@@ -211,8 +270,11 @@ fun FuelScreen(
     pending?.let { food ->
         QuantityDialog(
             food = food,
-            meal = meal,
-            onConfirm = { qty -> onLog(food.id, meal, qty); pending = null },
+            meal = Meals.slotFor(food.isSupplement, meal),
+            onConfirm = { qty ->
+                onLog(food.id, Meals.slotFor(food.isSupplement, meal), qty)
+                pending = null
+            },
             onDismiss = { pending = null }
         )
     }
@@ -251,9 +313,10 @@ private fun FoodPickRow(food: FoodItem, onTap: () -> Unit, onEdit: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(food.name, style = MaterialTheme.typography.bodyLarge, color = Bone)
             Text(
-                "${food.unitLabel}   ${food.kcal.roundToInt()} kcal",
+                "${food.unitLabel}   ${food.kcal.roundToInt()} kcal" +
+                    if (food.isSupplement) "   supplement" else "",
                 style = MaterialTheme.typography.labelSmall,
-                color = Mute
+                color = if (food.isSupplement) Brass else Mute
             )
         }
         Text(
@@ -318,6 +381,15 @@ private fun QuantityDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = Sage
                 )
+                val notable = notableMicros(food.micros, parsed)
+                if (notable.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        notable,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Faint
+                    )
+                }
             }
         },
         confirmButton = {
@@ -329,6 +401,23 @@ private fun QuantityDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Mute) } }
     )
+}
+
+/**
+ * The two or three micronutrients this food actually moves, so the confirm step says
+ * something useful about a fish oil capsule without listing fifteen zeroes.
+ */
+private fun notableMicros(micros: Micros, qty: Double): String {
+    val scaled = micros * qty
+    val bits = buildList {
+        if (scaled.omega3G >= 0.1) add("${"%.1f".format(scaled.omega3G)} g omega-3")
+        if (scaled.magnesiumMg >= 20) add("${scaled.magnesiumMg.roundToInt()} mg magnesium")
+        if (scaled.ironMg >= 1.0) add("${"%.1f".format(scaled.ironMg)} mg iron")
+        if (scaled.calciumMg >= 80) add("${scaled.calciumMg.roundToInt()} mg calcium")
+        if (scaled.vitDMcg >= 1.0) add("${"%.1f".format(scaled.vitDMcg)} mcg vitamin D")
+        if (scaled.fiberG >= 2.0) add("${"%.1f".format(scaled.fiberG)} g fibre")
+    }
+    return bits.take(3).joinToString(" · ")
 }
 
 @Composable
@@ -343,13 +432,32 @@ private fun FoodEditor(
     var protein by remember { mutableStateOf(trimZero(initial.proteinG)) }
     var carbs by remember { mutableStateOf(trimZero(initial.carbsG)) }
     var fat by remember { mutableStateOf(trimZero(initial.fatG)) }
+    var showMicros by remember { mutableStateOf(false) }
+
+    // One string per micronutrient. Verbose, but the alternative is a map keyed by
+    // string and losing every compile-time guarantee that the field exists.
+    var fiber by remember { mutableStateOf(trimZero(initial.micros.fiberG)) }
+    var sugar by remember { mutableStateOf(trimZero(initial.micros.sugarG)) }
+    var satFat by remember { mutableStateOf(trimZero(initial.micros.satFatG)) }
+    var sodium by remember { mutableStateOf(trimZero(initial.micros.sodiumMg)) }
+    var potassium by remember { mutableStateOf(trimZero(initial.micros.potassiumMg)) }
+    var calcium by remember { mutableStateOf(trimZero(initial.micros.calciumMg)) }
+    var iron by remember { mutableStateOf(trimZero(initial.micros.ironMg)) }
+    var magnesium by remember { mutableStateOf(trimZero(initial.micros.magnesiumMg)) }
+    var zinc by remember { mutableStateOf(trimZero(initial.micros.zincMg)) }
+    var vitA by remember { mutableStateOf(trimZero(initial.micros.vitAMcg)) }
+    var vitC by remember { mutableStateOf(trimZero(initial.micros.vitCMg)) }
+    var vitD by remember { mutableStateOf(trimZero(initial.micros.vitDMcg)) }
+    var b12 by remember { mutableStateOf(trimZero(initial.micros.vitB12Mcg)) }
+    var folate by remember { mutableStateOf(trimZero(initial.micros.folateMcg)) }
+    var omega3 by remember { mutableStateOf(trimZero(initial.micros.omega3G)) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Slate,
         title = { Text(if (initial.id == 0L) "New food" else "Edit food", color = Bone) },
         text = {
-            Column {
+            Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
                 Text(
                     "Values are per one unit. Measure yours once and these stop being guesses.",
                     style = MaterialTheme.typography.labelSmall,
@@ -377,6 +485,60 @@ private fun FoodEditor(
                     NumberField(carbs, { carbs = it }, "carbs", Modifier.weight(1f))
                     NumberField(fat, { fat = it }, "fat", Modifier.weight(1f))
                 }
+
+                Spacer(Modifier.height(12.dp))
+                TextButton(onClick = { showMicros = !showMicros }) {
+                    Text(
+                        if (showMicros) "Hide micronutrients" else "Micronutrients",
+                        color = Sage
+                    )
+                }
+
+                if (showMicros) {
+                    Text(
+                        "Leave a value at zero if you do not know it. Zero reads as " +
+                            "\"not estimated\" everywhere in the app, not as \"contains none\".",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Faint
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberField(fiber, { fiber = it }, "fibre g", Modifier.weight(1f))
+                        NumberField(sugar, { sugar = it }, "sugar g", Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberField(satFat, { satFat = it }, "sat fat g", Modifier.weight(1f))
+                        NumberField(sodium, { sodium = it }, "sodium mg", Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberField(potassium, { potassium = it }, "potassium mg", Modifier.weight(1f))
+                        NumberField(calcium, { calcium = it }, "calcium mg", Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberField(iron, { iron = it }, "iron mg", Modifier.weight(1f))
+                        NumberField(magnesium, { magnesium = it }, "magnesium mg", Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberField(zinc, { zinc = it }, "zinc mg", Modifier.weight(1f))
+                        NumberField(vitA, { vitA = it }, "vit A mcg", Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberField(vitC, { vitC = it }, "vit C mg", Modifier.weight(1f))
+                        NumberField(vitD, { vitD = it }, "vit D mcg", Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberField(b12, { b12 = it }, "B12 mcg", Modifier.weight(1f))
+                        NumberField(folate, { folate = it }, "folate mcg", Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    NumberField(omega3, { omega3 = it }, "omega-3 g", Modifier.fillMaxWidth())
+                }
             }
         },
         confirmButton = {
@@ -390,7 +552,24 @@ private fun FoodEditor(
                             kcal = kcal.toDoubleOrNull() ?: 0.0,
                             proteinG = protein.toDoubleOrNull() ?: 0.0,
                             carbsG = carbs.toDoubleOrNull() ?: 0.0,
-                            fatG = fat.toDoubleOrNull() ?: 0.0
+                            fatG = fat.toDoubleOrNull() ?: 0.0,
+                            micros = Micros(
+                                fiberG = fiber.toDoubleOrNull() ?: 0.0,
+                                sugarG = sugar.toDoubleOrNull() ?: 0.0,
+                                satFatG = satFat.toDoubleOrNull() ?: 0.0,
+                                sodiumMg = sodium.toDoubleOrNull() ?: 0.0,
+                                potassiumMg = potassium.toDoubleOrNull() ?: 0.0,
+                                calciumMg = calcium.toDoubleOrNull() ?: 0.0,
+                                ironMg = iron.toDoubleOrNull() ?: 0.0,
+                                magnesiumMg = magnesium.toDoubleOrNull() ?: 0.0,
+                                zincMg = zinc.toDoubleOrNull() ?: 0.0,
+                                vitAMcg = vitA.toDoubleOrNull() ?: 0.0,
+                                vitCMg = vitC.toDoubleOrNull() ?: 0.0,
+                                vitDMcg = vitD.toDoubleOrNull() ?: 0.0,
+                                vitB12Mcg = b12.toDoubleOrNull() ?: 0.0,
+                                folateMcg = folate.toDoubleOrNull() ?: 0.0,
+                                omega3G = omega3.toDoubleOrNull() ?: 0.0
+                            )
                         )
                     )
                 }

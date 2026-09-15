@@ -56,26 +56,77 @@ warning should never stand between you and a working APK.
 
 ```
 Today      protein first, calories second, a week strip with a dot per logged day
-Train      session → lift → kg × reps, rest timer, records, per-session volume
-Fuel       meal-aware logging over an editable catalogue, fractional quantities
+Train      session → lift → kg × reps, a target for every lift, rest timer, records
+Fuel       search or browse 239 foods by category, macros and 15 micronutrients
 Progress   weight trend, 14-day volume, training and logging streaks
 Settings   your targets, rest length, nightly reminder
 ```
 
-Seeded on first launch: 27 lifts across push, pull, legs and core, and 35 foods
-built around South Indian home cooking — idli, dosa, parotta, sambar, Chettinad
-chicken, mutton kuzhambu, vanjaram and nethili, egg podimas, curd rice, plus
-plain oats and unflavoured raw whey.
+**54 lifts**, each with its own rep range and increment, across push, pull, legs
+and core.
 
-**Those macro numbers are estimates.** Home-style portions vary enormously with
-oil, coconut and ghee. Every food is editable in place. Correcting the five or
-six you actually eat every week is worth more than any number of extra entries.
+**239 foods in 22 categories.** South Indian cooking gets the detail it deserves —
+fifteen dosa varieties (masala, ghee roast, paper, rava, set, neer, ragi, oats,
+pesarattu, adai and the rest), seven kinds of idli, twenty-two tiffin items,
+eighteen rice dishes, twenty-two sides from sambar to vatha kuzhambu. Then Italian,
+Chinese and Indo-Chinese, Middle Eastern, Japanese, Mexican and Continental, plus
+dairy, legumes, vegetables, fruit, nuts, drinks and oils.
+
+**21 supplements** — whey, casein, creatine, fish oil, cod liver oil, magnesium
+glycinate and citrate, D3, B12, zinc, calcium, iron, multivitamin, electrolytes,
+psyllium and the rest. They file themselves under their own slot rather than
+landing in dinner, and their numbers come off a label so they are the one honest
+corner of the catalogue.
+
+### On the numbers
+
+**Macros are estimates.** Home-style portions vary enormously with oil, coconut
+and ghee. Every food is editable in place, micronutrients included. Correcting the
+five or six you actually eat every week is worth more than any number of entries.
+
+**Micronutrients are rougher still**, and the app says so where you read them.
+Whole foods — eggs, milk, fish, spinach, nuts — are close to published values.
+Composite dishes are built up from their main ingredients and should be read as
+"that was a decent source of iron", never as a measurement.
+
+**A zero means not estimated, not proven absent.**
+
+## Targets, and where they come from
+
+Pick a lift and the Train screen shows what to try next, taken from your own logged
+history and nothing else:
+
+```
+Next target
+82.5 kg × 6                                    [Use]
+Last time 7 at 82.5 kg. One more rep, same weight — at 8 it goes up.
+────────────────────────────────────────────────
+estimated max 96 kg                   next 100 kg
+```
+
+It is double progression, the least clever scheme that works. Every lift has a rep
+range; you stay at one weight until you hit the top of it, then the weight goes up
+and the reps reset to the bottom. Ranges and increments are per lift, because a
+squat absorbs a 5 kg jump and a lateral raise does not. Three sessions at one weight
+without the reps moving gets called a stall, and the panel says so.
+
+Nothing is computed from your age, weight or "level", and the app will not invent a
+starting weight for a lift you have never done — it says so and waits. Tapping
+**Use** fills the weight and reps fields, because a target that needs typing is no
+faster than remembering.
+
+The nutrient panel works the same way: the reference intakes are the published adult
+figures, shown so a day's log reads as "low on iron" rather than as a bare number.
+They are not a prescription, the app never tells you to supplement anything, and
+anything you mean to act on — especially doses — belongs with a doctor or dietitian
+rather than a phone app.
 
 ## Structure
 
 ```
 data/      Room entities, one DAO, repository, seed catalogue, DataStore settings
-domain/    pure Kotlin — macro maths, 1RM and records, streaks. All of it unit tested.
+domain/    pure Kotlin — macro and micronutrient maths, 1RM and records, streaks,
+           progression. All of it unit tested.
 ui/        one ViewModel, five screens, a small set of shared components
 notify/    notification channels, rest timer alert, nightly reminder, boot re-schedule
 ```

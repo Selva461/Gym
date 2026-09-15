@@ -34,15 +34,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.domain.Training
+import dev.avles.gym.ui.LiftGuidance
 import dev.avles.gym.ui.TrainState
 import dev.avles.gym.ui.components.BigNumber
 import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
+import dev.avles.gym.ui.components.Meter
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
+import dev.avles.gym.ui.theme.Coral
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
@@ -56,6 +59,8 @@ fun TrainScreen(
     state: TrainState,
     restRemaining: Int?,
     prSetId: Long?,
+    guidance: LiftGuidance?,
+    onSelectExercise: (Long?) -> Unit,
     onStart: (String) -> Unit,
     onFinish: () -> Unit,
     onLogSet: (Long, Double, Int, Boolean) -> Unit,
@@ -71,6 +76,8 @@ fun TrainScreen(
             state = state,
             restRemaining = restRemaining,
             prSetId = prSetId,
+            guidance = guidance,
+            onSelectExercise = onSelectExercise,
             onFinish = onFinish,
             onLogSet = onLogSet,
             onDeleteSet = onDeleteSet,
@@ -138,6 +145,8 @@ private fun ActiveSessionPane(
     state: TrainState,
     restRemaining: Int?,
     prSetId: Long?,
+    guidance: LiftGuidance?,
+    onSelectExercise: (Long?) -> Unit,
     onFinish: () -> Unit,
     onLogSet: (Long, Double, Int, Boolean) -> Unit,
     onDeleteSet: (Long) -> Unit,
@@ -146,7 +155,7 @@ private fun ActiveSessionPane(
     modifier: Modifier
 ) {
     val session = state.active ?: return
-    var selectedExercise by remember { mutableStateOf<Exercise?>(null) }
+    val selectedExercise = guidance?.exercise
     var weight by remember { mutableStateOf("") }
     var reps by remember { mutableStateOf("") }
     var warmup by remember { mutableStateOf(false) }
@@ -211,6 +220,17 @@ private fun ActiveSessionPane(
                     selectedExercise?.name ?: "Choose a lift",
                     style = MaterialTheme.typography.titleMedium,
                     color = if (selectedExercise == null) Faint else Bone
+                )
+            }
+
+            if (guidance != null) {
+                Spacer(Modifier.height(12.dp))
+                TargetCard(
+                    guidance = guidance,
+                    onUseTarget = { w, r ->
+                        weight = Training.formatWeight(w)
+                        reps = r.toString()
+                    }
                 )
             }
 
@@ -302,7 +322,7 @@ private fun ActiveSessionPane(
     if (showPicker) {
         ExercisePicker(
             exercises = state.exercises,
-            onPick = { selectedExercise = it; showPicker = false },
+            onPick = { onSelectExercise(it.id); showPicker = false },
             onAddNew = { showPicker = false; showNewExercise = true },
             onDismiss = { showPicker = false }
         )
@@ -313,6 +333,99 @@ private fun ActiveSessionPane(
             onSave = { name, group -> onAddExercise(name, group); showNewExercise = false },
             onDismiss = { showNewExercise = false }
         )
+    }
+}
+
+/**
+ * The target for this lift, read off your own history.
+ *
+ * Tapping it fills the weight and reps fields, because the whole point is to remove
+ * a decision from the thirty seconds between two sets — if it takes typing, it is
+ * no faster than remembering.
+ */
+@Composable
+private fun TargetCard(guidance: LiftGuidance, onUseTarget: (Double, Int) -> Unit) {
+    val rec = guidance.recommendation
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Brass.copy(alpha = 0.10f))
+            .padding(16.dp)
+    ) {
+        if (rec == null) {
+            Text(
+                "No history on this lift yet",
+                style = MaterialTheme.typography.labelMedium,
+                color = Mute
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Log one working set and a target appears here from the next session on. " +
+                    "The app will not guess a starting weight for you.",
+                style = MaterialTheme.typography.labelSmall,
+                color = Faint
+            )
+            return@Column
+        }
+
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                if (rec.isStepUp) "Step up" else "Next target",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (rec.isStepUp) Brass else Mute
+            )
+            if (rec.isStalled) {
+                Text("stalling", style = MaterialTheme.typography.labelSmall, color = Coral)
+            }
+        }
+
+        Spacer(Modifier.height(6.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                rec.headline,
+                style = MaterialTheme.typography.displaySmall,
+                color = Brass
+            )
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = { onUseTarget(rec.weightKg, rec.reps) }) {
+                Text("Use", color = Brass, style = MaterialTheme.typography.labelLarge)
+            }
+        }
+
+        Text(
+            rec.rationale,
+            style = MaterialTheme.typography.labelSmall,
+            color = Mute
+        )
+
+        if (guidance.bestE1rm > 0) {
+            Spacer(Modifier.height(14.dp))
+            Hairline()
+            Spacer(Modifier.height(12.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "estimated max ${Training.formatWeight(guidance.bestE1rm)} kg",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Mute
+                )
+                Text(
+                    "next ${Training.formatWeight(guidance.nextMilestone)} kg",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Brass
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Meter(progress = guidance.milestoneProgress, accent = Brass, height = 4)
+        }
     }
 }
 
@@ -346,31 +459,68 @@ private fun ExercisePicker(
     onAddNew: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    var query by remember { mutableStateOf("") }
+    val matches = remember(query, exercises) {
+        if (query.isBlank()) exercises
+        else exercises.filter { it.name.contains(query, ignoreCase = true) }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Slate,
         title = { Text("Choose a lift", color = Bone) },
         text = {
-            LazyColumn(Modifier.height(380.dp)) {
-                exercises.groupBy { it.muscleGroup }.forEach { (group, inGroup) ->
-                    item {
-                        Text(
-                            group,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Brass,
-                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
-                        )
+            Column {
+                // The catalogue is past fifty lifts now. Scrolling to find a cable curl
+                // between two sets is exactly the friction this app exists to remove.
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    label = { Text("Search") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                LazyColumn(Modifier.height(340.dp)) {
+                    matches.groupBy { it.muscleGroup }.forEach { (group, inGroup) ->
+                        item {
+                            Text(
+                                group,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Brass,
+                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                            )
+                        }
+                        items(inGroup, key = { it.id }) { exercise ->
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onPick(exercise) }
+                                    .padding(vertical = 8.dp)
+                            ) {
+                                Text(
+                                    exercise.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Bone
+                                )
+                                Text(
+                                    "${exercise.repLow}-${exercise.repHigh} reps  ·  " +
+                                        "+${Training.formatWeight(exercise.incrementKg)} kg steps",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Faint
+                                )
+                            }
+                        }
                     }
-                    items(inGroup, key = { it.id }) { exercise ->
-                        Text(
-                            exercise.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Bone,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onPick(exercise) }
-                                .padding(vertical = 10.dp)
-                        )
+                    if (matches.isEmpty()) {
+                        item {
+                            Text(
+                                "Nothing matches \"$query\".",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Faint,
+                                modifier = Modifier.padding(vertical = 16.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -400,6 +550,12 @@ private fun NewExerciseDialog(onSave: (String, String) -> Unit, onDismiss: () ->
                 )
                 Spacer(Modifier.height(14.dp))
                 PillRow(listOf("Push", "Pull", "Legs", "Core"), group, Brass, { group = it })
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "New lifts progress in 6-10 reps and 2.5 kg steps until you change them.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint
+                )
             }
         },
         confirmButton = {

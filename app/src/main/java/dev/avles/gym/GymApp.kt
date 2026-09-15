@@ -31,7 +31,7 @@ class GymApp : Application() {
         Notifications.createChannels(this)
 
         appScope.launch {
-            repository.seedIfEmpty()
+            repository.seedCatalogue()
             val s = settings.settings.first()
             if (s.remindersOn) {
                 Notifications.scheduleDailyReminder(this@GymApp, s.reminderHour, s.reminderMinute)

@@ -16,6 +16,8 @@ import dev.avles.gym.data.Meals
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.WorkoutSession
 import dev.avles.gym.domain.MacroMath
+import dev.avles.gym.domain.Progression
+import dev.avles.gym.domain.Recommendation
 import dev.avles.gym.domain.Totals
 import dev.avles.gym.domain.Training
 import dev.avles.gym.notify.Notifications
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -55,6 +58,23 @@ data class TrainState(
     val recent: List<WorkoutSession> = emptyList()
 )
 
+/**
+ * Everything the Train screen needs to say about the lift you have picked: what to
+ * try next, where your estimated max sits, and the round number above it.
+ *
+ * Assembled in the ViewModel rather than in the screen because it is a join across
+ * the exercise catalogue and that lift's history, and a composable is the wrong
+ * place to be doing joins.
+ */
+data class LiftGuidance(
+    val exercise: Exercise,
+    val recommendation: Recommendation? = null,
+    val bestE1rm: Double = 0.0,
+    val nextMilestone: Double = 0.0,
+    val milestoneProgress: Float = 0f,
+    val recentSets: List<SetRow> = emptyList()
+)
+
 data class ProgressState(
     val weights: List<BodyWeight> = emptyList(),
     val volume: List<DayVolume> = emptyList(),
@@ -78,6 +98,14 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
     val lastPrSetId: StateFlow<Long?> = _lastPrSetId.asStateFlow()
 
     private var restJob: Job? = null
+
+    /**
+     * The lift being worked on. This lives here rather than in the Train screen so
+     * that it survives navigating away and back, and so that the recommendation can
+     * be a flow off it instead of something the screen has to go and fetch.
+     */
+    private val _selectedExerciseId = MutableStateFlow<Long?>(null)
+    val selectedExerciseId: StateFlow<Long?> = _selectedExerciseId.asStateFlow()
 
     // ---------- Day ----------
 
@@ -178,6 +206,36 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
     fun addExercise(name: String, group: String) = viewModelScope.launch {
         if (name.isNotBlank()) repo.addExercise(name.trim(), group)
     }
+
+    fun selectExercise(id: Long?) {
+        _selectedExerciseId.value = id
+    }
+
+    /**
+     * Recomputed whenever the lift changes or a set lands, because the history it
+     * reads is a database flow. Log a set that hits the top of the range and the
+     * target moves up while you are still standing there.
+     */
+    val guidance: StateFlow<LiftGuidance?> =
+        combine(_selectedExerciseId, repo.exercises) { id, catalogue ->
+            id?.let { wanted -> catalogue.firstOrNull { it.id == wanted } }
+        }.flatMapLatest { exercise ->
+            if (exercise == null) {
+                flowOf(null)
+            } else {
+                repo.historyForExercise(exercise.id).map { history ->
+                    val best = Training.bestEstimatedOneRepMax(history)
+                    LiftGuidance(
+                        exercise = exercise,
+                        recommendation = Progression.recommend(exercise, history),
+                        bestE1rm = best,
+                        nextMilestone = Progression.nextMilestone(best),
+                        milestoneProgress = Progression.milestoneProgress(best),
+                        recentSets = history.take(5)
+                    )
+                }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     // ---------- Rest timer ----------
 

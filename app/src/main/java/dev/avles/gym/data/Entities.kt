@@ -1,5 +1,6 @@
 package dev.avles.gym.data
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -10,13 +11,93 @@ import androidx.room.PrimaryKey
  * Nothing here needs a Room TypeConverter, which keeps the schema boring on purpose.
  */
 
+/**
+ * The micronutrients worth tracking for someone lifting on a South Indian diet.
+ *
+ * Fifteen, not fifty. Each one earns its place either because a lifter is plausibly
+ * short of it (iron, magnesium, zinc, vitamin D, B12, omega-3), because the diet
+ * makes it easy to overshoot (sodium, saturated fat, sugar), or because it is the
+ * cheapest signal that the day was built out of food rather than out of macros
+ * (fibre, potassium, vitamin C).
+ *
+ * Stored per unit of the food, exactly like the macros, and summed the same way.
+ * [plus] and [times] exist so that the totalling code stays one line instead of
+ * fifteen, which is the whole reason this is a value type and not loose columns.
+ *
+ * Room flattens this into the parent table with @Embedded, so these are real
+ * columns named fiberG, sodiumMg and so on — no converters, no JSON blob.
+ */
+data class Micros(
+    val fiberG: Double = 0.0,
+    val sugarG: Double = 0.0,
+    val satFatG: Double = 0.0,
+    val sodiumMg: Double = 0.0,
+    val potassiumMg: Double = 0.0,
+    val calciumMg: Double = 0.0,
+    val ironMg: Double = 0.0,
+    val magnesiumMg: Double = 0.0,
+    val zincMg: Double = 0.0,
+    val vitAMcg: Double = 0.0,
+    val vitCMg: Double = 0.0,
+    val vitDMcg: Double = 0.0,
+    val vitB12Mcg: Double = 0.0,
+    val folateMcg: Double = 0.0,
+    val omega3G: Double = 0.0
+) {
+    operator fun plus(o: Micros) = Micros(
+        fiberG + o.fiberG,
+        sugarG + o.sugarG,
+        satFatG + o.satFatG,
+        sodiumMg + o.sodiumMg,
+        potassiumMg + o.potassiumMg,
+        calciumMg + o.calciumMg,
+        ironMg + o.ironMg,
+        magnesiumMg + o.magnesiumMg,
+        zincMg + o.zincMg,
+        vitAMcg + o.vitAMcg,
+        vitCMg + o.vitCMg,
+        vitDMcg + o.vitDMcg,
+        vitB12Mcg + o.vitB12Mcg,
+        folateMcg + o.folateMcg,
+        omega3G + o.omega3G
+    )
+
+    operator fun times(q: Double) = Micros(
+        fiberG * q,
+        sugarG * q,
+        satFatG * q,
+        sodiumMg * q,
+        potassiumMg * q,
+        calciumMg * q,
+        ironMg * q,
+        magnesiumMg * q,
+        zincMg * q,
+        vitAMcg * q,
+        vitCMg * q,
+        vitDMcg * q,
+        vitB12Mcg * q,
+        folateMcg * q,
+        omega3G * q
+    )
+}
+
 @Entity(tableName = "exercise")
 data class Exercise(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val muscleGroup: String,
     val isBodyweight: Boolean = false,
-    val isCustom: Boolean = false
+    val isCustom: Boolean = false,
+    /**
+     * The rep range this lift is progressed in, and the smallest jump worth making
+     * on it. A barbell squat moves in 5 kg because that is two 2.5 kg plates and the
+     * lift can absorb it; a lateral raise moves in 1 kg because it cannot. Getting
+     * this per-exercise is what stops the recommendation being nonsense on isolation
+     * work, and it is why these live on the exercise rather than in settings.
+     */
+    val repLow: Int = 6,
+    val repHigh: Int = 10,
+    val incrementKg: Double = 2.5
 )
 
 @Entity(tableName = "workout_session", indices = [Index("dateEpochDay")])
@@ -52,7 +133,15 @@ data class FoodItem(
     val carbsG: Double,
     val fatG: Double,
     val category: String,
-    val isCustom: Boolean = false
+    val isCustom: Boolean = false,
+    /**
+     * A supplement is still a food — it has calories and it carries nutrients — but it
+     * is logged from a different mental drawer, so it gets its own flag rather than
+     * relying on the category string. It also makes the one honest claim in the whole
+     * catalogue: a magnesium tablet's label is a measurement, not an estimate.
+     */
+    val isSupplement: Boolean = false,
+    @Embedded val micros: Micros = Micros()
 )
 
 @Entity(tableName = "food_log", indices = [Index("dateEpochDay"), Index("foodId")])
@@ -86,7 +175,9 @@ data class FoodLogRow(
     val kcal: Double,
     val proteinG: Double,
     val carbsG: Double,
-    val fatG: Double
+    val fatG: Double,
+    val isSupplement: Boolean = false,
+    @Embedded val micros: Micros = Micros()
 )
 
 /** Joined row for a logged set: the set plus its exercise name. */
@@ -109,5 +200,24 @@ object Meals {
     const val LUNCH = "Lunch"
     const val DINNER = "Dinner"
     const val SNACK = "Snack"
-    val ALL = listOf(BREAKFAST, LUNCH, SNACK, DINNER)
+
+    /**
+     * Supplements are their own slot. Fish oil at 9 PM is not dinner, and burying it
+     * inside a meal makes both the meal's numbers and the supplement's harder to read.
+     */
+    const val SUPPLEMENT = "Supplements"
+
+    /** Every slot a day's log can be grouped under. */
+    val ALL = listOf(BREAKFAST, LUNCH, SNACK, DINNER, SUPPLEMENT)
+
+    /**
+     * What the meal picker offers. Supplements are missing on purpose: a food that
+     * is a supplement files itself there whatever the picker says, so putting it in
+     * the row would be a fifth pill that does nothing but squeeze the other four.
+     */
+    val PICKABLE = listOf(BREAKFAST, LUNCH, SNACK, DINNER)
+
+    /** Where an entry belongs, which the food itself decides. */
+    fun slotFor(isSupplement: Boolean, chosen: String): String =
+        if (isSupplement) SUPPLEMENT else chosen
 }

@@ -214,8 +214,10 @@ missed day as failure.
   formatting, and the seed catalogue itself. 32 cases covering the boundaries
   that matter — empty days, zero targets, fractional servings, warm-up
   exclusion, per-exercise record isolation, streaks broken by a two-day gap,
-  decimal separators under a comma locale, and a seeded food whose stated
-  calories drift from its own macros.
+  decimal separators under a comma locale, a seeded food whose stated calories
+  drift from its own macros, a lift with an inverted rep range, a deload session
+  that must not be overridden by an older heavier one, and a nutrient panel row
+  that reads the wrong field. 62 cases.
 - **Android Lint** across the app and its dependencies, publishing an HTML
   report as a build artifact. Lint does not gate the APK: a style warning must
   never stand between the user and a working build.
@@ -223,7 +225,7 @@ missed day as failure.
 
 ### Manual, before trusting a build
 
-1. First launch seeds 27 exercises and 35 foods.
+1. First launch seeds 54 exercises and 239 foods; an upgrade from v1 keeps every logged set and meal and adds only what is new.
 2. Log a set, confirm the rest timer starts and the notification fires.
 3. Log a warm-up, confirm no timer and no volume change.
 4. Beat a previous best, confirm the record marker.
@@ -264,7 +266,8 @@ a keystore in repository secrets; that is a later problem.
 | The release build has never been run | Signing is opt-in via repository secrets and `assembleRelease` turns on R8 and resource shrinking, neither of which has been exercised. Expect to iterate on keep rules the first time |
 | Seeded macro values are estimates for home-style portions | Every food is editable; the app says so in Settings and in the food editor |
 | Restaurant oil and ghee vary enormously | Same handling — correct the five foods you eat most and the rest stops mattering |
-| Database has no migrations yet | Schema is exported to `app/schemas` from v1 so migrations are possible later; until then a schema change means a reinstall |
+| Micronutrient values for composite dishes are estimates built from their ingredients | Stated as such in the app, in the seed file and in the README; a zero reads as "not estimated" rather than "contains none", and every value is editable |
+| A schema change could have wiped existing logs | v1 → v2 is a written migration, not `fallbackToDestructiveMigration`. Every new column is NOT NULL with a default, so existing rows are valid without a backfill |
 | Compiling is not the same as running | The whole app compiles, lints and tests green in CI, and produces an APK — but it has not been exercised on a device. The manual pass in section 9 is what closes that gap |
 | A phone in a comma-decimal locale | `Training.formatWeight` is pinned to a dot, because the weight dialog parses its own output back through a digits-and-dot filter and would otherwise read 62.5 kg as 625. Regression test in `TrainingTest` |
 | Auto-backup silently dropping settings | Targets, rest length and the reminder live in DataStore under `files/datastore`, not `sharedpref`; both backup rule files name it explicitly, alongside the database and its `-wal` |

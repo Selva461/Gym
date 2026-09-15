@@ -19,6 +19,10 @@ interface GymDao {
     @Query("SELECT COUNT(*) FROM exercise")
     suspend fun exerciseCount(): Int
 
+    /** Names only, so the catalogue can be topped up without reading every row. */
+    @Query("SELECT name FROM exercise")
+    suspend fun exerciseNames(): List<String>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertExercises(items: List<Exercise>)
 
@@ -104,6 +108,9 @@ interface GymDao {
     @Query("SELECT COUNT(*) FROM food_item")
     suspend fun foodCount(): Int
 
+    @Query("SELECT name FROM food_item")
+    suspend fun foodNames(): List<String>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertFoods(items: List<FoodItem>)
 
@@ -124,7 +131,13 @@ interface GymDao {
         SELECT l.id AS logId, l.dateEpochDay AS dateEpochDay, l.meal AS meal,
                l.quantity AS quantity, l.loggedAt AS loggedAt,
                f.id AS foodId, f.name AS name, f.unitLabel AS unitLabel,
-               f.kcal AS kcal, f.proteinG AS proteinG, f.carbsG AS carbsG, f.fatG AS fatG
+               f.kcal AS kcal, f.proteinG AS proteinG, f.carbsG AS carbsG, f.fatG AS fatG,
+               f.isSupplement AS isSupplement,
+               f.fiberG AS fiberG, f.sugarG AS sugarG, f.satFatG AS satFatG,
+               f.sodiumMg AS sodiumMg, f.potassiumMg AS potassiumMg, f.calciumMg AS calciumMg,
+               f.ironMg AS ironMg, f.magnesiumMg AS magnesiumMg, f.zincMg AS zincMg,
+               f.vitAMcg AS vitAMcg, f.vitCMg AS vitCMg, f.vitDMcg AS vitDMcg,
+               f.vitB12Mcg AS vitB12Mcg, f.folateMcg AS folateMcg, f.omega3G AS omega3G
         FROM food_log l
         JOIN food_item f ON f.id = l.foodId
         WHERE l.dateEpochDay = :day
@@ -133,12 +146,12 @@ interface GymDao {
     )
     fun foodLogFor(day: Long): Flow<List<FoodLogRow>>
 
+    // f.* rather than a hand-written column list: FoodItem now carries fifteen embedded
+    // micronutrient columns, and spelling them out here would mean this query silently
+    // going stale every time one is added.
     @Query(
         """
-        SELECT f.id AS id, f.name AS name, f.unitLabel AS unitLabel, f.kcal AS kcal,
-               f.proteinG AS proteinG, f.carbsG AS carbsG, f.fatG AS fatG,
-               f.category AS category, f.isCustom AS isCustom
-        FROM food_log l
+        SELECT f.* FROM food_log l
         JOIN food_item f ON f.id = l.foodId
         GROUP BY f.id
         ORDER BY COUNT(l.id) DESC, MAX(l.loggedAt) DESC

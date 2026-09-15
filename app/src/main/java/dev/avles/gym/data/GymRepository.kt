@@ -5,10 +5,27 @@ import java.time.LocalDate
 
 class GymRepository(private val dao: GymDao) {
 
-    /** Fills the catalogue on first launch only. Safe to call every start. */
-    suspend fun seedIfEmpty() {
-        if (dao.exerciseCount() == 0) dao.insertExercises(SeedData.exercises())
-        if (dao.foodCount() == 0) dao.insertFoods(SeedData.foods())
+    /**
+     * Fills the catalogue on first launch, and tops it up on later ones.
+     *
+     * Matching on name and inserting only what is missing does two jobs at once. On a
+     * fresh install everything is missing, so it seeds. On an install that already has
+     * data it adds whatever the catalogue has grown by since — the dosa varieties, the
+     * supplements — without touching a single existing row, so a food whose macros you
+     * corrected stays corrected. Safe to call on every start.
+     */
+    suspend fun seedCatalogue() {
+        val knownLifts = dao.exerciseNames().toSet()
+        SeedData.exercises()
+            .filter { it.name !in knownLifts }
+            .takeIf { it.isNotEmpty() }
+            ?.let { dao.insertExercises(it) }
+
+        val knownFoods = dao.foodNames().toSet()
+        SeedData.foods()
+            .filter { it.name !in knownFoods }
+            .takeIf { it.isNotEmpty() }
+            ?.let { dao.insertFoods(it) }
     }
 
     // ---------- Training ----------

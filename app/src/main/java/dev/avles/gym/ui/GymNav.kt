@@ -66,6 +66,7 @@ fun GymNav(vm: GymViewModel) {
     val foods by vm.foods.collectAsStateWithLifecycle()
     val rest by vm.restRemaining.collectAsStateWithLifecycle()
     val prSetId by vm.lastPrSetId.collectAsStateWithLifecycle()
+    val guidance by vm.guidance.collectAsStateWithLifecycle()
 
     fun go(route: String) {
         navController.navigate(route) {
@@ -127,6 +128,8 @@ fun GymNav(vm: GymViewModel) {
                     state = train,
                     restRemaining = rest,
                     prSetId = prSetId,
+                    guidance = guidance,
+                    onSelectExercise = vm::selectExercise,
                     onStart = vm::startSession,
                     onFinish = vm::finishSession,
                     onLogSet = { exerciseId, weight, reps, warmup ->
