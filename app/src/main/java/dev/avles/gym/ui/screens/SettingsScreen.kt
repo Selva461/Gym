@@ -138,9 +138,21 @@ fun SettingsScreen(
         Hairline()
         Spacer(Modifier.height(18.dp))
         Text(
-            "Everything lives on this phone. There is no account, no server, and nothing leaves the device.",
+            "Everything lives on this phone. There is no account, no server, and the app "
+                + "holds no network permission at all — it cannot reach the internet even "
+                + "if it wanted to.",
             style = MaterialTheme.typography.bodyMedium,
             color = Mute
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "One exception, stated plainly: if you have Android's own backup switched on, "
+                + "your log is included in it so that it survives a reinstall. It is "
+                + "encrypted with your screen lock before it leaves the phone, and is "
+                + "skipped entirely on a device that cannot do that. Android Settings › "
+                + "Google › Backup turns it off.",
+            style = MaterialTheme.typography.labelSmall,
+            color = Faint
         )
         Spacer(Modifier.height(8.dp))
         Text(

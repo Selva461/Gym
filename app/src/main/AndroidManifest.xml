@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- This app has no network code and must never gain any. Not declaring INTERNET
+         is not enough on its own: the manifest merger folds in the permissions of
+         every dependency, so a library that declares it would silently hand this app
+         network access. tools:node="remove" makes the merged manifest's lack of
+         INTERNET a build-time guarantee rather than a hope. Check it in the merged
+         manifest at app/build/outputs/logs/ after a build. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
     <application
         android:name=".GymApp"
@@ -31,9 +41,15 @@
             android:name=".notify.ReminderReceiver"
             android:exported="false" />
 
+        <!-- Exported only because the system delivers BOOT_COMPLETED from outside the
+             app. The permission attribute narrows that to the system alone: without it
+             any installed app could fire this receiver directly and re-arm the alarm.
+             The harm is small, but a receiver that only the OS needs to reach should
+             only be reachable by the OS. -->
         <receiver
             android:name=".notify.BootReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>

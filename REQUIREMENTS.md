@@ -156,7 +156,9 @@ exactly when the user has the least patience.
 
 ## 7. Non-functional requirements
 
-- **N1** Fully offline. No network permission is declared.
+- **N1** Fully offline. `INTERNET` and `ACCESS_NETWORK_STATE` are actively removed
+  from the merged manifest with `tools:node="remove"`, so no dependency can
+  reintroduce network access without the build showing it.
 - **N2** No analytics, no crash reporting, no third-party SDK of any kind.
 - **N3** Cold start to an interactive Today screen in under one second on
   mid-range hardware.
@@ -164,7 +166,13 @@ exactly when the user has the least patience.
 - **N5** Notification permission is requested once and declining degrades only
   the timer buzz and the nightly nudge.
 - **N6** Data survives reinstall via Android auto-backup where the device
-  supports it.
+  supports it — conditionally. `disableIfNoEncryptionCapabilities="true"` means a
+  device that cannot encrypt the backup end to end uploads nothing rather than
+  uploading something readable.
+- **N7** The exported boot receiver is restricted to
+  `android.permission.RECEIVE_BOOT_COMPLETED`, so only the system can reach it.
+- **N8** The release build is non-debuggable and signed from CI secrets, never
+  from a keystore committed to the repository.
 
 ## 8. Design direction
 

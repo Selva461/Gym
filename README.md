@@ -106,6 +106,48 @@ read its label. One animated element in the whole app — the meter fill.
 The reasoning behind the palette, type scale and layout is in section 8 of
 REQUIREMENTS.md, so that later changes are deliberate.
 
+## Security and privacy
+
+This app holds a health log — body weight over time, what you ate, what you
+lifted. What that deserves, and what has been done about it:
+
+**It cannot reach the network.** No networking code, no analytics, no SDKs. The
+manifest goes further than simply not asking for `INTERNET`: it removes the
+permission with `tools:node="remove"`, so if a dependency ever declares it, the
+merge fails to grant it rather than quietly handing the app network access. You
+can confirm this on any build by reading the merged manifest under
+`app/build/outputs/logs/`.
+
+**Backup is encrypted or it does not happen.** Android's auto-backup is the one
+route by which data leaves the phone, and it is genuinely useful — it is what
+makes the log survive a reinstall. `data_extraction_rules.xml` sets
+`disableIfNoEncryptionCapabilities="true"`, so on Android 12+ the upload only
+proceeds when the backup is end-to-end encrypted with your screen lock, which
+Google does not hold. On a device that cannot do that, nothing is uploaded at
+all. Android 11 and below have no equivalent switch; set
+`android:allowBackup="false"` if that matters to you. The Settings screen says
+all of this in the app rather than claiming more privacy than it delivers.
+
+**The debug APK is debuggable.** That is what debug means, and it is the one
+real exposure in the artifact you install: anyone with your unlocked phone and
+USB debugging enabled can read the database out of a debuggable app with
+`adb run-as`. If that is in your threat model, add four repository secrets
+(`GYM_KEYSTORE_BASE64`, `GYM_KEYSTORE_PASSWORD`, `GYM_KEY_ALIAS`,
+`GYM_KEY_PASSWORD` — the workflow comments carry the `keytool` command) and CI
+also produces `gym-release-apk`, which is minified and not debuggable. Nothing
+changes if you skip it. **The release build has not been run yet**, so expect to
+iterate on R8 rules the first time.
+
+**The boot receiver is reachable only by the system.** It has to be exported so
+Android can deliver `BOOT_COMPLETED`, so it also carries
+`android:permission="android.permission.RECEIVE_BOOT_COMPLETED"` — without that,
+any installed app could invoke it directly.
+
+**No injection surface.** Every query is a Room `@Query` with bound parameters;
+nothing builds SQL by concatenation, and food search filters in Kotlin rather
+than in SQL. There is no WebView, no reflection, no dynamic code loading, and
+nothing is written to the log.
+
 ## Licence
 
 Personal project. Do what you like with it.

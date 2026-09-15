@@ -16,6 +16,15 @@ jobs:
     name: Test, lint and assemble
     runs-on: ubuntu-latest
 
+    # Read once at job level so the optional release steps below can test for their
+    # presence. A secret that was never created resolves to an empty string, which is
+    # exactly the signal those steps check.
+    env:
+      GYM_KEYSTORE_BASE64: ${{ secrets.GYM_KEYSTORE_BASE64 }}
+      GYM_KEYSTORE_PASSWORD: ${{ secrets.GYM_KEYSTORE_PASSWORD }}
+      GYM_KEY_ALIAS: ${{ secrets.GYM_KEY_ALIAS }}
+      GYM_KEY_PASSWORD: ${{ secrets.GYM_KEY_PASSWORD }}
+
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -26,8 +35,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # `packages` is set explicitly. The action's default is "tools platform-tools",
+      # and Google has withdrawn the legacy `tools` package from the SDK repository —
+      # sdkmanager exits 1 with "Failed to find package 'tools'" and the job dies
+      # before Gradle ever starts. Naming what this build actually needs avoids it.
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -69,3 +84,38 @@ jobs:
           name: lint-report
           path: app/build/reports/lint-results-debug.html
           if-no-files-found: ignore
+
+      # --- Optional: a signed, non-debuggable release APK ---------------
+      # The debug APK above is debuggable, which means anyone holding your unlocked
+      # phone with USB debugging on can read the database out of it. For a health log
+      # that is worth closing. Create a keystore, add these four repository secrets,
+      # and every build also produces a release APK that is not debuggable:
+      #
+      #   keytool -genkey -v -keystore gym-release.jks -alias gym \
+      #           -keyalg RSA -keysize 2048 -validity 10000
+      #   base64 -w0 gym-release.jks        # the value for GYM_KEYSTORE_BASE64
+      #
+      #   GYM_KEYSTORE_BASE64  GYM_KEYSTORE_PASSWORD  GYM_KEY_ALIAS  GYM_KEY_PASSWORD
+      #
+      # With the secrets absent every step here is skipped and nothing else changes.
+      - name: Decode signing keystore
+        if: env.GYM_KEYSTORE_BASE64 != ''
+        run: |
+          printf '%s' "$GYM_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/gym-release.jks"
+          echo "GYM_KEYSTORE_PATH=$RUNNER_TEMP/gym-release.jks" >> "$GITHUB_ENV"
+
+      - name: Assemble signed release APK
+        if: env.GYM_KEYSTORE_BASE64 != ''
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Upload release APK
+        if: env.GYM_KEYSTORE_BASE64 != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: gym-release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Shred the keystore
+        if: always() && env.GYM_KEYSTORE_BASE64 != ''
+        run: shred -u "$RUNNER_TEMP/gym-release.jks" 2>/dev/null || rm -f "$RUNNER_TEMP/gym-release.jks"

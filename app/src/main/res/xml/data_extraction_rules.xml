@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
-    <cloud-backup>
+    <!--
+      What is in this backup is a health log: body weight over time, what you ate, what
+      you lifted. It should survive a reinstall (that is the point of backing it up) and
+      it should not be readable by anyone but you.
+
+      disableIfNoEncryptionCapabilities="true" is the control that makes both true at
+      once. Android's cloud backup is end-to-end encrypted with the device's screen-lock
+      secret, which Google does not hold — but only on a device that has a screen lock
+      and the hardware to do it. This flag says: if that is not available, do not upload
+      at all. A phone with no lock screen backs nothing up rather than shipping a
+      readable copy of your weight history to a server.
+
+      Device transfer is phone-to-phone over a local link and carries no such condition.
+    -->
+    <cloud-backup disableIfNoEncryptionCapabilities="true">
         <include domain="database" path="gym.db" />
         <include domain="database" path="gym.db-wal" />
         <include domain="file" path="datastore/" />

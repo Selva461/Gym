@@ -5,6 +5,14 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+/**
+ * Release signing is opt-in and driven entirely by environment variables, so no
+ * keystore and no password ever lives in this repository. With none of them set a
+ * release build is simply left unsigned; the debug build is untouched either way.
+ */
+val releaseKeystore: String? = System.getenv("GYM_KEYSTORE_PATH")
+val canSignRelease = !releaseKeystore.isNullOrBlank() && file(releaseKeystore).exists()
+
 android {
     namespace = "dev.avles.gym"
     compileSdk = 35
@@ -18,6 +26,17 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (canSignRelease) {
+            create("release") {
+                storeFile = file(releaseKeystore!!)
+                storePassword = System.getenv("GYM_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("GYM_KEY_ALIAS")
+                keyPassword = System.getenv("GYM_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -28,6 +47,12 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // A debug APK is debuggable by definition, which means `adb run-as` can read
+            // the database straight out of it on an unlocked phone with USB debugging on.
+            // For a health log that is the one exposure worth engineering around, and a
+            // signed release build is the answer.
+            isDebuggable = false
+            if (canSignRelease) signingConfig = signingConfigs.getByName("release")
         }
     }
 
