@@ -8,8 +8,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# `write` is needed to publish the APK as a release asset. Nothing else in this
+# workflow writes to the repository.
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -95,6 +97,29 @@ jobs:
           name: lint-report
           path: app/build/reports/lint-results-debug.html
           if-no-files-found: ignore
+
+      # An Actions artifact is a zip behind a GitHub login, which is close to
+      # unusable on a phone. A release asset is a direct .apk link that any browser
+      # can download, so the build publishes one and keeps it at a fixed tag: the
+      # URL never changes, only what sits behind it.
+      #
+      #   https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk
+      - name: Publish the APK where a phone can download it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/*.apk gym-debug.apk
+          TAG=latest-debug
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
+            --title "Gym — latest debug build" \
+            --prerelease \
+            --notes "Replaced by the newest successful build. Debug build, signed with the repository's fixed debug key."
+          gh release upload "$TAG" gym-debug.apk --clobber
+          gh release edit "$TAG" --notes "Built from \`${GITHUB_SHA::7}\` on \`${GITHUB_REF_NAME}\`.
+
+          Debug build, signed with the repository's fixed debug key, so each build installs over the last one without losing data.
+
+          Download **gym-debug.apk** below."
 
       # --- Optional: a signed, non-debuggable release APK ---------------
       # The debug APK above is debuggable, which means anyone holding your unlocked
