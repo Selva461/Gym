@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Room runs in WAL mode, so recent writes can still be sitting in the -wal file
+         when a backup is taken. The -shm file is deliberately left out: SQLite rebuilds
+         it from the -wal, and restoring a stale one is worse than restoring none. -->
+    <include domain="database" path="gym.db" />
+    <include domain="database" path="gym.db-wal" />
+    <!-- Targets, rest length and the reminder live in DataStore, which writes under
+         files/datastore — not sharedpref. Without this line a reinstall silently
+         resets every setting. -->
+    <include domain="file" path="datastore/" />
+</full-backup-content>

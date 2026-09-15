@@ -1,0 +1,71 @@
+name: Build APK
+
+# Every branch, not just main. The APK is the deliverable and it is wanted from
+# whichever branch the work is on — a branch filter here means pushing a fix and
+# getting nothing back.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Test, lint and assemble
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      # --- Audit gates -------------------------------------------------
+      # Debug variant only. The release unit tests run the same code against the
+      # same JVM and just double the wall clock.
+      - name: Unit tests
+        run: gradle testDebugUnitTest --no-daemon --stacktrace
+
+      - name: Android Lint
+        run: gradle lintDebug --no-daemon --stacktrace
+
+      # --- Deliverable -------------------------------------------------
+      - name: Assemble debug APK
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gym-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore

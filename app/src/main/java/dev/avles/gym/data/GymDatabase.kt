@@ -1,0 +1,35 @@
+package dev.avles.gym.data
+
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+
+@Database(
+    entities = [
+        Exercise::class,
+        WorkoutSession::class,
+        SetEntry::class,
+        FoodItem::class,
+        FoodLog::class,
+        BodyWeight::class
+    ],
+    version = 1,
+    exportSchema = true
+)
+abstract class GymDatabase : RoomDatabase() {
+
+    abstract fun dao(): GymDao
+
+    companion object {
+        @Volatile private var instance: GymDatabase? = null
+
+        fun get(context: Context): GymDatabase = instance ?: synchronized(this) {
+            instance ?: Room.databaseBuilder(
+                context.applicationContext,
+                GymDatabase::class.java,
+                "gym.db"
+            ).build().also { instance = it }
+        }
+    }
+}

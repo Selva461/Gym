@@ -1,0 +1,111 @@
+# Gym
+
+A training and food log for one person, one phone, no network.
+Kotlin, Jetpack Compose, Room. Built on GitHub Actions because the phone is the
+whole development environment.
+
+Full spec: [REQUIREMENTS.md](REQUIREMENTS.md)
+
+---
+
+## Read this first
+
+**Half of this has been compiled and half has not.** The pure-Kotlin core —
+`domain/`, the entity and joined-row types, and the seed catalogue — was built
+with a real Kotlin 2.0.21 compiler and its 32 unit tests were run and passed.
+That is the half holding every number the app shows you.
+
+The other half — everything touching Android or Compose — has still never seen a
+compiler, because the Android SDK is not fetchable from where this was written.
+It has passed a static audit instead: package and resource resolution, manifest
+class references, Compose property-delegate operator imports, and every
+cross-file call site checked against its declaration. **The first CI run is the
+first real compile of the UI. Expect to fix something there.**
+
+**If the first build fails, look at versions before you look at code.** The
+toolchain in `gradle/libs.versions.toml` is pinned as a matched set that is
+known to work together, but it may be behind what the Android plugins expect
+now. The fix is to bump AGP, Kotlin, KSP and the Compose BOM **together** —
+bumping one alone will break the other three.
+
+```toml
+agp        = "8.7.3"
+kotlin     = "2.0.21"
+ksp        = "2.0.21-1.0.28"   # must track the Kotlin version exactly
+composeBom = "2024.10.01"
+room       = "2.6.1"
+```
+
+## Getting the APK
+
+1. Push to any branch. `.github/workflows/android.yml` has no branch filter, so
+   the build runs wherever the work is — you do not have to merge to `main` to
+   get an APK.
+2. Open the **Actions** tab, click the run, scroll to **Artifacts**, download
+   `gym-debug-apk`.
+3. Unzip on the phone and install. Android will ask you to allow installs from
+   that source once.
+
+The APK is signed with the standard debug key — fine for your own phone,
+not publishable. The app id is `dev.avles.gym.debug`, so it installs
+alongside anything else without conflict.
+
+Two other artifacts come back from every run: `unit-test-report` and
+`lint-report`. The tests gate the build; lint does not, deliberately — a style
+warning should never stand between you and a working APK.
+
+## What's in it
+
+```
+Today      protein first, calories second, a week strip with a dot per logged day
+Train      session → lift → kg × reps, rest timer, records, per-session volume
+Fuel       meal-aware logging over an editable catalogue, fractional quantities
+Progress   weight trend, 14-day volume, training and logging streaks
+Settings   your targets, rest length, nightly reminder
+```
+
+Seeded on first launch: 27 lifts across push, pull, legs and core, and 35 foods
+built around South Indian home cooking — idli, dosa, parotta, sambar, Chettinad
+chicken, mutton kuzhambu, vanjaram and nethili, egg podimas, curd rice, plus
+plain oats and unflavoured raw whey.
+
+**Those macro numbers are estimates.** Home-style portions vary enormously with
+oil, coconut and ghee. Every food is editable in place. Correcting the five or
+six you actually eat every week is worth more than any number of extra entries.
+
+## Structure
+
+```
+data/      Room entities, one DAO, repository, seed catalogue, DataStore settings
+domain/    pure Kotlin — macro maths, 1RM and records, streaks. All of it unit tested.
+ui/        one ViewModel, five screens, a small set of shared components
+notify/    notification channels, rest timer alert, nightly reminder, boot re-schedule
+```
+
+`domain/` holds no Android types, and neither do the row classes it works on.
+That is not tidiness for its own sake — it is what lets the maths be compiled and
+tested without an emulator, or without an SDK at all.
+
+The domain layer holds no Android types, which is why it can be tested without
+an emulator. Anything that can move into it, should.
+
+There is no dependency injection framework. One app, one user, five screens —
+a graph builder would be more machinery than the problem deserves. `GymApp`
+constructs the repository and hands it to a single ViewModel.
+
+## Design
+
+Dark only, on purpose. This app is opened at 8:50 PM in a gym and again at 10 PM
+in bed; it never meets daylight, and an app that is honestly dark beats one that
+flashes white on launch.
+
+Two accents that never swap roles: brass is always training, sage is always
+food. A number's colour tells you which half of the app you are in before you
+read its label. One animated element in the whole app — the meter fill.
+
+The reasoning behind the palette, type scale and layout is in section 8 of
+REQUIREMENTS.md, so that later changes are deliberate.
+
+## Licence
+
+Personal project. Do what you like with it.
