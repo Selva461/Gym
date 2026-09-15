@@ -10,19 +10,17 @@ Full spec: [REQUIREMENTS.md](REQUIREMENTS.md)
 
 ## Read this first
 
-**Half of this has been compiled and half has not.** The pure-Kotlin core —
-`domain/`, the entity and joined-row types, and the seed catalogue — was built
-with a real Kotlin 2.0.21 compiler and its 32 unit tests were run and passed.
-That is the half holding every number the app shows you.
+**It builds.** CI is green: the whole app compiles — Kotlin, Compose, Room's
+generated code — lint passes, the 32 unit tests pass, and `gym-debug-apk` comes
+back as an artifact. The pinned toolchain below is a working set, not a guess.
 
-The other half — everything touching Android or Compose — has still never seen a
-compiler, because the Android SDK is not fetchable from where this was written.
-It has passed a static audit instead: package and resource resolution, manifest
-class references, Compose property-delegate operator imports, and every
-cross-file call site checked against its declaration. **The first CI run is the
-first real compile of the UI. Expect to fix something there.**
+What has *not* happened is anyone running it on a phone. Compiling is not the
+same as behaving, so the manual pass in section 9 of
+[REQUIREMENTS.md](REQUIREMENTS.md) is still worth walking through once — in
+particular that the rest timer fires, an open session survives a restart, and
+editing a seeded food recomputes past entries.
 
-**If the first build fails, look at versions before you look at code.** The
+**If a later build fails, look at versions before you look at code.** The
 toolchain in `gradle/libs.versions.toml` is pinned as a matched set that is
 known to work together, but it may be behind what the Android plugins expect
 now. The fix is to bump AGP, Kotlin, KSP and the Compose BOM **together** —

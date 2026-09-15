@@ -260,11 +260,12 @@ a keystore in repository secrets; that is a later problem.
 
 | Risk | Handling |
 |---|---|
-| Toolchain versions in `libs.versions.toml` may be behind current | Pinned as a matched set; if CI fails on the first run it is almost certainly this, and the fix is bumping AGP, Kotlin, KSP and the Compose BOM together rather than one at a time |
+| Toolchain versions in `libs.versions.toml` may be behind current | Pinned as a matched set and now confirmed to build together. If a future bump breaks CI, move AGP, Kotlin, KSP and the Compose BOM together rather than one at a time |
+| The release build has never been run | Signing is opt-in via repository secrets and `assembleRelease` turns on R8 and resource shrinking, neither of which has been exercised. Expect to iterate on keep rules the first time |
 | Seeded macro values are estimates for home-style portions | Every food is editable; the app says so in Settings and in the food editor |
 | Restaurant oil and ghee vary enormously | Same handling — correct the five foods you eat most and the rest stops mattering |
 | Database has no migrations yet | Schema is exported to `app/schemas` from v1 so migrations are possible later; until then a schema change means a reinstall |
-| The Compose and Android layers have never been compiled | Statically audited only — package and resource resolution, manifest class references, property-delegate operator imports, and every cross-file call site against its declaration. The first CI run is the first real compile of that half |
+| Compiling is not the same as running | The whole app compiles, lints and tests green in CI, and produces an APK — but it has not been exercised on a device. The manual pass in section 9 is what closes that gap |
 | A phone in a comma-decimal locale | `Training.formatWeight` is pinned to a dot, because the weight dialog parses its own output back through a digits-and-dot filter and would otherwise read 62.5 kg as 625. Regression test in `TrainingTest` |
 | Auto-backup silently dropping settings | Targets, rest length and the reminder live in DataStore under `files/datastore`, not `sharedpref`; both backup rule files name it explicitly, alongside the database and its `-wal` |
 
