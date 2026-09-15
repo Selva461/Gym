@@ -26,12 +26,20 @@ import java.io.File
  */
 class MigrationSqlTest {
 
-    private val schemaFile: File? = listOf(
-        // Gradle runs unit tests with the module directory as the working directory;
-        // the second path is for a run rooted at the repository instead.
-        File("schemas/dev.avles.gym.GymDatabase/3.json"),
-        File("app/schemas/dev.avles.gym.GymDatabase/3.json")
-    ).firstOrNull { it.isFile }
+    private companion object {
+        const val SCHEMA_PATH = "dev.avles.gym.GymDatabase/3.json"
+    }
+
+    private val candidates: List<File> = listOfNotNull(
+        // The build passes this in, so there is nothing to guess about the test
+        // task's working directory. The relative paths are a fallback for running
+        // the class straight out of an IDE.
+        System.getProperty("gym.schemaDir")?.let { File(it, SCHEMA_PATH) },
+        File("schemas/$SCHEMA_PATH"),
+        File("app/schemas/$SCHEMA_PATH")
+    )
+
+    private val schemaFile: File? = candidates.firstOrNull { it.isFile }
 
     private val json: String? = schemaFile?.readText()
 
@@ -39,10 +47,20 @@ class MigrationSqlTest {
     fun `the exported schema is where the build should have put it`() {
         // Not an assumption-skip: if this file stops being generated the rest of the
         // class silently stops checking anything, and a quiet gate is worse than none.
+        // The message lists what is actually on disk, because "not found" on its own
+        // does not distinguish a wrong path from a schema that was never written.
         assertTrue(
-            "No exported Room schema found. It is written during the build by KSP " +
-                "with room.schemaLocation, so this test must run after the main " +
-                "sources are compiled. Looked in app/schemas/dev.avles.gym.GymDatabase/.",
+            buildString {
+                append("No exported Room schema found. KSP writes it during the build ")
+                append("from room.schemaLocation. Looked in:\n")
+                candidates.forEach { append("  ").append(it.absolutePath).append('\n') }
+                append("Working directory: ").append(File(".").absolutePath).append('\n')
+                val root = System.getProperty("gym.schemaDir")?.let(::File)
+                append("Schema dir exists: ").append(root?.isDirectory).append('\n')
+                root?.walkTopDown()?.take(20)?.forEach {
+                    append("  found: ").append(it.path).append('\n')
+                }
+            },
             json != null
         )
     }

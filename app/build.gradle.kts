@@ -91,6 +91,14 @@ ksp {
     arg("room.incremental", "true")
 }
 
+// MigrationSqlTest compares the hand-written v3 migration against the schema Room
+// exports here. Handing it the directory as a system property removes any guess
+// about the test task's working directory — the one assumption that is invisible
+// until it is wrong, and which reads as "the file is missing" when it is not.
+tasks.withType<Test>().configureEach {
+    systemProperty("gym.schemaDir", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
