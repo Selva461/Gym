@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -466,25 +464,27 @@ fun SplitLiftRow(
             color = Faint
         )
         Spacer(Modifier.height(8.dp))
-        LazyColumn(Modifier.heightIn(max = 190.dp)) {
-            items(plan.exercises, key = { it.id }) { exercise ->
-                val on = exercise.id == selectedId
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 6.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (on) Brass.copy(alpha = 0.16f) else Raised)
-                        .clickable { onPick(exercise) }
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                ) {
-                    Text(
-                        exercise.name,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (on) Brass else Bone,
-                        maxLines = 1
-                    )
-                }
+        // A plain Column, not a LazyColumn. This sits inside the Train screen's own
+        // lazy list, and a second vertical scroller nested in the first is awkward to
+        // drag even when its height is bounded. A split is five to eight lifts; there
+        // is nothing here worth virtualising.
+        plan.exercises.forEach { exercise ->
+            val on = exercise.id == selectedId
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (on) Brass.copy(alpha = 0.16f) else Raised)
+                    .clickable { onPick(exercise) }
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
+            ) {
+                Text(
+                    exercise.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (on) Brass else Bone,
+                    maxLines = 1
+                )
             }
         }
     }
