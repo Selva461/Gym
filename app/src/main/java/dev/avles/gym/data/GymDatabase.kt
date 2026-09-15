@@ -73,42 +73,16 @@ abstract class GymDatabase : RoomDatabase() {
         /**
          * v2 → v3: saved workout splits.
          *
-         * The CREATE TABLE statements are written to match what Room generates for
-         * these entities exactly — backticked identifiers, AUTOINCREMENT on the
-         * primary key, and no DEFAULT clauses, because Room only emits a default
-         * when @ColumnInfo(defaultValue = ...) says so. Room validates the schema it
-         * finds against the one it expects on every open, so a near-miss here is a
-         * crash on launch rather than a subtle bug. The index names follow Room's own
-         * index_<table>_<column> convention for the same reason.
-         *
-         * splitId is added nullable with no default: sessions logged before splits
-         * existed genuinely have no split, and that is not the same as zero.
+         * The statements live in [SchemaSql] rather than inline, so that a plain JVM
+         * unit test can compare them against the schema Room exported at build time.
+         * Room validates the on-disk schema against its own on every open, and a
+         * hand-written CREATE TABLE that differs by a word is a crash on launch for
+         * anyone upgrading with data — which is exactly the failure a migration exists
+         * to prevent. MigrationSqlTest is what keeps these honest.
          */
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `split` (" +
-                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                        "`name` TEXT NOT NULL, " +
-                        "`position` INTEGER NOT NULL, " +
-                        "`isCustom` INTEGER NOT NULL)"
-                )
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `split_exercise` (" +
-                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                        "`splitId` INTEGER NOT NULL, " +
-                        "`exerciseId` INTEGER NOT NULL, " +
-                        "`position` INTEGER NOT NULL)"
-                )
-                db.execSQL(
-                    "CREATE INDEX IF NOT EXISTS `index_split_exercise_splitId` " +
-                        "ON `split_exercise` (`splitId`)"
-                )
-                db.execSQL(
-                    "CREATE INDEX IF NOT EXISTS `index_split_exercise_exerciseId` " +
-                        "ON `split_exercise` (`exerciseId`)"
-                )
-                db.execSQL("ALTER TABLE `workout_session` ADD COLUMN `splitId` INTEGER")
+                SchemaSql.V3_STATEMENTS.forEach(db::execSQL)
             }
         }
 

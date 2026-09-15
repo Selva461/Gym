@@ -289,7 +289,12 @@ fun SplitEditorDialog(
 ) {
     val key = initial?.id ?: 0L
     var name by remember(key) { mutableStateOf(initial?.name ?: "") }
-    var chosen by remember(key) { mutableStateOf(initial?.exercises?.map { it.id } ?: emptyList()) }
+    // The type argument is spelled out on purpose. `?: emptyList()` two lambdas deep
+    // leaves the element type unpinned, the delegate then resolves to Any?, and every
+    // later use of `chosen` fails with an error that names none of that.
+    var chosen by remember(key) {
+        mutableStateOf<List<Long>>(initial?.exercises?.map { it.id }.orEmpty())
+    }
     var query by remember(key) { mutableStateOf("") }
     var confirmingDelete by remember(key) { mutableStateOf(false) }
 
