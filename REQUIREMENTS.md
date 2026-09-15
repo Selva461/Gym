@@ -69,8 +69,10 @@ them move the one job.
 
 ### 4.2 Train
 
-- **F2.1** With no session open: choose a label (Push, Pull, Legs, Full) and
-  start. Shows the last 20 sessions below.
+- **F2.1** With no session open: start from a saved split, which names the session
+  and brings its lifts with it. Ad hoc start (Push, Pull, Legs, Full) stays
+  available behind one tap. Shows the last 20 sessions below, each with its set
+  count and working volume.
 - **F2.2** With a session open: choose a lift, enter kg and reps, mark warm-up
   or working, log. The reps field clears after each set; weight and lift persist,
   because the next set is usually the same weight.
@@ -80,8 +82,17 @@ them move the one job.
   naming the lift.
 - **F2.5** A working set that beats every previous working set on the same lift
   by estimated 1RM is marked in the session list.
-- **F2.6** Tapping a logged set deletes it. No confirmation — a mis-logged set
-  is cheap to re-enter and a dialog costs more than the mistake.
+- **F2.6** Tapping a logged set opens it for editing — weight, reps, warm-up flag —
+  with delete inside. This reverses the original 0.1 rule, which deleted on a single
+  tap. The reasoning there was that a mis-logged set is cheap to re-enter; in use the
+  common mistake turned out to be one wrong digit in a weight, where re-entering the
+  whole set is worse than a dialog, and an accidental tap destroyed work.
+- **F2.9** A past session can be renamed, re-opened to add more sets, or deleted.
+  Deleting takes a second confirming tap and states how many sets go with it,
+  because unlike one set a session can be an hour of work and there is no undo.
+  Re-opening is offered only when no other session is open.
+- **F2.10** Any set on any past session can be edited or removed from that session's
+  detail view, not only sets on the session currently open.
 - **F2.7** New lifts can be added to the catalogue without leaving the session.
 - **F2.8** A session stays open until explicitly finished. An open session
   survives app restart.
@@ -99,7 +110,8 @@ them move the one job.
 - **F3.5** Any food can be edited in place. Any new food can be added.
 - **F3.6** Entries group by meal, each meal showing its own protein and calorie
   subtotal.
-- **F3.7** Tapping an entry removes it.
+- **F3.7** Tapping an entry opens it for editing — quantity and meal — with remove
+  inside. A supplement's slot is not editable, because the food decides it.
 
 ### 4.4 Progress
 
@@ -110,6 +122,21 @@ them move the one job.
 - **F4.3** Current and longest streaks for both training and food logging.
 - **F4.4** A streak break is stated as a restart, never as a loss. The copy is
   deliberate: a missed day is not a reason to stop.
+
+### 4.6 Splits
+
+- **F6.1** A split is a name and an ordered list of lifts. Ten are seeded (Push,
+  Pull, Legs, Upper, Lower, Full body, Chest and triceps, Back and biceps,
+  Shoulders and arms, Arms) and every one is editable.
+- **F6.2** Splits can be created, renamed, reordered lift by lift, and deleted.
+- **F6.3** Starting a session from a split records the link, and the session screen
+  lists that split's lifts for one-tap selection. This is the point of the feature:
+  not choosing from a catalogue of 86 between two sets.
+- **F6.4** Deleting a split leaves sessions already run from it untouched — their
+  name and every set stay. Only the plan goes.
+- **F6.5** Splits seed once on an empty table and are never topped up afterwards.
+  Once the list is yours, re-adding a starter split on every launch would be the
+  app arguing with you.
 
 ### 4.5 Settings
 
@@ -126,8 +153,10 @@ Dates are stored as epoch days and instants as epoch millis, so no Room type
 converter is needed anywhere in the schema.
 
 ```
-exercise         id, name, muscleGroup, isBodyweight, isCustom
-workout_session  id, dateEpochDay, label, startedAt, endedAt?, notes
+exercise         id, name, muscleGroup, isBodyweight, isCustom, repLow, repHigh, incrementKg
+split            id, name, position, isCustom
+split_exercise   id, splitId→, exerciseId→, position
+workout_session  id, dateEpochDay, label, startedAt, endedAt?, notes, splitId?→
 set_entry        id, sessionId→, exerciseId→, setIndex, weightKg, reps, isWarmup, loggedAt
 food_item        id, name, unitLabel, kcal, proteinG, carbsG, fatG, category, isCustom
 food_log         id, dateEpochDay, foodId→, meal, quantity, loggedAt
@@ -217,7 +246,8 @@ missed day as failure.
   decimal separators under a comma locale, a seeded food whose stated calories
   drift from its own macros, a lift with an inverted rep range, a deload session
   that must not be overridden by an older heavier one, and a nutrient panel row
-  that reads the wrong field. 62 cases.
+  that reads the wrong field, and a split naming a lift that does not exist.
+  64 cases.
 - **Android Lint** across the app and its dependencies, publishing an HTML
   report as a build artifact. Lint does not gate the APK: a style warning must
   never stand between the user and a working build.
@@ -267,7 +297,8 @@ a keystore in repository secrets; that is a later problem.
 | Seeded macro values are estimates for home-style portions | Every food is editable; the app says so in Settings and in the food editor |
 | Restaurant oil and ghee vary enormously | Same handling — correct the five foods you eat most and the rest stops mattering |
 | Micronutrient values for composite dishes are estimates built from their ingredients | Stated as such in the app, in the seed file and in the README; a zero reads as "not estimated" rather than "contains none", and every value is editable |
-| A schema change could have wiped existing logs | v1 → v2 is a written migration, not `fallbackToDestructiveMigration`. Every new column is NOT NULL with a default, so existing rows are valid without a backfill |
+| A schema change could have wiped existing logs | v1 → v2 and v2 → v3 are written migrations, not `fallbackToDestructiveMigration`. Added columns are NOT NULL with a default (or nullable where null is the honest answer), so existing rows are valid without a backfill |
+| A hand-written `CREATE TABLE` that does not match what Room expects crashes on launch | The v3 statements mirror Room's own DDL exactly — backticked identifiers, `AUTOINCREMENT`, no `DEFAULT` clauses it would not emit, and `index_<table>_<column>` index names. This is the part of the migration worth re-reading before release |
 | Compiling is not the same as running | The whole app compiles, lints and tests green in CI, and produces an APK — but it has not been exercised on a device. The manual pass in section 9 is what closes that gap |
 | A phone in a comma-decimal locale | `Training.formatWeight` is pinned to a dot, because the weight dialog parses its own output back through a digits-and-dot filter and would otherwise read 62.5 kg as 625. Regression test in `TrainingTest` |
 | Auto-backup silently dropping settings | Targets, rest length and the reminder live in DataStore under `files/datastore`, not `sharedpref`; both backup rule files name it explicitly, alongside the database and its `-wal` |

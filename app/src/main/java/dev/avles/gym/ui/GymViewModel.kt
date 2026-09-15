@@ -13,7 +13,10 @@ import dev.avles.gym.data.FoodItem
 import dev.avles.gym.data.FoodLogRow
 import dev.avles.gym.data.GymSettings
 import dev.avles.gym.data.Meals
+import dev.avles.gym.data.SessionSummary
 import dev.avles.gym.data.SetRow
+import dev.avles.gym.data.Split
+import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Progression
@@ -73,6 +76,13 @@ data class LiftGuidance(
     val nextMilestone: Double = 0.0,
     val milestoneProgress: Float = 0f,
     val recentSets: List<SetRow> = emptyList()
+)
+
+/** A past session opened for inspection: what it was, and every set on it. */
+data class SessionDetail(
+    val session: WorkoutSession,
+    val sets: List<SetRow>,
+    val summary: SessionSummary? = null
 )
 
 data class ProgressState(
@@ -170,8 +180,96 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
     val settings: StateFlow<GymSettings> = settingsStore.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GymSettings())
 
-    fun startSession(label: String) = viewModelScope.launch {
-        repo.startSession(label, _selectedDate.value)
+    // ---------- Splits ----------
+
+    /**
+     * Splits with their lifts resolved and ordered. Assembled here from three flows
+     * because the exercise catalogue is already loaded and a Room @Relation would
+     * lose the ordering that makes a split worth having.
+     */
+    val splitPlans: StateFlow<List<SplitPlan>> =
+        combine(repo.splits, repo.splitExercises, repo.exercises) { splits, links, catalogue ->
+            val byId = catalogue.associateBy { it.id }
+            splits.map { split ->
+                SplitPlan(
+                    split = split,
+                    exercises = links
+                        .filter { it.splitId == split.id }
+                        .sortedBy { it.position }
+                        .mapNotNull { byId[it.exerciseId] }
+                )
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** The plan behind the session currently open, so its lifts are one tap away. */
+    val activePlan: StateFlow<SplitPlan?> =
+        combine(repo.activeSession, splitPlans) { session, plans ->
+            session?.splitId?.let { id -> plans.firstOrNull { it.id == id } }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val sessionSummaries: StateFlow<Map<Long, SessionSummary>> = repo.sessionSummaries
+        .map { rows -> rows.associateBy { it.sessionId } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    fun saveSplit(id: Long, name: String, exerciseIds: List<Long>) = viewModelScope.launch {
+        if (name.isBlank()) return@launch
+        val position = splitPlans.value.firstOrNull { it.id == id }?.split?.position
+            ?: splitPlans.value.size
+        repo.saveSplit(id, name, position, exerciseIds)
+    }
+
+    fun deleteSplit(splitId: Long) = viewModelScope.launch { repo.deleteSplit(splitId) }
+
+    // ---------- Sessions ----------
+
+    fun startSession(label: String, splitId: Long? = null) = viewModelScope.launch {
+        repo.startSession(label, _selectedDate.value, splitId)
+    }
+
+    fun startSessionFrom(plan: SplitPlan) = viewModelScope.launch {
+        repo.startSession(plan.name, _selectedDate.value, plan.id)
+    }
+
+    /**
+     * Which past session is open for editing. Held here rather than in the screen so
+     * that its sets can be a database flow — edit a set inside the dialog and the
+     * list behind it updates without anything being told to refresh.
+     */
+    private val _openSessionId = MutableStateFlow<Long?>(null)
+
+    fun openSession(sessionId: Long?) {
+        _openSessionId.value = sessionId
+    }
+
+    val openSessionDetail: StateFlow<SessionDetail?> = _openSessionId
+        .flatMapLatest { id ->
+            if (id == null) {
+                flowOf(null)
+            } else {
+                combine(
+                    repo.recentSessions(50),
+                    repo.setsForSession(id),
+                    repo.sessionSummaries
+                ) { sessions, sets, summaries ->
+                    sessions.firstOrNull { it.id == id }?.let { session ->
+                        SessionDetail(session, sets, summaries.firstOrNull { s -> s.sessionId == id })
+                    }
+                }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun renameSession(session: WorkoutSession, label: String) = viewModelScope.launch {
+        repo.renameSession(session, label)
+    }
+
+    fun reopenSession(session: WorkoutSession) = viewModelScope.launch {
+        repo.reopenSession(session)
+        _openSessionId.value = null
+    }
+
+    fun deleteSession(sessionId: Long) = viewModelScope.launch {
+        repo.deleteSession(sessionId)
+        _openSessionId.value = null
     }
 
     fun finishSession() = viewModelScope.launch {
@@ -202,6 +300,17 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
         repo.deleteSet(setId)
         if (_lastPrSetId.value == setId) _lastPrSetId.value = null
     }
+
+    /**
+     * Clears the record marker on edit. The flag was earned by the numbers that were
+     * there a moment ago; leaving it on a set whose weight just changed would be the
+     * app asserting something it has not rechecked.
+     */
+    fun editSet(setId: Long, weightKg: Double, reps: Int, isWarmup: Boolean) =
+        viewModelScope.launch {
+            repo.editSet(setId, weightKg, reps, isWarmup)
+            if (_lastPrSetId.value == setId) _lastPrSetId.value = null
+        }
 
     fun addExercise(name: String, group: String) = viewModelScope.launch {
         if (name.isNotBlank()) repo.addExercise(name.trim(), group)
@@ -280,6 +389,10 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
         }
 
     fun removeFoodLog(logId: Long) = viewModelScope.launch { repo.removeFoodLog(logId) }
+
+    fun editFoodLog(logId: Long, quantity: Double, meal: String) = viewModelScope.launch {
+        repo.editFoodLog(logId, quantity, meal)
+    }
 
     fun saveFood(item: FoodItem) = viewModelScope.launch {
         if (item.id == 0L) repo.saveFood(item) else repo.updateFood(item)

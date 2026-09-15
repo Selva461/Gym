@@ -14,9 +14,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SetEntry::class,
         FoodItem::class,
         FoodLog::class,
-        BodyWeight::class
+        BodyWeight::class,
+        Split::class,
+        SplitExercise::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class GymDatabase : RoomDatabase() {
@@ -68,6 +70,48 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v2 → v3: saved workout splits.
+         *
+         * The CREATE TABLE statements are written to match what Room generates for
+         * these entities exactly — backticked identifiers, AUTOINCREMENT on the
+         * primary key, and no DEFAULT clauses, because Room only emits a default
+         * when @ColumnInfo(defaultValue = ...) says so. Room validates the schema it
+         * finds against the one it expects on every open, so a near-miss here is a
+         * crash on launch rather than a subtle bug. The index names follow Room's own
+         * index_<table>_<column> convention for the same reason.
+         *
+         * splitId is added nullable with no default: sessions logged before splits
+         * existed genuinely have no split, and that is not the same as zero.
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `split` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`name` TEXT NOT NULL, " +
+                        "`position` INTEGER NOT NULL, " +
+                        "`isCustom` INTEGER NOT NULL)"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `split_exercise` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`splitId` INTEGER NOT NULL, " +
+                        "`exerciseId` INTEGER NOT NULL, " +
+                        "`position` INTEGER NOT NULL)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_split_exercise_splitId` " +
+                        "ON `split_exercise` (`splitId`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_split_exercise_exerciseId` " +
+                        "ON `split_exercise` (`exerciseId`)"
+                )
+                db.execSQL("ALTER TABLE `workout_session` ADD COLUMN `splitId` INTEGER")
+            }
+        }
+
         @Volatile private var instance: GymDatabase? = null
 
         fun get(context: Context): GymDatabase = instance ?: synchronized(this) {
@@ -76,7 +120,7 @@ abstract class GymDatabase : RoomDatabase() {
                 GymDatabase::class.java,
                 "gym.db"
             )
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
                 .also { instance = it }
         }

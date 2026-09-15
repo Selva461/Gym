@@ -29,6 +29,10 @@ interface GymDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertExercise(item: Exercise): Long
 
+    /** One-shot read, for seeding splits against exercise ids that only exist after insert. */
+    @Query("SELECT * FROM exercise ORDER BY muscleGroup, name")
+    suspend fun allExercisesOnce(): List<Exercise>
+
     // ---------- Sessions and sets ----------
 
     @Insert
@@ -60,6 +64,34 @@ interface GymDao {
 
     @Query("SELECT * FROM set_entry WHERE id = :id")
     suspend fun setById(id: Long): SetEntry?
+
+    // Targeted UPDATE rather than @Update on the whole row: the caller is editing
+    // three fields from a joined row and has no business reconstructing the entity,
+    // including its loggedAt, just to change a weight.
+    @Query("UPDATE set_entry SET weightKg = :weightKg, reps = :reps, isWarmup = :isWarmup WHERE id = :id")
+    suspend fun editSet(id: Long, weightKg: Double, reps: Int, isWarmup: Boolean)
+
+    @Query("SELECT * FROM workout_session WHERE id = :id")
+    suspend fun sessionById(id: Long): WorkoutSession?
+
+    @Query("DELETE FROM workout_session WHERE id = :id")
+    suspend fun deleteSessionRow(id: Long)
+
+    /** No foreign keys are declared, so a session's sets are cleared explicitly. */
+    @Query("DELETE FROM set_entry WHERE sessionId = :sessionId")
+    suspend fun deleteSetsForSession(sessionId: Long)
+
+    @Query(
+        """
+        SELECT w.id AS sessionId,
+               COUNT(s.id) AS setCount,
+               COALESCE(SUM(CASE WHEN s.isWarmup = 0 THEN s.weightKg * s.reps ELSE 0 END), 0.0) AS volume
+        FROM workout_session w
+        LEFT JOIN set_entry s ON s.sessionId = w.id
+        GROUP BY w.id
+        """
+    )
+    fun sessionSummaries(): Flow<List<SessionSummary>>
 
     @Query(
         """
@@ -126,6 +158,9 @@ interface GymDao {
     @Query("DELETE FROM food_log WHERE id = :id")
     suspend fun deleteFoodLog(id: Long)
 
+    @Query("UPDATE food_log SET quantity = :quantity, meal = :meal WHERE id = :id")
+    suspend fun editFoodLog(id: Long, quantity: Double, meal: String)
+
     @Query(
         """
         SELECT l.id AS logId, l.dateEpochDay AS dateEpochDay, l.meal AS meal,
@@ -162,6 +197,36 @@ interface GymDao {
 
     @Query("SELECT DISTINCT dateEpochDay FROM food_log ORDER BY dateEpochDay DESC")
     fun allLoggedFoodDays(): Flow<List<Long>>
+
+    // ---------- Splits ----------
+
+    @Query("SELECT * FROM split ORDER BY position, name")
+    fun splits(): Flow<List<Split>>
+
+    @Query("SELECT COUNT(*) FROM split")
+    suspend fun splitCount(): Int
+
+    @Insert
+    suspend fun insertSplit(split: Split): Long
+
+    @Update
+    suspend fun updateSplit(split: Split)
+
+    @Query("DELETE FROM split WHERE id = :id")
+    suspend fun deleteSplitRow(id: Long)
+
+    @Query("SELECT * FROM split_exercise ORDER BY splitId, position")
+    fun splitExercises(): Flow<List<SplitExercise>>
+
+    @Insert
+    suspend fun insertSplitExercises(rows: List<SplitExercise>)
+
+    @Query("DELETE FROM split_exercise WHERE splitId = :splitId")
+    suspend fun clearSplitExercises(splitId: Long)
+
+    /** A deleted split must not leave sessions pointing at it. */
+    @Query("UPDATE workout_session SET splitId = NULL WHERE splitId = :splitId")
+    suspend fun detachSessionsFromSplit(splitId: Long)
 
     // ---------- Body weight ----------
 

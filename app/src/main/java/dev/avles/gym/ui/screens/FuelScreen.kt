@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.FoodItem
+import dev.avles.gym.data.FoodLogRow
 import dev.avles.gym.data.Meals
 import dev.avles.gym.data.Micros
 import dev.avles.gym.domain.MacroMath
@@ -51,6 +52,7 @@ import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
+import dev.avles.gym.ui.theme.Coral
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
@@ -65,6 +67,7 @@ fun FuelScreen(
     catalogue: List<FoodItem>,
     onLog: (Long, String, Double) -> Unit,
     onRemove: (Long) -> Unit,
+    onEditEntry: (Long, Double, String) -> Unit,
     onSaveFood: (FoodItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -75,6 +78,7 @@ fun FuelScreen(
     var editing by remember { mutableStateOf<FoodItem?>(null) }
     var creating by remember { mutableStateOf(false) }
     var nutrientsOpen by remember { mutableStateOf(false) }
+    var editingEntry by remember { mutableStateOf<FoodLogRow?>(null) }
 
     val categories = remember(catalogue) {
         catalogue.map { it.category }.distinct().sorted()
@@ -246,7 +250,7 @@ fun FuelScreen(
                         detail = "${Training.formatWeight(row.quantity)} x ${row.unitLabel}",
                         trailing = "${(row.proteinG * row.quantity).roundToInt()} p",
                         accent = if (row.isSupplement) Brass else Sage,
-                        onClick = { onRemove(row.logId) },
+                        onClick = { editingEntry = row },
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
                 }
@@ -259,12 +263,21 @@ fun FuelScreen(
         } else {
             item {
                 Text(
-                    "Tap an entry to remove it.",
+                    "Tap an entry to change the amount or remove it.",
                     style = MaterialTheme.typography.labelSmall,
                     color = Faint
                 )
             }
         }
+    }
+
+    editingEntry?.let { row ->
+        FoodEntryEditorDialog(
+            row = row,
+            onSave = { qty, slot -> onEditEntry(row.logId, qty, slot); editingEntry = null },
+            onDelete = { onRemove(row.logId); editingEntry = null },
+            onDismiss = { editingEntry = null }
+        )
     }
 
     pending?.let { food ->
@@ -297,6 +310,85 @@ fun FuelScreen(
             onDismiss = { creating = false }
         )
     }
+}
+
+/**
+ * Editing a logged entry.
+ *
+ * Replaces tap-to-delete for the same reason the set editor does: the usual mistake
+ * is two idli logged as one, not the whole entry being wrong, and re-searching the
+ * catalogue to fix a quantity is a worse trade than one dialog. A supplement cannot
+ * be moved out of its slot, because that slot is decided by the food itself.
+ */
+@Composable
+private fun FoodEntryEditorDialog(
+    row: FoodLogRow,
+    onSave: (Double, String) -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var qty by remember(row.logId) { mutableStateOf(trimZero(row.quantity).ifBlank { "1" }) }
+    var slot by remember(row.logId) { mutableStateOf(row.meal) }
+    val parsed = qty.toDoubleOrNull() ?: 0.0
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Slate,
+        title = { Text(row.name, color = Bone) },
+        text = {
+            Column {
+                Text(
+                    "One is ${row.unitLabel}.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Mute
+                )
+                Spacer(Modifier.height(14.dp))
+                OutlinedTextField(
+                    value = qty,
+                    onValueChange = { qty = it.filter { c -> c.isDigit() || c == '.' } },
+                    label = { Text("How many") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("0.5", "1", "1.5", "2").forEach { preset ->
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Raised)
+                                .clickable { qty = preset }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(preset, style = MaterialTheme.typography.labelMedium, color = Bone)
+                        }
+                    }
+                }
+                if (!row.isSupplement) {
+                    Spacer(Modifier.height(14.dp))
+                    PillRow(Meals.PICKABLE, slot, Sage, { slot = it })
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "${(row.proteinG * parsed).roundToInt()} g protein, " +
+                        "${(row.kcal * parsed).roundToInt()} kcal",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Sage
+                )
+                Spacer(Modifier.height(10.dp))
+                TextButton(onClick = onDelete) { Text("Remove this entry", color = Coral) }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = parsed > 0, onClick = { onSave(parsed, slot) }) {
+                Text("Save", color = if (parsed > 0) Sage else Faint)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Mute) } }
+    )
 }
 
 @Composable

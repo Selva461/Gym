@@ -17,10 +17,38 @@ class SeedDataTest {
     private val exercises = SeedData.exercises()
     private val foods = SeedData.foods()
 
+    private val splits = SeedData.splits()
+
     @Test
     fun `the catalogue is the size the README claims`() {
-        assertEquals(54, exercises.size)
+        assertEquals(86, exercises.size)
         assertEquals(239, foods.size)
+        assertEquals(10, splits.size)
+    }
+
+    /**
+     * Splits name their lifts as strings, because exercise ids do not exist until the
+     * database assigns them. That makes a typo silent: the lift is simply missing from
+     * the split and nothing complains. This is the check that complains.
+     */
+    @Test
+    fun `every lift named by a split exists in the catalogue`() {
+        val known = exercises.map { it.name }.toSet()
+        splits.forEach { (splitName, lifts) ->
+            lifts.forEach { lift ->
+                assertTrue("$splitName names \"$lift\", which is not a seeded lift", lift in known)
+            }
+        }
+    }
+
+    @Test
+    fun `no split is empty or nameless, and none is named twice`() {
+        splits.forEach { (name, lifts) ->
+            assertTrue("a split has a blank name", name.isNotBlank())
+            assertTrue("$name has no lifts", lifts.isNotEmpty())
+            assertEquals("$name names a lift twice", lifts.size, lifts.toSet().size)
+        }
+        assertEquals(splits.size, splits.map { it.first }.toSet().size)
     }
 
     @Test

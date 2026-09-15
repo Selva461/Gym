@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,8 +34,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.Exercise
+import dev.avles.gym.data.SessionSummary
+import dev.avles.gym.data.SetRow
+import dev.avles.gym.data.SplitPlan
+import dev.avles.gym.data.WorkoutSession
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.LiftGuidance
+import dev.avles.gym.ui.SessionDetail
 import dev.avles.gym.ui.TrainState
 import dev.avles.gym.ui.components.BigNumber
 import dev.avles.gym.ui.components.EmptyNote
@@ -52,7 +58,7 @@ import dev.avles.gym.ui.theme.Raised
 import dev.avles.gym.ui.theme.Slate
 import kotlin.math.roundToInt
 
-private val SESSION_LABELS = listOf("Push", "Pull", "Legs", "Full")
+private val AD_HOC_LABELS = listOf("Push", "Pull", "Legs", "Full")
 
 @Composable
 fun TrainScreen(
@@ -60,30 +66,78 @@ fun TrainScreen(
     restRemaining: Int?,
     prSetId: Long?,
     guidance: LiftGuidance?,
+    splits: List<SplitPlan>,
+    activePlan: SplitPlan?,
+    summaries: Map<Long, SessionSummary>,
+    openSession: SessionDetail?,
     onSelectExercise: (Long?) -> Unit,
-    onStart: (String) -> Unit,
+    onStartFromSplit: (SplitPlan) -> Unit,
+    onStartBlank: (String) -> Unit,
+    onSaveSplit: (Long, String, List<Long>) -> Unit,
+    onDeleteSplit: (Long) -> Unit,
+    onOpenSession: (Long?) -> Unit,
+    onRenameSession: (WorkoutSession, String) -> Unit,
+    onReopenSession: (WorkoutSession) -> Unit,
+    onDeleteSession: (Long) -> Unit,
     onFinish: () -> Unit,
     onLogSet: (Long, Double, Int, Boolean) -> Unit,
+    onEditSet: (Long, Double, Int, Boolean) -> Unit,
     onDeleteSet: (Long) -> Unit,
     onSkipRest: () -> Unit,
     onAddExercise: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Hoisted here because a set can be opened from the live session or from a past
+    // one inside the session dialog, and both should land on the same editor.
+    var editingSet by remember { mutableStateOf<SetRow?>(null) }
+
     if (state.active == null) {
-        StartSessionPane(state, onStart, modifier)
+        StartSessionPane(
+            state = state,
+            splits = splits,
+            summaries = summaries,
+            onStartFromSplit = onStartFromSplit,
+            onStartBlank = onStartBlank,
+            onSaveSplit = onSaveSplit,
+            onDeleteSplit = onDeleteSplit,
+            onOpenSession = onOpenSession,
+            modifier = modifier
+        )
     } else {
         ActiveSessionPane(
             state = state,
             restRemaining = restRemaining,
             prSetId = prSetId,
             guidance = guidance,
+            activePlan = activePlan,
             onSelectExercise = onSelectExercise,
             onFinish = onFinish,
             onLogSet = onLogSet,
-            onDeleteSet = onDeleteSet,
+            onEditSetRow = { editingSet = it },
             onSkipRest = onSkipRest,
             onAddExercise = onAddExercise,
             modifier = modifier
+        )
+    }
+
+    openSession?.let { detail ->
+        SessionDetailDialog(
+            detail = detail,
+            canReopen = state.active == null,
+            onRename = { onRenameSession(detail.session, it) },
+            onReopen = { onReopenSession(detail.session) },
+            onDeleteSession = { onDeleteSession(detail.session.id) },
+            onEditSet = { editingSet = it },
+            onDismiss = { onOpenSession(null) }
+        )
+    }
+
+    editingSet?.let { row ->
+        SetEditorDialog(
+            row = row,
+            onSave = { w, r, warm -> onEditSet(row.setId, w, r, warm); editingSet = null },
+            onDelete = { onDeleteSet(row.setId); editingSet = null },
+            onDismiss = { editingSet = null }
         )
     }
 }
@@ -91,10 +145,19 @@ fun TrainScreen(
 @Composable
 private fun StartSessionPane(
     state: TrainState,
-    onStart: (String) -> Unit,
+    splits: List<SplitPlan>,
+    summaries: Map<Long, SessionSummary>,
+    onStartFromSplit: (SplitPlan) -> Unit,
+    onStartBlank: (String) -> Unit,
+    onSaveSplit: (Long, String, List<Long>) -> Unit,
+    onDeleteSplit: (Long) -> Unit,
+    onOpenSession: (Long?) -> Unit,
     modifier: Modifier
 ) {
-    var label by remember { mutableStateOf("Push") }
+    var editingSplit by remember { mutableStateOf<SplitPlan?>(null) }
+    var creatingSplit by remember { mutableStateOf(false) }
+    var showAdHoc by remember { mutableStateOf(false) }
+    var adHocLabel by remember { mutableStateOf("Push") }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -103,23 +166,59 @@ private fun StartSessionPane(
         item {
             Text("Train", style = MaterialTheme.typography.headlineMedium, color = Bone)
             Text(
-                "Pick what today is, then start logging sets.",
+                "Start a split and its lifts come with it.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Mute
             )
-            Spacer(Modifier.height(22.dp))
-            PillRow(SESSION_LABELS, label, Brass, { label = it })
-            Spacer(Modifier.height(16.dp))
-            Button(
-                onClick = { onStart(label) },
-                colors = ButtonDefaults.buttonColors(containerColor = Brass, contentColor = Slate),
-                modifier = Modifier.fillMaxWidth().height(52.dp)
-            ) { Text("Start $label session", style = MaterialTheme.typography.labelLarge) }
+            Spacer(Modifier.height(20.dp))
+            SectionHeading("Your splits", trailing = "${splits.size}")
+            Spacer(Modifier.height(10.dp))
+        }
 
-            Spacer(Modifier.height(30.dp))
+        if (splits.isEmpty()) {
+            item { EmptyNote("No splits yet. Build one and you never pick lifts from scratch again.") }
+        } else {
+            items(splits, key = { it.id }) { plan ->
+                SplitCard(
+                    plan = plan,
+                    onStart = { onStartFromSplit(plan) },
+                    onEdit = { editingSplit = plan }
+                )
+            }
+        }
+
+        item {
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = { creatingSplit = true }) {
+                    Text("New split", color = Brass)
+                }
+                TextButton(onClick = { showAdHoc = !showAdHoc }) {
+                    Text(if (showAdHoc) "Hide" else "Start without a split", color = Mute)
+                }
+            }
+
+            if (showAdHoc) {
+                Spacer(Modifier.height(8.dp))
+                PillRow(AD_HOC_LABELS, adHocLabel, Brass, { adHocLabel = it })
+                Spacer(Modifier.height(10.dp))
+                Button(
+                    onClick = { onStartBlank(adHocLabel) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Brass.copy(alpha = 0.16f),
+                        contentColor = Brass
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Start $adHocLabel session") }
+            }
+
+            Spacer(Modifier.height(28.dp))
             Hairline()
             Spacer(Modifier.height(22.dp))
-            SectionHeading("Recent sessions")
+            SectionHeading(
+                "Recent sessions",
+                trailing = if (state.recent.isEmpty()) null else "tap to edit"
+            )
             Spacer(Modifier.height(10.dp))
         }
 
@@ -127,16 +226,76 @@ private fun StartSessionPane(
             item { EmptyNote("No sessions yet. The first one is the only hard one.") }
         } else {
             items(state.recent, key = { it.id }) { session ->
+                val summary = summaries[session.id]
                 val minutes = session.endedAt?.let { ((it - session.startedAt) / 60000).toInt() }
+                val detail = buildString {
+                    append(java.time.LocalDate.ofEpochDay(session.dateEpochDay).toString())
+                    summary?.let { append("   ${it.setCount} sets   ${it.volume.roundToInt()} kg") }
+                }
                 EntryRow(
                     title = session.label,
-                    detail = java.time.LocalDate.ofEpochDay(session.dateEpochDay).toString(),
+                    detail = detail,
                     trailing = minutes?.let { "$it min" } ?: "open",
                     accent = Brass,
+                    onClick = { onOpenSession(session.id) },
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
             }
         }
+    }
+
+    if (creatingSplit) {
+        SplitEditorDialog(
+            initial = null,
+            catalogue = state.exercises,
+            onSave = { name, ids -> onSaveSplit(0L, name, ids); creatingSplit = false },
+            onDelete = null,
+            onDismiss = { creatingSplit = false }
+        )
+    }
+
+    editingSplit?.let { plan ->
+        SplitEditorDialog(
+            initial = plan,
+            catalogue = state.exercises,
+            onSave = { name, ids -> onSaveSplit(plan.id, name, ids); editingSplit = null },
+            onDelete = { onDeleteSplit(plan.id); editingSplit = null },
+            onDismiss = { editingSplit = null }
+        )
+    }
+}
+
+@Composable
+private fun SplitCard(plan: SplitPlan, onStart: () -> Unit, onEdit: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+            .clip(RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp))
+            .background(Slate),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.width(3.dp).height(50.dp).background(Brass))
+        Column(
+            Modifier
+                .weight(1f)
+                .clickable { onStart() }
+                .padding(start = 12.dp, top = 12.dp, bottom = 12.dp)
+        ) {
+            Text(plan.name, style = MaterialTheme.typography.bodyLarge, color = Bone)
+            Text(
+                if (plan.exercises.isEmpty()) {
+                    "no lifts yet"
+                } else {
+                    plan.exercises.take(3).joinToString(", ") { it.name } +
+                        if (plan.exercises.size > 3) " +${plan.exercises.size - 3}" else ""
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = Faint,
+                maxLines = 1
+            )
+        }
+        TextButton(onClick = onEdit) { Text("Edit", color = Mute) }
     }
 }
 
@@ -146,10 +305,11 @@ private fun ActiveSessionPane(
     restRemaining: Int?,
     prSetId: Long?,
     guidance: LiftGuidance?,
+    activePlan: SplitPlan?,
     onSelectExercise: (Long?) -> Unit,
     onFinish: () -> Unit,
     onLogSet: (Long, Double, Int, Boolean) -> Unit,
-    onDeleteSet: (Long) -> Unit,
+    onEditSetRow: (SetRow) -> Unit,
     onSkipRest: () -> Unit,
     onAddExercise: (String, String) -> Unit,
     modifier: Modifier
@@ -207,7 +367,17 @@ private fun ActiveSessionPane(
             Hairline()
             Spacer(Modifier.height(20.dp))
 
-            // --- Set entry ------------------------------------------------
+            // The split's own lifts, which is the whole point of having started from
+            // one: no searching a catalogue of eighty-odd between two sets.
+            if (activePlan != null && activePlan.exercises.isNotEmpty()) {
+                SplitLiftRow(
+                    plan = activePlan,
+                    selectedId = selectedExercise?.id,
+                    onPick = { onSelectExercise(it.id) }
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -304,14 +474,14 @@ private fun ActiveSessionPane(
                     detail = if (row.isWarmup) "warm-up" else "set ${row.setIndex}",
                     trailing = "${Training.formatWeight(row.weightKg)} x ${row.reps}",
                     accent = if (row.isWarmup) Mute else Brass,
-                    onClick = { onDeleteSet(row.setId) },
+                    onClick = { onEditSetRow(row) },
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
             }
             item {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Tap a set to remove it.",
+                    "Tap a set to change or remove it.",
                     style = MaterialTheme.typography.labelSmall,
                     color = Faint
                 )
@@ -471,7 +641,7 @@ private fun ExercisePicker(
         title = { Text("Choose a lift", color = Bone) },
         text = {
             Column {
-                // The catalogue is past fifty lifts now. Scrolling to find a cable curl
+                // The catalogue is past eighty lifts now. Scrolling to find a cable curl
                 // between two sets is exactly the friction this app exists to remove.
                 OutlinedTextField(
                     value = query,

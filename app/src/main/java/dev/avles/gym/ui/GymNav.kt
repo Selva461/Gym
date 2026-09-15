@@ -67,6 +67,10 @@ fun GymNav(vm: GymViewModel) {
     val rest by vm.restRemaining.collectAsStateWithLifecycle()
     val prSetId by vm.lastPrSetId.collectAsStateWithLifecycle()
     val guidance by vm.guidance.collectAsStateWithLifecycle()
+    val splits by vm.splitPlans.collectAsStateWithLifecycle()
+    val activePlan by vm.activePlan.collectAsStateWithLifecycle()
+    val summaries by vm.sessionSummaries.collectAsStateWithLifecycle()
+    val openSession by vm.openSessionDetail.collectAsStateWithLifecycle()
 
     fun go(route: String) {
         navController.navigate(route) {
@@ -129,11 +133,25 @@ fun GymNav(vm: GymViewModel) {
                     restRemaining = rest,
                     prSetId = prSetId,
                     guidance = guidance,
+                    splits = splits,
+                    activePlan = activePlan,
+                    summaries = summaries,
+                    openSession = openSession,
                     onSelectExercise = vm::selectExercise,
-                    onStart = vm::startSession,
+                    onStartFromSplit = vm::startSessionFrom,
+                    onStartBlank = { label -> vm.startSession(label) },
+                    onSaveSplit = { id, name, ids -> vm.saveSplit(id, name, ids) },
+                    onDeleteSplit = vm::deleteSplit,
+                    onOpenSession = vm::openSession,
+                    onRenameSession = { session, label -> vm.renameSession(session, label) },
+                    onReopenSession = vm::reopenSession,
+                    onDeleteSession = vm::deleteSession,
                     onFinish = vm::finishSession,
                     onLogSet = { exerciseId, weight, reps, warmup ->
                         vm.logSet(exerciseId, weight, reps, warmup)
+                    },
+                    onEditSet = { setId, weight, reps, warmup ->
+                        vm.editSet(setId, weight, reps, warmup)
                     },
                     onDeleteSet = vm::deleteSet,
                     onSkipRest = vm::cancelRest,
@@ -147,6 +165,7 @@ fun GymNav(vm: GymViewModel) {
                     catalogue = foods,
                     onLog = { foodId, meal, qty -> vm.logFood(foodId, meal, qty) },
                     onRemove = vm::removeFoodLog,
+                    onEditEntry = { logId, qty, slot -> vm.editFoodLog(logId, qty, slot) },
                     onSaveFood = vm::saveFood
                 )
             }

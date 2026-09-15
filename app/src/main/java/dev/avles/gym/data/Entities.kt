@@ -107,8 +107,60 @@ data class WorkoutSession(
     val label: String,
     val startedAt: Long,
     val endedAt: Long? = null,
-    val notes: String = ""
+    val notes: String = "",
+    /**
+     * The split this session was started from, if any. Nullable because a session
+     * can still be started ad hoc, and because every session logged before splits
+     * existed has no answer to this question.
+     */
+    val splitId: Long? = null
 )
+
+/**
+ * A named workout day — "Push A", "Legs heavy", whatever you actually call it —
+ * holding the lifts you do on it, in order.
+ *
+ * The point is to stop choosing. Starting a session from a split means its lifts
+ * are already listed on the Train screen, one tap each, instead of being hunted
+ * out of a catalogue of eighty between two sets.
+ */
+@Entity(tableName = "split")
+data class Split(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val position: Int = 0,
+    val isCustom: Boolean = false
+)
+
+/**
+ * One lift's place in one split. A join table rather than a list column, so that
+ * renaming or deleting a lift cannot leave a split holding a dangling string.
+ */
+@Entity(
+    tableName = "split_exercise",
+    indices = [Index("splitId"), Index("exerciseId")]
+)
+data class SplitExercise(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val splitId: Long,
+    val exerciseId: Long,
+    val position: Int = 0
+)
+
+/**
+ * A split with its lifts resolved and in order.
+ *
+ * Assembled in Kotlin from three flows rather than with @Relation, because the
+ * order matters and a junction relation does not preserve it. The exercise
+ * catalogue is already in memory, so this costs a map lookup per entry.
+ */
+data class SplitPlan(
+    val split: Split,
+    val exercises: List<Exercise>
+) {
+    val id: Long get() = split.id
+    val name: String get() = split.name
+}
 
 @Entity(tableName = "set_entry", indices = [Index("sessionId"), Index("exerciseId")])
 data class SetEntry(
@@ -194,6 +246,9 @@ data class SetRow(
 )
 
 data class DayVolume(val dateEpochDay: Long, val volume: Double)
+
+/** Set count and working volume per session, for the recent-sessions list. */
+data class SessionSummary(val sessionId: Long, val setCount: Int, val volume: Double)
 
 object Meals {
     const val BREAKFAST = "Breakfast"

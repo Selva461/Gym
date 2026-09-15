@@ -67,6 +67,13 @@ object SeedData {
         ex("Overhead triceps extension", "Push", 10, 15, 2.0),
         ex("Skull crusher", "Push", 8, 12, 2.0),
         ex("Close-grip bench press", "Push", 6, 10, 2.5),
+        ex("Decline bench press", "Push", 5, 8, 2.5),
+        ex("Smith machine bench press", "Push", 6, 10, 2.5),
+        ex("Incline machine press", "Push", 8, 12, 2.5),
+        ex("Machine shoulder press", "Push", 8, 12, 2.5),
+        ex("Cable crossover", "Push", 10, 15, 2.5),
+        ex("Landmine press", "Push", 8, 12, 2.5),
+        ex("Rope triceps pushdown", "Push", 10, 15, 2.5),
         ex("Dip", "Push", 6, 12, 2.5, bodyweight = true),
         ex("Push-up", "Push", 10, 20, 2.5, bodyweight = true),
 
@@ -89,6 +96,16 @@ object SeedData {
         ex("Preacher curl", "Pull", 10, 15, 1.0),
         ex("Cable curl", "Pull", 10, 15, 1.0),
         ex("Shrug", "Pull", 10, 15, 2.5),
+        ex("T-bar row", "Pull", 6, 10, 2.5),
+        ex("Sumo deadlift", "Pull", 3, 6, 5.0),
+        ex("Rack pull", "Pull", 4, 8, 5.0),
+        ex("Straight-arm pulldown", "Pull", 12, 15, 2.5),
+        ex("Single-arm lat pulldown", "Pull", 10, 15, 2.5),
+        ex("Inverted row", "Pull", 8, 15, 2.5, bodyweight = true),
+        ex("Back extension", "Pull", 10, 20, 2.5, bodyweight = true),
+        ex("Incline dumbbell curl", "Pull", 8, 12, 1.0),
+        ex("Concentration curl", "Pull", 10, 15, 1.0),
+        ex("Reverse curl", "Pull", 10, 15, 1.0),
 
         // --- Legs ---
         ex("Back squat", "Legs", 4, 8, 5.0),
@@ -103,13 +120,83 @@ object SeedData {
         ex("Hip thrust", "Legs", 8, 12, 5.0),
         ex("Standing calf raise", "Legs", 10, 20, 2.5),
         ex("Seated calf raise", "Legs", 12, 20, 2.5),
+        ex("Goblet squat", "Legs", 8, 12, 2.0),
+        ex("Smith machine squat", "Legs", 6, 10, 5.0),
+        ex("Box squat", "Legs", 4, 8, 5.0),
+        ex("Good morning", "Legs", 8, 12, 2.5),
+        ex("Step-up", "Legs", 8, 12, 2.0),
+        ex("Nordic curl", "Legs", 5, 10, 2.5, bodyweight = true),
+        ex("Hip adduction", "Legs", 12, 20, 2.5),
+        ex("Hip abduction", "Legs", 12, 20, 2.5),
+        ex("Calf press on leg press", "Legs", 12, 20, 5.0),
 
         // --- Core ---
         ex("Hanging leg raise", "Core", 8, 15, 2.5, bodyweight = true),
         ex("Cable crunch", "Core", 10, 20, 2.5),
         ex("Plank", "Core", 30, 90, 2.5, bodyweight = true),
         ex("Ab wheel rollout", "Core", 8, 15, 2.5, bodyweight = true),
-        ex("Russian twist", "Core", 12, 20, 2.0)
+        ex("Russian twist", "Core", 12, 20, 2.0),
+        ex("Hanging knee raise", "Core", 10, 20, 2.5, bodyweight = true),
+        ex("Sit-up", "Core", 12, 25, 2.5, bodyweight = true),
+        ex("Bicycle crunch", "Core", 15, 30, 2.5, bodyweight = true),
+        ex("Side plank", "Core", 30, 90, 2.5, bodyweight = true),
+        ex("Dead bug", "Core", 10, 20, 2.5, bodyweight = true),
+        ex("Pallof press", "Core", 10, 15, 2.5)
+    )
+
+    // ------------------------------------------------------------- splits
+
+    /**
+     * Starter splits, as name and the lifts on them in order.
+     *
+     * Referenced by exercise *name* rather than id because ids are assigned by the
+     * database on insert and do not exist when this list is written. The repository
+     * resolves them once, after the lifts are in.
+     *
+     * These are only a starting point — every one is editable, and your own splits
+     * sit alongside them.
+     */
+    fun splits(): List<Pair<String, List<String>>> = listOf(
+        "Push" to listOf(
+            "Barbell bench press", "Incline dumbbell press", "Overhead press",
+            "Cable fly", "Lateral raise", "Triceps pushdown"
+        ),
+        "Pull" to listOf(
+            "Barbell row", "Lat pulldown", "Seated cable row",
+            "Face pull", "Barbell curl", "Hammer curl"
+        ),
+        "Legs" to listOf(
+            "Back squat", "Romanian deadlift", "Leg press",
+            "Leg curl", "Leg extension", "Standing calf raise"
+        ),
+        "Upper" to listOf(
+            "Barbell bench press", "Barbell row", "Overhead press", "Lat pulldown",
+            "Lateral raise", "Barbell curl", "Triceps pushdown"
+        ),
+        "Lower" to listOf(
+            "Back squat", "Romanian deadlift", "Leg press", "Leg curl",
+            "Hip thrust", "Standing calf raise", "Hanging leg raise"
+        ),
+        "Full body" to listOf(
+            "Back squat", "Barbell bench press", "Barbell row",
+            "Overhead press", "Romanian deadlift", "Plank"
+        ),
+        "Chest and triceps" to listOf(
+            "Barbell bench press", "Incline dumbbell press", "Cable crossover",
+            "Dip", "Skull crusher", "Rope triceps pushdown"
+        ),
+        "Back and biceps" to listOf(
+            "Deadlift", "Pull-up", "T-bar row", "Seated cable row",
+            "Barbell curl", "Incline dumbbell curl"
+        ),
+        "Shoulders and arms" to listOf(
+            "Overhead press", "Lateral raise", "Rear delt fly", "Face pull",
+            "Hammer curl", "Overhead triceps extension"
+        ),
+        "Arms" to listOf(
+            "Barbell curl", "Incline dumbbell curl", "Hammer curl",
+            "Close-grip bench press", "Skull crusher", "Rope triceps pushdown"
+        )
     )
 
     // ----------------------------------------------------------------- food

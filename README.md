@@ -56,14 +56,21 @@ warning should never stand between you and a working APK.
 
 ```
 Today      protein first, calories second, a week strip with a dot per logged day
-Train      session → lift → kg × reps, a target for every lift, rest timer, records
+Train      split → lift → kg × reps, a target for every lift, rest timer, records
 Fuel       search or browse 239 foods by category, macros and 15 micronutrients
 Progress   weight trend, 14-day volume, training and logging streaks
 Settings   your targets, rest length, nightly reminder
 ```
 
-**54 lifts**, each with its own rep range and increment, across push, pull, legs
+**86 lifts**, each with its own rep range and increment, across push, pull, legs
 and core.
+
+**Ten starter splits** — Push, Pull, Legs, Upper, Lower, Full body, Chest and
+triceps, Back and biceps, Shoulders and arms, Arms — and you can build your own.
+Starting a session from a split names it and puts that split's lifts on the
+screen, in order, one tap each. That is the whole point: not picking from a list
+of 86 between two sets. Splits are editable, reorderable and deletable, and
+deleting one leaves every session already run from it untouched.
 
 **239 foods in 22 categories.** South Indian cooking gets the detail it deserves —
 fifteen dosa varieties (masala, ghee roast, paper, rava, set, neer, ragi, oats,
@@ -90,6 +97,19 @@ Composite dishes are built up from their main ingredients and should be read as
 "that was a decent source of iron", never as a measurement.
 
 **A zero means not estimated, not proven absent.**
+
+## Fixing what you logged
+
+Tapping a logged set opens it — weight, reps, warm-up — with delete inside.
+Tapping a food entry opens its quantity and meal the same way. Both used to delete
+on a single tap, on the theory that a mis-logged entry is cheap to re-enter. That
+was wrong in practice: the usual mistake is one wrong digit, where re-entering the
+whole thing is worse than a dialog, and an accidental tap destroyed work.
+
+Past sessions are editable too. Tap one in the recent list to rename it, re-open it
+to add more sets, fix any set on it, or delete it. Deleting a session asks twice and
+tells you how many sets go with it — unlike a single set, that can be an hour of
+work and there is no undo.
 
 ## Targets, and where they come from
 
