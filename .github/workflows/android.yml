@@ -154,13 +154,19 @@ jobs:
         if: success()
         run: |
           VERSION=$(grep -oP 'version\s*=\s*\K[0-9]+' app/src/main/java/dev/avles/gym/data/GymDatabase.kt | head -1)
-          SCHEMA="app/schemas/dev.avles.gym.GymDatabase/${VERSION}.json"
-          if [ ! -f "$SCHEMA" ]; then
-            echo "::error::$SCHEMA was never exported, so MigrationSqlTest skipped and the v${VERSION} migration is UNVERIFIED. Check room.schemaLocation and that KSP ran."
+          # Searched, not assumed. Room keys the directory on the fully qualified
+          # class name, and hardcoding that path is what let MigrationSqlTest skip
+          # silently from the day it was written — it looked under
+          # dev.avles.gym.GymDatabase while the class lives in dev.avles.gym.data.
+          FOUND=$(find app/schemas -name "${VERSION}.json" -path "*GymDatabase*" 2>/dev/null | head -1)
+          if [ -z "$FOUND" ]; then
+            echo "::error::No ${VERSION}.json under any *GymDatabase directory, so MigrationSqlTest skipped and the v${VERSION} migration is UNVERIFIED."
+            echo "What is actually in app/schemas:"
+            find app/schemas -type f 2>/dev/null | sed 's/^/  /' || echo "  (no app/schemas directory at all)"
             exit 1
           fi
-          echo "Schema v${VERSION} exported — MigrationSqlTest compared the migration against it."
-          grep -o '"defaultValue"[^,}]*' "$SCHEMA" | head -5
+          echo "Schema v${VERSION} found at $FOUND — MigrationSqlTest compared the migration against it."
+          grep -o '"defaultValue"[^,}]*' "$FOUND" | head -5
 
       # --- Optional: a signed, non-debuggable release APK ---------------
       # The debug APK above is debuggable, which means anyone holding your unlocked

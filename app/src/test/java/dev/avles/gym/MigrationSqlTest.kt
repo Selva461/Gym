@@ -29,19 +29,46 @@ import java.io.File
 class MigrationSqlTest {
 
     private companion object {
-        const val SCHEMA_PATH = "dev.avles.gym.GymDatabase/5.json"
+        /**
+         * Kept in step with @Database(version = ...) by hand, and asserted below so
+         * the two cannot drift apart silently.
+         */
+        const val DB_VERSION = 5
     }
 
-    private val candidates: List<File> = listOfNotNull(
-        // The build passes this in, so there is nothing to guess about the test
-        // task's working directory. The relative paths are a fallback for running
-        // the class straight out of an IDE.
-        System.getProperty("gym.schemaDir")?.let { File(it, SCHEMA_PATH) },
-        File("schemas/$SCHEMA_PATH"),
-        File("app/schemas/$SCHEMA_PATH")
-    )
-
-    private val schemaFile: File? = candidates.firstOrNull { it.isFile }
+    /**
+     * Finds the exported schema by searching rather than by naming a path.
+     *
+     * The path used to be hardcoded as "dev.avles.gym.GymDatabase/<n>.json" — which
+     * was wrong, because Room keys the directory on the *fully qualified* class name
+     * and this database lives in dev.avles.gym.data. The file was never where the
+     * test looked, the lookup fell through to assumeTrue, and the whole class skipped
+     * on every run since it was written. Every migration it claims to have checked,
+     * it had not.
+     *
+     * Nothing about that was visible: a skipped test is a green build. It surfaced
+     * only because CI grew a separate step asserting the schema exists at all, which
+     * is the lesson — a check that can silently stop checking needs something
+     * watching it that cannot.
+     *
+     * Searching means a package move cannot reintroduce this. The GymDatabase filter
+     * keeps it from latching onto some other generated json that happens to share a
+     * version number.
+     */
+    private val schemaFile: File? = run {
+        val roots = listOfNotNull(
+            System.getProperty("gym.schemaDir")?.let(::File),
+            File("schemas"),
+            File("app/schemas")
+        ).filter { it.isDirectory }
+        roots.asSequence()
+            .flatMap { it.walkTopDown() }
+            .firstOrNull {
+                it.isFile &&
+                    it.name == "$DB_VERSION.json" &&
+                    it.parentFile?.name?.endsWith("GymDatabase") == true
+            }
+    }
 
     private val json: String? = schemaFile?.readText()
 
@@ -65,8 +92,11 @@ class MigrationSqlTest {
         val diagnosis = buildString {
             append("Skipping: no exported Room schema found, so there is nothing to ")
             append("compare the migration against. KSP writes it during the build from ")
-            append("room.schemaLocation. Looked in:\n")
-            candidates.forEach { append("  ").append(it.absolutePath).append('\n') }
+            append("room.schemaLocation. Searched for ")
+            append(DB_VERSION).append(".json under a *GymDatabase directory in:\n")
+            listOfNotNull(
+                System.getProperty("gym.schemaDir"), "schemas", "app/schemas"
+            ).forEach { append("  ").append(File(it).absolutePath).append('\n') }
             append("Working directory: ").append(File(".").absolutePath).append('\n')
             val root = System.getProperty("gym.schemaDir")?.let(::File)
             append("gym.schemaDir: ").append(root?.absolutePath ?: "(not set)").append('\n')
@@ -194,10 +224,17 @@ class MigrationSqlTest {
     }
 
     @Test
-    fun `the exported schema is version 5`() {
+    fun `the exported schema is the version the database declares`() {
+        val declared = File("app/src/main/java/dev/avles/gym/data/GymDatabase.kt")
+            .takeIf { it.isFile }
+            ?.readText()
+            ?.let { Regex("""version\s*=\s*(\d+)""").find(it)?.groupValues?.get(1)?.toInt() }
+        if (declared != null) {
+            assertEquals("DB_VERSION here has drifted from @Database(version=)", declared, DB_VERSION)
+        }
         assertTrue(
-            "exported schema is not version 5",
-            Regex(""""version"\s*:\s*5""").containsMatchIn(json!!)
+            "exported schema is not version $DB_VERSION",
+            Regex(""""version"\s*:\s*$DB_VERSION""").containsMatchIn(json!!)
         )
     }
 
