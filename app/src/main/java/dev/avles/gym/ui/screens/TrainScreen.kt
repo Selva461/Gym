@@ -73,6 +73,7 @@ fun TrainScreen(
     summaries: Map<Long, SessionSummary>,
     openSession: SessionDetail?,
     onSelectExercise: (Long?) -> Unit,
+    onSelectVariation: (String) -> Unit,
     onStartFromSplit: (SplitPlan) -> Unit,
     onStartBlank: (String) -> Unit,
     onSaveSplit: (Long, String, List<Long>) -> Unit,
@@ -83,7 +84,7 @@ fun TrainScreen(
     onDeleteSession: (Long) -> Unit,
     onFinish: () -> Unit,
     onLogSet: (Long, Double, Int, Boolean) -> Unit,
-    onEditSet: (Long, Double, Int, Boolean) -> Unit,
+    onEditSet: (Long, Double, Int, Boolean, String) -> Unit,
     onDeleteSet: (Long) -> Unit,
     onSkipRest: () -> Unit,
     onAddExercise: (String, String) -> Unit,
@@ -113,6 +114,7 @@ fun TrainScreen(
             guidance = guidance,
             activePlan = activePlan,
             onSelectExercise = onSelectExercise,
+            onSelectVariation = onSelectVariation,
             onFinish = onFinish,
             onLogSet = onLogSet,
             onEditSetRow = { editingSet = it },
@@ -137,7 +139,10 @@ fun TrainScreen(
     editingSet?.let { row ->
         SetEditorDialog(
             row = row,
-            onSave = { w, r, warm -> onEditSet(row.setId, w, r, warm); editingSet = null },
+            onSave = { w, r, warm ->
+                onEditSet(row.setId, w, r, warm, row.variation)
+                editingSet = null
+            },
             onDelete = { onDeleteSet(row.setId); editingSet = null },
             onDismiss = { editingSet = null }
         )
@@ -314,6 +319,7 @@ private fun ActiveSessionPane(
     guidance: LiftGuidance?,
     activePlan: SplitPlan?,
     onSelectExercise: (Long?) -> Unit,
+    onSelectVariation: (String) -> Unit,
     onFinish: () -> Unit,
     onLogSet: (Long, Double, Int, Boolean) -> Unit,
     onEditSetRow: (SetRow) -> Unit,
@@ -328,6 +334,7 @@ private fun ActiveSessionPane(
     var warmup by remember { mutableStateOf(false) }
     var showPicker by remember { mutableStateOf(false) }
     var showNewExercise by remember { mutableStateOf(false) }
+    var showingReference by remember { mutableStateOf<Exercise?>(null) }
 
     val volume = Training.volume(state.sets)
     val working = state.sets.count { !it.isWarmup }
@@ -401,7 +408,32 @@ private fun ActiveSessionPane(
             }
 
             if (guidance != null) {
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = { showingReference = selectedExercise }) {
+                        Text("How to do it", color = Brass, style = MaterialTheme.typography.labelSmall)
+                    }
+                    guidance.guide?.let {
+                        Text(
+                            it.summary,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Faint
+                        )
+                    }
+                }
+
+                // Grip and stance live directly under the lift because they have to be
+                // set before the set is logged, not remembered afterwards.
+                guidance.guide?.let { g ->
+                    VariationPicker(
+                        axes = g.variations,
+                        selected = guidance.variation,
+                        onSelect = onSelectVariation,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(4.dp))
                 TargetCard(
                     guidance = guidance,
                     onUseTarget = { w, r ->
@@ -478,7 +510,10 @@ private fun ActiveSessionPane(
                 val isPr = row.setId == prSetId
                 EntryRow(
                     title = row.exerciseName + if (isPr) "  best yet" else "",
-                    detail = if (row.isWarmup) "warm-up" else "set ${row.setIndex}",
+                    detail = listOfNotNull(
+                        if (row.isWarmup) "warm-up" else "set ${row.setIndex}",
+                        row.variationLabel
+                    ).joinToString("  ·  "),
                     trailing = "${Training.formatWeight(row.weightKg)} x ${row.reps}",
                     accent = if (row.isWarmup) Mute else Brass,
                     onClick = { onEditSetRow(row) },
@@ -510,6 +545,10 @@ private fun ActiveSessionPane(
             onSave = { name, group -> onAddExercise(name, group); showNewExercise = false },
             onDismiss = { showNewExercise = false }
         )
+    }
+
+    showingReference?.let { exercise ->
+        ExerciseReferenceDialog(exercise = exercise, onDismiss = { showingReference = null })
     }
 }
 

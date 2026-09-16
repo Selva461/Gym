@@ -138,6 +138,7 @@ fun GymNav(vm: GymViewModel) {
                     summaries = summaries,
                     openSession = openSession,
                     onSelectExercise = vm::selectExercise,
+                    onSelectVariation = vm::selectVariation,
                     onStartFromSplit = vm::startSessionFrom,
                     onStartBlank = { label -> vm.startSession(label) },
                     onSaveSplit = { id, name, ids -> vm.saveSplit(id, name, ids) },
@@ -150,8 +151,8 @@ fun GymNav(vm: GymViewModel) {
                     onLogSet = { exerciseId, weight, reps, warmup ->
                         vm.logSet(exerciseId, weight, reps, warmup)
                     },
-                    onEditSet = { setId, weight, reps, warmup ->
-                        vm.editSet(setId, weight, reps, warmup)
+                    onEditSet = { setId, weight, reps, warmup, variation ->
+                        vm.editSet(setId, weight, reps, warmup, variation)
                     },
                     onDeleteSet = vm::deleteSet,
                     onSkipRest = vm::cancelRest,
