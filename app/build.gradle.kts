@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.room)
 }
 
 /**
@@ -112,8 +113,24 @@ android {
     }
 }
 
+/**
+ * Where Room writes the schema it exports for each database version.
+ *
+ * This used to be `ksp { arg("room.schemaLocation", ...) }`, and that wrote nothing
+ * — app/schemas came out empty on every CI run, which is why MigrationSqlTest
+ * skipped from the day it was written and why the migrations have never actually
+ * been checked against Room's own expectation. The Room Gradle plugin is the
+ * supported way to set this from Room 2.6 onwards.
+ *
+ * The exported files are committed to the repository. They are the record of what
+ * each version looked like, a migration is only reviewable against them, and a file
+ * in git cannot quietly fail to exist the way one in a build directory can.
+ */
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
     arg("room.incremental", "true")
 }
 
