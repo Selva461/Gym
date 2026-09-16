@@ -59,7 +59,7 @@ Today      protein first, calories second, a week strip with a dot per logged da
 Train      split → lift → kg × reps, a target for every lift, rest timer, records
            tap "How to do it" for a muscle map and how the movement works
 Fuel       search or browse 439 foods by category, macros and 15 micronutrients
-Progress   weight trend, 14-day volume, training and logging streaks
+Progress   weight trend, 14-day volume, streaks, and progress photos
 Settings   your targets, rest length, nightly reminder
 ```
 
@@ -94,6 +94,20 @@ keep separate histories and separate records, because sharing one means twelve
 reps on the easier grip tells you to add weight to the harder one. Volume does not
 split — that is a fatigue number, and fatigue does not care how you held the bar.
 Leave it on "Any" and nothing changes.
+
+**Progress photos, kept out of your gallery.** Add one from the Progress tab. They
+are copied into the app's private storage — not MediaStore, so no gallery app,
+cloud sync or lock-screen slideshow ever sees them — re-encoded so the GPS
+coordinates and device serial in the original do not come along, and deliberately
+left out of cloud backup. The oldest and newest sit side by side with the days
+between them, because adjacent weeks look identical and the distance travelled is
+the point. The trade is stated on the screen: reinstalling loses them.
+
+**Your own picture on any lift.** The reference sheet takes one from your phone
+and shows it at the top. This is the honest way to get the demo image you wanted:
+the app has no network permission and will not ship somebody else's licensed
+animation, but it will happily hold the picture you put there. Picking uses the
+system photo picker, so the app never asks for access to your photos.
 
 **Ten starter splits** — Push, Pull, Legs, Upper, Lower, Full body, Chest and
 triceps, Back and biceps, Shoulders and arms, Arms — and you can build your own.

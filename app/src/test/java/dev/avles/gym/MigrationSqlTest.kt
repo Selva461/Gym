@@ -29,7 +29,7 @@ import java.io.File
 class MigrationSqlTest {
 
     private companion object {
-        const val SCHEMA_PATH = "dev.avles.gym.GymDatabase/4.json"
+        const val SCHEMA_PATH = "dev.avles.gym.GymDatabase/5.json"
     }
 
     private val candidates: List<File> = listOfNotNull(
@@ -165,10 +165,39 @@ class MigrationSqlTest {
     }
 
     @Test
-    fun `the exported schema is version 4`() {
+    fun `the photo tables are created exactly as Room expects them`() {
+        assertEquals(expectedCreateSql("progress_photo"), SchemaSql.CREATE_PROGRESS_PHOTO)
+        assertEquals(expectedCreateSql("exercise_photo"), SchemaSql.CREATE_EXERCISE_PHOTO)
+        assertEquals(
+            expectedIndexSql("progress_photo", "index_progress_photo_dateEpochDay"),
+            SchemaSql.INDEX_PROGRESS_PHOTO_DATE
+        )
+        assertEquals(
+            expectedIndexSql("exercise_photo", "index_exercise_photo_exerciseId"),
+            SchemaSql.INDEX_EXERCISE_PHOTO_EXERCISE_ID
+        )
+    }
+
+    /**
+     * One picture per lift, enforced by the index rather than by the code that
+     * inserts. The repository relies on it: attaching a second picture is an
+     * OnConflictStrategy.REPLACE that only replaces because this index is unique.
+     * Were it dropped to a plain index, every replacement would silently become an
+     * extra row and the old file would be orphaned.
+     */
+    @Test
+    fun `one picture per lift is enforced by a unique index`() {
         assertTrue(
-            "exported schema is not version 4",
-            Regex(""""version"\s*:\s*4""").containsMatchIn(json!!)
+            "index_exercise_photo_exerciseId is not unique in the exported schema",
+            SchemaSql.INDEX_EXERCISE_PHOTO_EXERCISE_ID.contains("CREATE UNIQUE INDEX")
+        )
+    }
+
+    @Test
+    fun `the exported schema is version 5`() {
+        assertTrue(
+            "exported schema is not version 5",
+            Regex(""""version"\s*:\s*5""").containsMatchIn(json!!)
         )
     }
 

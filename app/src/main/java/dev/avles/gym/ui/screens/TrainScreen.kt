@@ -74,6 +74,9 @@ fun TrainScreen(
     openSession: SessionDetail?,
     onSelectExercise: (Long?) -> Unit,
     onSelectVariation: (String) -> Unit,
+    exercisePhotos: Map<Long, java.io.File?>,
+    onAttachExercisePhoto: (Long, android.net.Uri) -> Unit,
+    onDetachExercisePhoto: (Long) -> Unit,
     onStartFromSplit: (SplitPlan) -> Unit,
     onStartBlank: (String) -> Unit,
     onSaveSplit: (Long, String, List<Long>) -> Unit,
@@ -115,6 +118,9 @@ fun TrainScreen(
             activePlan = activePlan,
             onSelectExercise = onSelectExercise,
             onSelectVariation = onSelectVariation,
+            exercisePhotos = exercisePhotos,
+            onAttachExercisePhoto = onAttachExercisePhoto,
+            onDetachExercisePhoto = onDetachExercisePhoto,
             onFinish = onFinish,
             onLogSet = onLogSet,
             onEditSetRow = { editingSet = it },
@@ -320,6 +326,9 @@ private fun ActiveSessionPane(
     activePlan: SplitPlan?,
     onSelectExercise: (Long?) -> Unit,
     onSelectVariation: (String) -> Unit,
+    exercisePhotos: Map<Long, java.io.File?>,
+    onAttachExercisePhoto: (Long, android.net.Uri) -> Unit,
+    onDetachExercisePhoto: (Long) -> Unit,
     onFinish: () -> Unit,
     onLogSet: (Long, Double, Int, Boolean) -> Unit,
     onEditSetRow: (SetRow) -> Unit,
@@ -548,7 +557,13 @@ private fun ActiveSessionPane(
     }
 
     showingReference?.let { exercise ->
-        ExerciseReferenceDialog(exercise = exercise, onDismiss = { showingReference = null })
+        ExerciseReferenceDialog(
+            exercise = exercise,
+            onDismiss = { showingReference = null },
+            photoFile = exercisePhotos[exercise.id],
+            onAttachPhoto = { uri -> onAttachExercisePhoto(exercise.id, uri) },
+            onRemovePhoto = { onDetachExercisePhoto(exercise.id) }
+        )
     }
 }
 
@@ -666,127 +681,4 @@ private fun RestBanner(secondsLeft: Int, onSkip: () -> Unit) {
         }
         TextButton(onClick = onSkip) { Text("Skip rest", color = Brass) }
     }
-}
-
-@Composable
-private fun ExercisePicker(
-    exercises: List<Exercise>,
-    onPick: (Exercise) -> Unit,
-    onAddNew: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    var query by remember { mutableStateOf("") }
-    val matches = remember(query, exercises) {
-        if (query.isBlank()) exercises
-        else exercises.filter { it.name.contains(query, ignoreCase = true) }
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Slate,
-        title = { Text("Choose a lift", color = Bone) },
-        text = {
-            Column {
-                // The catalogue is past eighty lifts now. Scrolling to find a cable curl
-                // between two sets is exactly the friction this app exists to remove.
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    label = { Text("Search") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                LazyColumn(Modifier.height(340.dp)) {
-                    matches.groupBy { it.muscleGroup }.forEach { (group, inGroup) ->
-                        item {
-                            Text(
-                                group,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Brass,
-                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
-                            )
-                        }
-                        items(inGroup, key = { "lift-${it.id}" }) { exercise ->
-                            Column(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onPick(exercise) }
-                                    .padding(vertical = 8.dp)
-                            ) {
-                                Text(
-                                    exercise.name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = Bone
-                                )
-                                Text(
-                                    "${exercise.repLow}-${exercise.repHigh} reps  ·  " +
-                                        "+${Training.formatWeight(exercise.incrementKg)} kg steps",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Faint
-                                )
-                            }
-                        }
-                    }
-                    if (matches.isEmpty()) {
-                        item {
-                            Text(
-                                "Nothing matches \"$query\".",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Faint,
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onAddNew) { Text("Add a lift", color = Brass) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Close", color = Mute) } }
-    )
-}
-
-@Composable
-private fun NewExerciseDialog(onSave: (String, String) -> Unit, onDismiss: () -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var group by remember { mutableStateOf(SeedData.muscleGroups().first()) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Slate,
-        title = { Text("Add a lift", color = Bone) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Name") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(14.dp))
-                Text(
-                    "Muscle group",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Mute
-                )
-                Spacer(Modifier.height(6.dp))
-                // Thirteen groups: a ChipRow scrolls, where PillRow would squeeze
-                // every label down to two ellipsised characters.
-                ChipRow(SeedData.muscleGroups(), group, Brass, { group = it })
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    "New lifts progress in 6-10 reps and 2.5 kg steps until you change them.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Faint
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(enabled = name.isNotBlank(), onClick = { onSave(name, group) }) {
-                Text("Save lift", color = if (name.isNotBlank()) Brass else Faint)
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Mute) } }
-    )
 }

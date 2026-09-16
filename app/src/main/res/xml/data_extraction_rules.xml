@@ -14,14 +14,29 @@
 
       Device transfer is phone-to-phone over a local link and carries no such condition.
     -->
+    <!--
+      Progress photos are deliberately NOT in the cloud backup, and that is a
+      decision rather than an oversight.
+
+      The rest of this is numbers. Encrypted on a server with a key Google does not
+      hold, a weight history is a reasonable trade for surviving a lost phone.
+      Photographs of somebody's body are a different question, and it is not one to
+      answer on their behalf by defaulting to upload. The cost is real and is stated
+      on the photos screen: reinstalling loses them.
+
+      Device transfer below does include them. That is a local link between two
+      phones the person is holding, not a copy on someone else's computer.
+    -->
     <cloud-backup disableIfNoEncryptionCapabilities="true">
         <include domain="database" path="gym.db" />
         <include domain="database" path="gym.db-wal" />
         <include domain="file" path="datastore/" />
+        <exclude domain="file" path="photos/" />
     </cloud-backup>
     <device-transfer>
         <include domain="database" path="gym.db" />
         <include domain="database" path="gym.db-wal" />
         <include domain="file" path="datastore/" />
+        <include domain="file" path="photos/" />
     </device-transfer>
 </data-extraction-rules>

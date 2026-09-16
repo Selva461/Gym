@@ -272,4 +272,42 @@ interface GymDao {
 
     @Query("SELECT * FROM body_weight ORDER BY dateEpochDay DESC LIMIT 1")
     fun latestWeight(): Flow<BodyWeight?>
+
+    // ---------- Photos ----------
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertProgressPhoto(photo: ProgressPhoto): Long
+
+    @Query("SELECT * FROM progress_photo ORDER BY dateEpochDay DESC, takenAt DESC")
+    fun progressPhotos(): Flow<List<ProgressPhoto>>
+
+    @Query("SELECT * FROM progress_photo WHERE id = :id")
+    suspend fun progressPhotoById(id: Long): ProgressPhoto?
+
+    @Query("DELETE FROM progress_photo WHERE id = :id")
+    suspend fun deleteProgressPhotoRow(id: Long)
+
+    @Query("UPDATE progress_photo SET label = :label, note = :note WHERE id = :id")
+    suspend fun editProgressPhoto(id: Long, label: String, note: String)
+
+    /** Every filename the database believes in, for reconciling against the disk. */
+    @Query("SELECT fileName FROM progress_photo UNION SELECT fileName FROM exercise_photo")
+    suspend fun referencedPhotoFileNames(): List<String>
+
+    /**
+     * REPLACE, with the unique index on exerciseId doing the work: attaching a second
+     * picture to a lift swaps it rather than accumulating. One picture per lift is the
+     * feature; a gallery would be a different one.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertExercisePhoto(photo: ExercisePhoto): Long
+
+    @Query("SELECT * FROM exercise_photo")
+    fun exercisePhotos(): Flow<List<ExercisePhoto>>
+
+    @Query("SELECT * FROM exercise_photo WHERE exerciseId = :exerciseId")
+    suspend fun exercisePhotoFor(exerciseId: Long): ExercisePhoto?
+
+    @Query("DELETE FROM exercise_photo WHERE exerciseId = :exerciseId")
+    suspend fun deleteExercisePhotoRow(exerciseId: Long)
 }

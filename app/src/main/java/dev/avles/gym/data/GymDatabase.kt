@@ -16,9 +16,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         FoodLog::class,
         BodyWeight::class,
         Split::class,
-        SplitExercise::class
+        SplitExercise::class,
+        ProgressPhoto::class,
+        ExercisePhoto::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class GymDatabase : RoomDatabase() {
@@ -101,6 +103,19 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v4 → v5: progress photos, and a picture per lift.
+         *
+         * Two new tables and nothing touched, so there is no way for this one to
+         * lose data. The pictures themselves are files in the app's private
+         * directory; these tables only name them.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                SchemaSql.V5_STATEMENTS.forEach(db::execSQL)
+            }
+        }
+
         @Volatile private var instance: GymDatabase? = null
 
         fun get(context: Context): GymDatabase = instance ?: synchronized(this) {
@@ -109,7 +124,7 @@ abstract class GymDatabase : RoomDatabase() {
                 GymDatabase::class.java,
                 "gym.db"
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
                 .also { instance = it }
         }

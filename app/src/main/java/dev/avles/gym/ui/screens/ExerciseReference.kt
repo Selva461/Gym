@@ -27,6 +27,7 @@ import dev.avles.gym.data.Exercise
 import dev.avles.gym.domain.ExerciseGuide
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.MuscleMap
+import dev.avles.gym.ui.components.PhotoImage
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
@@ -50,9 +51,19 @@ import dev.avles.gym.ui.theme.Raised
 @Composable
 fun ExerciseReferenceDialog(
     exercise: Exercise,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    photoFile: java.io.File? = null,
+    onAttachPhoto: ((android.net.Uri) -> Unit)? = null,
+    onRemovePhoto: (() -> Unit)? = null
 ) {
     val guide = ExerciseGuide.of(exercise)
+
+    // The system photo picker, which needs no permission: it runs outside this
+    // process and returns exactly the one image chosen. READ_MEDIA_IMAGES would
+    // grant every picture on the phone, forever, to import one.
+    val picker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
+    ) { uri -> if (uri != null) onAttachPhoto?.invoke(uri) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -70,6 +81,48 @@ fun ExerciseReferenceDialog(
                     .heightIn(max = 460.dp)
                     .verticalScroll(rememberScrollState())
             ) {
+                // Your own picture, if you added one, above everything else — it is
+                // the fastest answer to "which way does this move", which is why this
+                // exists. The app cannot fetch one: it has no network permission, and
+                // the animations people want are somebody's licensed product. It can
+                // hold the one you put there.
+                if (photoFile != null) {
+                    PhotoImage(
+                        file = photoFile,
+                        contentDescription = "Your picture for ${exercise.name}",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 180.dp, max = 220.dp)
+                    )
+                    Spacer(Modifier.height(6.dp))
+                }
+                if (onAttachPhoto != null) {
+                    Row {
+                        TextButton(
+                            onClick = {
+                                picker.launch(
+                                    androidx.activity.result.PickVisualMediaRequest(
+                                        androidx.activity.result.contract
+                                            .ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
+                                )
+                            }
+                        ) {
+                            Text(
+                                if (photoFile == null) "Add your own picture" else "Replace picture",
+                                color = Brass,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                        if (photoFile != null && onRemovePhoto != null) {
+                            TextButton(onClick = onRemovePhoto) {
+                                Text("Remove", color = Coral, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+
                 MuscleMap(
                     primary = guide.primary,
                     secondary = guide.secondary,

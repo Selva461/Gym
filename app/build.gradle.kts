@@ -147,5 +147,12 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
 
+    // Reading the orientation tag out of a picked photo. Without it every picture
+    // taken in portrait displays on its side, because neither BitmapFactory nor
+    // Compose rotates by EXIF on its own. ~100 KB, first-party, and it touches
+    // nothing but the bytes it is handed — no network, which matters in an app
+    // whose INTERNET permission is removed at build time.
+    implementation(libs.androidx.exifinterface)
+
     testImplementation(libs.junit)
 }

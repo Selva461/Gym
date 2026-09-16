@@ -58,6 +58,52 @@ Obfuscation is still worth its (zero) cost, so:
 
 ---
 
+## Photos
+
+Progress photos are the most sensitive thing this app holds, and the first thing
+in it that arrives from outside. Four decisions follow from that.
+
+**They are copied in, not referenced.** The picker returns a `content://` URI
+into another app's storage under a grant that dies with the process. Storing one
+would work today and show nothing next week, so the bytes are copied into this
+app's private directory and the URI is discarded.
+
+**Private storage, never the gallery.** `filesDir` is readable only by this app's
+UID. Writing them to MediaStore would put them in the phone's gallery beside
+holiday pictures and hand them to every gallery app, cloud sync and lock-screen
+slideshow on the device.
+
+**They are re-encoded, which strips the metadata.** A 12 MB phone photo becomes a
+few hundred KB, the orientation tag is baked into the pixels, and whatever else
+the original carried — GPS coordinates, device serial, timestamps — does not
+survive the round trip. A progress photo with the gym's location in it is a worse
+thing to keep than one without.
+
+**They are excluded from cloud backup, on purpose.** The rest of the data is
+numbers; encrypted on a server with a key Google does not hold, a weight history
+is a reasonable trade for surviving a lost phone. Photographs of a body are a
+different question, and not one to answer on the user's behalf by defaulting to
+upload. Device-to-device transfer does include them — that is a local link
+between two phones the person is holding. The cost is real and the photos screen
+states it: reinstalling loses them.
+
+**No permission was added.** Picking uses the system photo picker, which runs
+outside this process and returns exactly the one image chosen. `READ_MEDIA_IMAGES`
+would grant access to every picture on the phone, forever, in order to import one.
+The permission allowlist in `SecurityPostureTest` is unchanged.
+
+### The filename is untrusted input
+
+Everything else in this database was typed into it. A picked image carries a name
+and a MIME type chosen by another app, and a filename is one string join away from
+being a path. So the name is generated here, the extension comes from a fixed
+list, and names read back out of the database are validated before they are
+resolved — because a restored or corrupted database is exactly the case where "it
+cannot happen" stops being true. `PhotosTest` checks this against inputs like
+`../../databases/gym.db`.
+
+---
+
 ## What actually protects your data
 
 In rough order of how much work each one does:
@@ -91,7 +137,10 @@ Stated plainly, because a security claim without a threat model is decoration.
 | Data in logcat | **Yes** | GymLog is compiled out of release; R8 strips `android.util.Log` |
 | Someone picking up your unlocked phone | **No** | Nothing stops them opening the app. See below |
 | Phone stolen while locked | **Mostly** | Full-disk encryption, as strong as your lock screen |
-| Forensic extraction from an unlocked, rooted phone | **No** | The database is not separately encrypted. See below |
+| Forensic extraction from an unlocked, rooted phone | **No** | Neither the database nor the photos are separately encrypted. See below |
+| Progress photos reaching Google's servers | **Yes** | Excluded from cloud backup; no network permission exists |
+| Progress photos appearing in your gallery | **Yes** | Private storage, never MediaStore |
+| Location or device data hidden in a photo | **Yes** | Re-encoding drops every EXIF tag but orientation |
 | Malicious app with root | **No** | Root defeats the sandbox; nothing in userspace survives it |
 | Someone decompiling the APK | **No, and it does not matter** | See the top of this document |
 | Supply chain — a dependency turning hostile | **Partly** | No network to exfiltrate through; new permissions fail a test |

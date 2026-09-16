@@ -81,4 +81,43 @@ object SchemaSql {
 
     /** Every statement the v4 migration runs, in order. */
     val V4_STATEMENTS = listOf(ADD_SET_VARIATION)
+
+    // ---- v5: pictures ------------------------------------------------------
+    //
+    // New tables rather than added columns, so there is no DEFAULT question here:
+    // Room emits no DEFAULT clause for a Kotlin default value, and on a CREATE that
+    // matches, because there are no existing rows for one to apply to.
+
+    const val CREATE_PROGRESS_PHOTO =
+        "CREATE TABLE IF NOT EXISTS `progress_photo` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`dateEpochDay` INTEGER NOT NULL, " +
+            "`fileName` TEXT NOT NULL, " +
+            "`label` TEXT NOT NULL, " +
+            "`note` TEXT NOT NULL, " +
+            "`takenAt` INTEGER NOT NULL)"
+
+    const val INDEX_PROGRESS_PHOTO_DATE =
+        "CREATE INDEX IF NOT EXISTS `index_progress_photo_dateEpochDay` " +
+            "ON `progress_photo` (`dateEpochDay`)"
+
+    const val CREATE_EXERCISE_PHOTO =
+        "CREATE TABLE IF NOT EXISTS `exercise_photo` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`exerciseId` INTEGER NOT NULL, " +
+            "`fileName` TEXT NOT NULL, " +
+            "`addedAt` INTEGER NOT NULL)"
+
+    /** Unique, because a lift has one picture. Room spells a unique index this way. */
+    const val INDEX_EXERCISE_PHOTO_EXERCISE_ID =
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_exercise_photo_exerciseId` " +
+            "ON `exercise_photo` (`exerciseId`)"
+
+    /** Every statement the v5 migration runs, in order. */
+    val V5_STATEMENTS = listOf(
+        CREATE_PROGRESS_PHOTO,
+        INDEX_PROGRESS_PHOTO_DATE,
+        CREATE_EXERCISE_PHOTO,
+        INDEX_EXERCISE_PHOTO_EXERCISE_ID
+    )
 }

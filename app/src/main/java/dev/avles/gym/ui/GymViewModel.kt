@@ -14,12 +14,14 @@ import dev.avles.gym.data.FoodLogRow
 import dev.avles.gym.data.GymSettings
 import dev.avles.gym.data.Meals
 import dev.avles.gym.data.SessionSummary
+import dev.avles.gym.data.ProgressPhoto
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.Split
 import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.ExerciseGuide
+import dev.avles.gym.domain.Photos
 import dev.avles.gym.domain.Progression
 import dev.avles.gym.domain.Recommendation
 import dev.avles.gym.domain.Totals
@@ -93,6 +95,23 @@ data class SessionDetail(
     val sets: List<SetRow>,
     val summary: SessionSummary? = null
 )
+
+/**
+ * The photo timeline, with each row's file resolved once here rather than in the
+ * composable — a screen should not be doing filesystem work while it lays out.
+ *
+ * [comparison] is the oldest against the newest, which is the comparison worth
+ * showing: adjacent weeks look identical, and the distance travelled is the whole
+ * point of taking these.
+ */
+data class PhotoState(
+    val photos: List<PhotoRow> = emptyList(),
+    val comparison: Pair<PhotoRow, PhotoRow>? = null,
+    val bytesUsed: Long = 0L
+)
+
+/** One photo, with the file it lives in. A null [file] means the picture is gone. */
+data class PhotoRow(val photo: ProgressPhoto, val file: java.io.File?)
 
 data class ProgressState(
     val weights: List<BodyWeight> = emptyList(),
@@ -194,6 +213,52 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
     ) { weights, volume, trained, fuelled ->
         ProgressState(weights, volume, trained.toSet(), fuelled.toSet())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProgressState())
+
+    val photoState: StateFlow<PhotoState> = repo.progressPhotos
+        .map { photos ->
+            val rows = photos.map { PhotoRow(it, repo.photoFile(it.fileName)) }
+            PhotoState(
+                photos = rows,
+                comparison = Photos.spanToCompare(rows) { it.photo.dateEpochDay },
+                bytesUsed = repo.photoBytesUsed()
+            )
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PhotoState())
+
+    /** Files for lift pictures, keyed by exercise, so the reference sheet can look one up. */
+    val exercisePhotoFiles: StateFlow<Map<Long, java.io.File?>> = repo.exercisePhotos
+        .map { rows -> rows.associate { it.exerciseId to repo.photoFile(it.fileName) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /**
+     * Null means the import failed — an unreadable pick, or no store. Surfaced so the
+     * screen can say so instead of silently doing nothing, which reads as a bug.
+     */
+    private val _photoError = MutableStateFlow<String?>(null)
+    val photoError: StateFlow<String?> = _photoError.asStateFlow()
+
+    fun clearPhotoError() { _photoError.value = null }
+
+    fun addProgressPhoto(uri: android.net.Uri, dateEpochDay: Long, label: String) =
+        viewModelScope.launch {
+            if (!repo.addProgressPhoto(uri, dateEpochDay, label)) {
+                _photoError.value = "That picture could not be read. Nothing was saved."
+            }
+        }
+
+    fun deleteProgressPhoto(id: Long) = viewModelScope.launch { repo.deleteProgressPhoto(id) }
+
+    fun editProgressPhoto(id: Long, label: String, note: String) =
+        viewModelScope.launch { repo.editProgressPhoto(id, label, note) }
+
+    fun attachExercisePhoto(exerciseId: Long, uri: android.net.Uri) = viewModelScope.launch {
+        if (!repo.attachExercisePhoto(exerciseId, uri)) {
+            _photoError.value = "That picture could not be read. Nothing was saved."
+        }
+    }
+
+    fun detachExercisePhoto(exerciseId: Long) =
+        viewModelScope.launch { repo.detachExercisePhoto(exerciseId) }
 
     val settings: StateFlow<GymSettings> = settingsStore.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GymSettings())

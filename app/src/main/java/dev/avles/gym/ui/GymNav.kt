@@ -25,6 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.avles.gym.ui.screens.FuelScreen
+import dev.avles.gym.ui.screens.PhotosScreen
 import dev.avles.gym.ui.screens.ProgressScreen
 import dev.avles.gym.ui.screens.SettingsScreen
 import dev.avles.gym.ui.screens.TodayScreen
@@ -71,6 +72,7 @@ fun GymNav(vm: GymViewModel) {
     val activePlan by vm.activePlan.collectAsStateWithLifecycle()
     val summaries by vm.sessionSummaries.collectAsStateWithLifecycle()
     val openSession by vm.openSessionDetail.collectAsStateWithLifecycle()
+    val liftPhotos by vm.exercisePhotoFiles.collectAsStateWithLifecycle()
 
     fun go(route: String) {
         navController.navigate(route) {
@@ -139,6 +141,9 @@ fun GymNav(vm: GymViewModel) {
                     openSession = openSession,
                     onSelectExercise = vm::selectExercise,
                     onSelectVariation = vm::selectVariation,
+                    exercisePhotos = liftPhotos,
+                    onAttachExercisePhoto = { id, uri -> vm.attachExercisePhoto(id, uri) },
+                    onDetachExercisePhoto = vm::detachExercisePhoto,
                     onStartFromSplit = vm::startSessionFrom,
                     onStartBlank = { label -> vm.startSession(label) },
                     onSaveSplit = { id, name, ids -> vm.saveSplit(id, name, ids) },
@@ -171,8 +176,29 @@ fun GymNav(vm: GymViewModel) {
                 )
             }
             composable("progress") {
-                ProgressScreen(state = progress, onRecordWeight = vm::recordWeight)
+                ProgressScreen(
+                    state = progress,
+                    onRecordWeight = vm::recordWeight,
+                    onOpenPhotos = { go("photos") }
+                )
             }
+            // Not a sixth tab. Photos are about your body over time, which is what
+            // Progress already is, and a five-item bar is already at the point where
+            // the labels start truncating.
+            composable("photos") {
+                val photos by vm.photoState.collectAsStateWithLifecycle()
+                val photoError by vm.photoError.collectAsStateWithLifecycle()
+                PhotosScreen(
+                    state = photos,
+                    error = photoError,
+                    today = day.date,
+                    onAdd = { uri, epochDay, label -> vm.addProgressPhoto(uri, epochDay, label) },
+                    onDelete = vm::deleteProgressPhoto,
+                    onEdit = { id, label, note -> vm.editProgressPhoto(id, label, note) },
+                    onDismissError = vm::clearPhotoError
+                )
+            }
+
             composable("settings") {
                 SettingsScreen(settings = settings, onSave = vm::saveSettings)
             }

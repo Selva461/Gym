@@ -300,3 +300,43 @@ object Meals {
     fun slotFor(isSupplement: Boolean, chosen: String): String =
         if (isSupplement) SUPPLEMENT else chosen
 }
+
+/**
+ * A progress photo: one picture, one day.
+ *
+ * Only the *name* of the file is stored, never a content:// URI from the picker.
+ * Those are revocable — the grant dies with the process — and they point at
+ * another app's storage, so a row holding one would work today and show nothing
+ * next week. The bytes are copied into this app's private directory instead, and
+ * this row names the copy.
+ *
+ * Several per day is deliberate: front, side and back is how people actually take
+ * these, and forcing one would make the second overwrite the first.
+ */
+@Entity(tableName = "progress_photo", indices = [Index("dateEpochDay")])
+data class ProgressPhoto(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val dateEpochDay: Long,
+    val fileName: String,
+    /** "Front", "Side", "Back" — free text, because it is your shorthand, not a schema. */
+    val label: String = "",
+    val note: String = "",
+    val takenAt: Long
+)
+
+/**
+ * A picture you attached to a lift — the legal way to get the demo image you
+ * wanted into the app, since it cannot download one and would not ship somebody
+ * else's licensed animation.
+ *
+ * Unique on exerciseId: one picture per lift. A gallery per exercise would be a
+ * different feature, and the thing being solved here is "show me which way this
+ * moves", which one picture does.
+ */
+@Entity(tableName = "exercise_photo", indices = [Index(value = ["exerciseId"], unique = true)])
+data class ExercisePhoto(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val exerciseId: Long,
+    val fileName: String,
+    val addedAt: Long
+)

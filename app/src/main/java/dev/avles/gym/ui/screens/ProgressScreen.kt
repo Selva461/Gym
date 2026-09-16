@@ -45,6 +45,7 @@ import kotlin.math.abs
 fun ProgressScreen(
     state: ProgressState,
     onRecordWeight: (Double) -> Unit,
+    onOpenPhotos: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var logging by remember { mutableStateOf(false) }
@@ -75,7 +76,17 @@ fun ProgressScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = Mute
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(14.dp))
+            // Photos belong here rather than in a sixth tab: they are the same
+            // question as the weight trend, answered with your eyes instead of a
+            // number, and they are the one that tells you when the scale is lying.
+            androidx.compose.material3.TextButton(
+                onClick = onOpenPhotos,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) {
+                Text("Progress photos", color = Brass, style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(Modifier.height(16.dp))
 
             SectionHeading(
                 "Body weight",

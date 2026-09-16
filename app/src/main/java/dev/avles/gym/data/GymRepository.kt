@@ -3,7 +3,13 @@ package dev.avles.gym.data
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
-class GymRepository(private val dao: GymDao) {
+/**
+ * [photos] is optional so that the repository stays constructible without an Android
+ * Context — which is what keeps every non-photo test able to build one. When it is
+ * absent the photo methods are no-ops rather than crashes: a caller with no store
+ * cannot have a picture to lose.
+ */
+class GymRepository(private val dao: GymDao, private val photos: PhotoStore? = null) {
 
     /**
      * Fills the catalogue on first launch, and tops it up on later ones.
@@ -218,4 +224,74 @@ class GymRepository(private val dao: GymDao) {
 
     suspend fun recordWeight(day: LocalDate, kg: Double, note: String = "") =
         dao.upsertWeight(BodyWeight(dateEpochDay = day.toEpochDay(), weightKg = kg, note = note))
+
+    // ---------- Photos ----------
+
+    val progressPhotos: Flow<List<ProgressPhoto>> = dao.progressPhotos()
+    val exercisePhotos: Flow<List<ExercisePhoto>> = dao.exercisePhotos()
+
+    /**
+     * Copies the picked image in, then records it. In that order, deliberately: a
+     * file with no row is an orphan the reconciler sweeps up on the next launch,
+     * whereas a row with no file is a permanent gap in the timeline that the UI has
+     * to keep apologising for.
+     */
+    suspend fun addProgressPhoto(uri: android.net.Uri, dateEpochDay: Long, label: String = ""): Boolean {
+        val store = photos ?: return false
+        val fileName = store.importFrom(uri) ?: return false
+        dao.insertProgressPhoto(
+            ProgressPhoto(
+                dateEpochDay = dateEpochDay,
+                fileName = fileName,
+                label = label.trim(),
+                takenAt = System.currentTimeMillis()
+            )
+        )
+        return true
+    }
+
+    /** Row first here, because a failed file delete is recoverable and a lost row is not. */
+    suspend fun deleteProgressPhoto(id: Long) {
+        val row = dao.progressPhotoById(id) ?: return
+        dao.deleteProgressPhotoRow(id)
+        photos?.delete(row.fileName)
+    }
+
+    suspend fun editProgressPhoto(id: Long, label: String, note: String) =
+        dao.editProgressPhoto(id, label.trim(), note.trim())
+
+    suspend fun attachExercisePhoto(exerciseId: Long, uri: android.net.Uri): Boolean {
+        val store = photos ?: return false
+        val fileName = store.importFrom(uri) ?: return false
+        // The old picture's file has to go explicitly: the unique index replaces the
+        // row, which would otherwise leave its file on disk with nothing pointing at it.
+        val previous = dao.exercisePhotoFor(exerciseId)
+        dao.insertExercisePhoto(
+            ExercisePhoto(exerciseId = exerciseId, fileName = fileName, addedAt = System.currentTimeMillis())
+        )
+        previous?.let { store.delete(it.fileName) }
+        return true
+    }
+
+    suspend fun detachExercisePhoto(exerciseId: Long) {
+        val row = dao.exercisePhotoFor(exerciseId) ?: return
+        dao.deleteExercisePhotoRow(exerciseId)
+        photos?.delete(row.fileName)
+    }
+
+    /**
+     * Deletes photo files nothing points at. Called once on launch alongside seeding.
+     *
+     * Cheap — a directory listing and a set difference — and it turns "we might leak
+     * a few hundred KB every time a delete half-fails" into something that cannot
+     * accumulate.
+     */
+    suspend fun reconcilePhotoFiles(): Int {
+        val store = photos ?: return 0
+        return store.deleteOrphans(dao.referencedPhotoFileNames().toSet())
+    }
+
+    fun photoFile(fileName: String): java.io.File? = photos?.fileFor(fileName)
+
+    fun photoBytesUsed(): Long = photos?.bytesUsed() ?: 0L
 }

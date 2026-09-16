@@ -99,13 +99,13 @@ extendable and secure. `GymLog`, `ArchitectureTest`, `SecurityPostureTest`,
 `SECURITY.md`, `ARCHITECTURE.md`, and a ProGuard file that no longer exempts the
 data layer from obfuscation.
 
-### Tier 4 — Daily photos
+### Tier 4 — Daily photos — **done**
 A progress photo per day, stored in app-private storage — not the shared gallery,
 so it does not land in Google Photos or any backup. Timeline by date, and a
 side-by-side compare of any two days. Includes the storage, permission and
 lifecycle work that Tier 5 then reuses.
 
-### Tier 5 — Your own image per lift
+### Tier 5 — Your own image per lift — **done**
 Attach a picture or GIF from the phone to any exercise, shown at the top of its
 reference sheet. Reuses Tier 4's storage pipeline entirely.
 
