@@ -113,6 +113,38 @@ jobs:
           path: app/build/reports/lint-results-debug.html
           if-no-files-found: ignore
 
+      # Room's exported schema, committed rather than left in a build directory.
+      #
+      # Room's own guidance is to keep these in version control, and for good reason:
+      # they are the record of what each database version actually looked like, and a
+      # migration is only reviewable against them.
+      #
+      # This project has a sharper reason. MigrationSqlTest skipped silently from the
+      # day it was written because it looked for the schema under the wrong package,
+      # and nothing could see that the file was absent — a skipped test is a green
+      # build, and the schema lived only in a build directory nobody reads. A file in
+      # the repository cannot hide. The diff also makes a schema change something you
+      # have to look at rather than something that happens.
+      #
+      # It runs before the migration watcher and on always(), because the run where
+      # the schema is missing is precisely the run whose evidence is worth keeping.
+      # Ordered the other way it skipped exactly when it was needed.
+      #
+      # [skip ci] keeps this from triggering itself.
+      - name: Commit the exported Room schema
+        if: always()
+        run: |
+          if [ -z "$(git status --porcelain app/schemas 2>/dev/null)" ]; then
+            echo "Exported schema unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/schemas
+          git commit -m "Export Room schema from CI [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
       # An Actions artifact is a zip behind a GitHub login, which is close to
       # unusable on a phone. A release asset is a direct .apk link that any browser
       # can download, so the build publishes one and keeps it at a fixed tag: the
@@ -167,34 +199,6 @@ jobs:
           fi
           echo "Schema v${VERSION} found at $FOUND — MigrationSqlTest compared the migration against it."
           grep -o '"defaultValue"[^,}]*' "$FOUND" | head -5
-
-      # Room's exported schema, committed rather than left in a build directory.
-      #
-      # Room's own guidance is to keep these in version control, and for good reason:
-      # they are the record of what each database version actually looked like, and a
-      # migration is only reviewable against them.
-      #
-      # This project has a sharper reason. MigrationSqlTest skipped silently from the
-      # day it was written because it looked for the schema under the wrong package,
-      # and nothing could see that the file was absent — a skipped test is a green
-      # build, and the schema lived only in a build directory nobody reads. A file in
-      # the repository cannot hide. The diff also makes a schema change something you
-      # have to look at rather than something that happens.
-      #
-      # [skip ci] keeps this from triggering itself.
-      - name: Commit the exported Room schema
-        if: success()
-        run: |
-          if [ -z "$(git status --porcelain app/schemas 2>/dev/null)" ]; then
-            echo "Exported schema unchanged."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/schemas
-          git commit -m "Export Room schema from CI [skip ci]"
-          git pull --rebase origin "${GITHUB_REF_NAME}" || true
-          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       # --- Optional: a signed, non-debuggable release APK ---------------
       # The debug APK above is debuggable, which means anyone holding your unlocked
