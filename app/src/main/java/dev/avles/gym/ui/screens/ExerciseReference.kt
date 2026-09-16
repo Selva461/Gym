@@ -26,7 +26,9 @@ import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.domain.ExerciseGuide
 import dev.avles.gym.ui.components.Hairline
+import dev.avles.gym.ui.components.ExerciseDemo
 import dev.avles.gym.ui.components.MuscleMap
+import dev.avles.gym.ui.components.hasExerciseDemo
 import dev.avles.gym.ui.components.PhotoImage
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
@@ -81,6 +83,27 @@ fun ExerciseReferenceDialog(
                     .heightIn(max = 460.dp)
                     .verticalScroll(rememberScrollState())
             ) {
+                // A bundled demonstration, where one exists: start position and end
+                // position, alternating. Public-domain artwork, which is why it could
+                // be shipped at all — the app has no network permission and will not
+                // carry somebody else's licensed animation.
+                if (photoFile == null && hasExerciseDemo(exercise.name)) {
+                    ExerciseDemo(
+                        exerciseName = exercise.name,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 190.dp, max = 230.dp)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Start and finish of the movement. Public domain artwork from " +
+                            "the Free Exercise DB.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Faint
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
+
                 // Your own picture, if you added one, above everything else — it is
                 // the fastest answer to "which way does this move", which is why this
                 // exists. The app cannot fetch one: it has no network permission, and

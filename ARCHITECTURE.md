@@ -39,6 +39,7 @@ This is the section worth keeping current.
 
 | To add… | Edit | Notes |
 |---|---|---|
+| A bundled demonstration | `data/ExerciseDemos.kt` + `assets/demo/` | Generated; see CREDITS.md for the source and the matching rules |
 | An exercise | `data/SeedExercises.kt` | One line. Pick the right per-group builder — `tri("…")`, `chest("…")` — and put the equipment **in the name**, which is what makes the picker's search double as an equipment filter |
 | A muscle group | `SeedExercises.Groups` | Add the constant and put it in `ALL`. The picker, the new-lift dialog and the tests all read that one list |
 | A food | `data/SeedData.kt` | One line in the relevant function, then add the function to `foods()` if it is new |
@@ -75,6 +76,14 @@ memory so a debug build can show what just happened, and compiles itself out of
 release entirely — a health log must not write body weights into logcat. Call it
 with a lambda (`GymLog.d(Tag.TRAIN) { "…" }`) so the string is never built in
 release.
+
+**`tools/check-imports.py`** answers the one question this project cannot otherwise
+ask without a full Android SDK: is every capitalised reference in a Kotlin file
+either imported, declared in the same package, or fully qualified? It is not a type
+checker and knows nothing about signatures — it catches exactly one mistake, the
+unresolvable name, which is the mistake that otherwise costs a full CI round trip
+to discover. It found `Slate` and `Training` missing from a file that had just been
+split out of another, which is precisely when it happens.
 
 **Off-device test harness.** Everything in `domain/` plus the entities and seed
 catalogue compiles and runs in a plain JVM. That is the fast loop: a change to

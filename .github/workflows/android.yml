@@ -145,8 +145,13 @@ jobs:
       # This is that watcher. It runs after the APK has been built and published, so
       # a problem here is loud without ever costing the deliverable, and it reads the
       # version out of GymDatabase.kt so it cannot go stale when the schema moves on.
+      # success() rather than always(). On its first outing this step ran after a
+      # failed compile, found no exported schema — because KSP never got that far —
+      # and reported "the v5 migration is UNVERIFIED", which was true but had nothing
+      # to do with why the build broke. A watcher that speaks up when the thing it
+      # watches never ran is a watcher that hides the real error.
       - name: Confirm the migration check was not silently skipped
-        if: always()
+        if: success()
         run: |
           VERSION=$(grep -oP 'version\s*=\s*\K[0-9]+' app/src/main/java/dev/avles/gym/data/GymDatabase.kt | head -1)
           SCHEMA="app/schemas/dev.avles.gym.GymDatabase/${VERSION}.json"
@@ -191,3 +196,22 @@ jobs:
       - name: Shred the keystore
         if: always() && env.GYM_KEYSTORE_BASE64 != ''
         run: shred -u "$RUNNER_TEMP/gym-release.jks" 2>/dev/null || rm -f "$RUNNER_TEMP/gym-release.jks"
+
+      # The last step in the job, so its output is the last thing in the log.
+      #
+      # The Unit tests step already greps its own errors out, but anything printed
+      # mid-job is unreachable when the only way to read the log is its tail — which
+      # is the situation from a terminal, where the raw log lives on a host that is
+      # often unreachable. Repeating them here costs nothing and makes a compile
+      # error legible without opening a browser.
+      - name: Repeat the failure at the end of the log
+        if: failure()
+        run: |
+          echo "════════ what actually failed ════════"
+          if [ -f /tmp/gym-build.log ]; then
+            grep -E "^e: |^w: .*error|FAILED$|^[0-9]+\) |AssertionError" /tmp/gym-build.log | head -60 \
+              || echo "(no compile or test errors in the build log — the failure was in a later step)"
+          else
+            echo "(no build log: the job failed before Gradle ran)"
+          fi
+          echo "══════════════════════════════════════"

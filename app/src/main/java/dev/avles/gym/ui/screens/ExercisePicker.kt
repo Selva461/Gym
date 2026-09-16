@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.SeedData
+import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.components.ChipRow
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
@@ -29,6 +30,7 @@ import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
+import dev.avles.gym.ui.theme.Slate
 
 /**
  * Choosing a lift out of a catalogue of nearly four hundred, and adding one that

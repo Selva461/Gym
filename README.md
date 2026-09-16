@@ -80,6 +80,16 @@ cross-body), eight with dumbbells, seven with a barbell or EZ bar, three on a
 machine, six bodyweight. Whatever is free, there is a way to train the muscle you
 came for.
 
+**A demonstration on 140 of them.** The reference sheet animates between the start
+and the finish of the movement — which is what almost every exercise GIF is once you
+strip the tweening, at a tenth of the size. The pictures are public domain (Free
+Exercise DB, Unlicense); the commercial animations people usually mean are somebody's
+product and this app will not ship those. Only lifts with a confident name match get
+one: "Barbell row" scores 0.82 against "Upright Barbell Row" and they are different
+exercises, so anything less than certain shows the muscle map instead of the wrong
+movement. Bundled in the APK at about 3.6 MB, because the app has no network
+permission and never will.
+
 **A reference on every lift.** Tap "How to do it" under the lift for a body
 diagram with the worked muscles shaded, how to set up, how the movement goes, the
 two words to hold in your head mid-set, and what usually goes wrong. It is derived
