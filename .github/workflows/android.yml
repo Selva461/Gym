@@ -54,8 +54,23 @@ jobs:
       # --- Audit gates -------------------------------------------------
       # Debug variant only. The release unit tests run the same code against the
       # same JVM and just double the wall clock.
+      # --stacktrace is deliberately absent. On a Kotlin compile failure Gradle
+      # prints a two-hundred-line internal stack trace that says nothing except
+      # "compilation failed", and it buries the "e: file:..." lines that say what
+      # is actually wrong — far enough up that reading the tail of the log, which
+      # is all the API hands back, shows only the trace. The summary below repeats
+      # the real errors as the last thing in the step so they are always visible.
       - name: Unit tests
-        run: gradle testDebugUnitTest --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          gradle testDebugUnitTest --no-daemon 2>&1 | tee /tmp/gym-build.log || {
+            echo "::group::Compile and test errors"
+            echo "──────── errors, repeated here so they are the last thing in this log ────────"
+            grep -E "^e: |FAILED$|^[0-9]+\) " /tmp/gym-build.log | head -80
+            echo "──────────────────────────────────────────────────────────────────────────────"
+            echo "::endgroup::"
+            exit 1
+          }
 
       - name: Android Lint
         run: gradle lintDebug --no-daemon --stacktrace
