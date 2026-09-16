@@ -57,6 +57,7 @@ warning should never stand between you and a working APK.
 ```
 Today      protein first, calories second, a week strip with a dot per logged day
 Train      split → lift → kg × reps, a target for every lift, rest timer, records
+           tap "How to do it" for a muscle map and how the movement works
 Fuel       search or browse 439 foods by category, macros and 15 micronutrients
 Progress   weight trend, 14-day volume, training and logging streaks
 Settings   your targets, rest length, nightly reminder
@@ -78,6 +79,21 @@ carries 37: thirteen on a cable (rope, bar, single-arm, overhead, kickback,
 cross-body), eight with dumbbells, seven with a barbell or EZ bar, three on a
 machine, six bodyweight. Whatever is free, there is a way to train the muscle you
 came for.
+
+**A reference on every lift.** Tap "How to do it" under the lift for a body
+diagram with the worked muscles shaded, how to set up, how the movement goes, the
+two words to hold in your head mid-set, and what usually goes wrong. It is derived
+from the lift itself rather than written out four hundred times, so a lift you
+invent tomorrow has one the moment you name it. There are no downloaded
+animations: the app has no network permission, those GIFs are somebody's licensed
+product, and four hundred of them would be several hundred megabytes. The map is
+drawn in code instead — vectors, kilobytes, sharp at any size.
+
+**Grip and stance are logged per set.** A close-grip bench and a wide-grip bench
+keep separate histories and separate records, because sharing one means twelve
+reps on the easier grip tells you to add weight to the harder one. Volume does not
+split — that is a fatigue number, and fatigue does not care how you held the bar.
+Leave it on "Any" and nothing changes.
 
 **Ten starter splits** — Push, Pull, Legs, Upper, Lower, Full body, Chest and
 triceps, Back and biceps, Shoulders and arms, Arms — and you can build your own.

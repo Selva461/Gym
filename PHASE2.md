@@ -74,23 +74,30 @@ supination. Derived from the movement pattern, same mechanism as the reference.
 
 Ordered by dependency. Each one is shippable on its own.
 
-### Tier 1 — Reference data *(this is the foundation)*
+### Tier 1 — Reference data — **done**
 Every exercise resolves to a structured guide: equipment, movement pattern,
 primary and secondary muscles, setup, execution, cues, common mistakes, and which
 variation axes it offers. **Derived, not stored** — computed from the exercise
 row, so there is no migration, no per-row data entry, and a custom lift is covered
 the moment it is created. Pure Kotlin, fully testable off-device.
 
-### Tier 2 — Reference UI
-A detail sheet on every lift in the picker and the session screen, showing the
-Tier 1 guide and a **muscle map drawn in Compose** — a vector body with the worked
-muscles shaded, primary darker than secondary. Vector, so it is kilobytes and
-sharp at any size.
+### Tier 2 — Reference UI — **done**
+"How to do it" under the lift opens a sheet with the Tier 1 guide and a **muscle
+map drawn in Compose** — front and back views, primary shaded solidly, secondary
+at a third of the intensity, laid out in a normalised box and scaled at draw
+time. Vectors, so kilobytes and sharp at any size.
 
-### Tier 3 — Variations
-`variation` on the set. Grip/stance/angle chips on the log row, driven by Tier 1's
-axes. Progression and records re-keyed to (exercise, variation) per the rules
-above. Needs a schema migration and a careful pass over `Progression`.
+### Tier 3 — Variations — **done**
+`variation` on the set (schema v4). Grip and stance chips under the lift, driven
+by Tier 1's axes, with an explicit "Any" for unspecified. Progression and records
+re-keyed to (exercise, variation); volume deliberately not. Nine tests, each
+naming the failure it prevents.
+
+### Tier 0 — Foundation — **done**
+Not in the original plan; added when the request came to make the app debuggable,
+extendable and secure. `GymLog`, `ArchitectureTest`, `SecurityPostureTest`,
+`SECURITY.md`, `ARCHITECTURE.md`, and a ProGuard file that no longer exempts the
+data layer from obfuscation.
 
 ### Tier 4 — Daily photos
 A progress photo per day, stored in app-private storage — not the shared gallery,
