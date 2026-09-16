@@ -85,6 +85,11 @@ unresolvable name, which is the mistake that otherwise costs a full CI round tri
 to discover. It found `Slate` and `Training` missing from a file that had just been
 split out of another, which is precisely when it happens.
 
+It also knows the two lowercase cases the capitalised-name scan cannot see, both
+added after each cost a CI round trip: `val x by remember {}` needs the `getValue`
+operator imported, and every `Modifier.clickable`-style extension is a top-level
+function needing its own import. Run it before pushing Compose changes.
+
 **Off-device test harness.** Everything in `domain/` plus the entities and seed
 catalogue compiles and runs in a plain JVM. That is the fast loop: a change to
 progression or the catalogue is verified in about a second without an emulator.

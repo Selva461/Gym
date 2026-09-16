@@ -17,6 +17,31 @@ JvmStatic JvmField Deprecated Suppress OptIn Target AnnotationTarget Retention
 ArrayDeque LinkedHashMap HashMap HashSet MutableList MutableMap MutableSet
 Math System Thread Runnable Comparator Number Enum Companion Class UUID File'''.split())
 
+# Modifier extensions this project uses, and where each one lives. Every one is a
+# top-level function needing its own import — `Modifier.clickable {}` fails with
+# "Unresolved reference: clickable" and nothing else.
+MODIFIER_EXTENSIONS = {
+    'clickable': 'androidx.compose.foundation',
+    'background': 'androidx.compose.foundation',
+    'border': 'androidx.compose.foundation',
+    'verticalScroll': 'androidx.compose.foundation',
+    'horizontalScroll': 'androidx.compose.foundation',
+    'padding': 'androidx.compose.foundation.layout',
+    'fillMaxWidth': 'androidx.compose.foundation.layout',
+    'fillMaxHeight': 'androidx.compose.foundation.layout',
+    'fillMaxSize': 'androidx.compose.foundation.layout',
+    'height': 'androidx.compose.foundation.layout',
+    'width': 'androidx.compose.foundation.layout',
+    'size': 'androidx.compose.foundation.layout',
+    'heightIn': 'androidx.compose.foundation.layout',
+    'widthIn': 'androidx.compose.foundation.layout',
+    'aspectRatio': 'androidx.compose.foundation.layout',
+    'offset': 'androidx.compose.foundation.layout',
+    'clip': 'androidx.compose.ui.draw',
+    'alpha': 'androidx.compose.ui.draw',
+    'semantics': 'androidx.compose.ui.semantics',
+}
+
 # Everything the project declares, and which package it lives in.
 decls = collections.defaultdict(set)
 files = []
@@ -68,10 +93,31 @@ for p in sorted(targets):
     here |= set(re.findall(r'<([A-Z])[,>]', code))                              # type params
 
     missing = sorted(used - imports - fq - here - KOTLIN - decls[pkg])
+
+    # Lowercase references need their own rules: the capitalised-name scan above
+    # cannot see them, and they are exactly what goes missing when code moves
+    # between files. Both of these cost a CI round trip before they were added.
+
+    # `val x by remember {}` compiles only with the getValue operator imported, and
+    # `var x by` needs setValue as well. The error it produces names a delegate
+    # rather than an import, which is not where anybody looks first.
+    if re.search(r'\bval\s+\w+\s+by\s', stripped) and 'getValue' not in imports:
+        missing.append('getValue  -> import androidx.compose.runtime.getValue (for `val x by ...`)')
+    if re.search(r'\bvar\s+\w+\s+by\s', stripped) and 'setValue' not in imports:
+        missing.append('setValue  -> import androidx.compose.runtime.setValue (for `var x by ...`)')
+
+    # Modifier extensions are top-level functions, so each one is its own import.
+    for fn, path in MODIFIER_EXTENSIONS.items():
+        if re.search(r'\.' + fn + r'\s*[({]', stripped) and fn not in imports:
+            missing.append(f'{fn}  -> import {path}.{fn}')
+    missing = sorted(set(missing))
     if missing:
         bad += 1
         print(f"{p.replace(ROOT+'/','')}")
         for m in missing:
+            if ' -> ' in m:          # the rule already wrote its own suggestion
+                print(f"    {m}")
+                continue
             where = [k for k, v in decls.items() if m in v]
             hint = f"  -> import {where[0]}.{m}" if where else "  (not declared in this project)"
             print(f"    {m}{hint}")
