@@ -89,6 +89,10 @@ android {
 
     buildFeatures {
         compose = true
+        // GymLog compiles itself out of release builds by branching on
+        // BuildConfig.DEBUG, which R8 then folds away entirely. That needs
+        // BuildConfig generated, which AGP 8 no longer does by default.
+        buildConfig = true
     }
 
     // Audit pass: lint runs in CI and publishes an HTML report, but a style
