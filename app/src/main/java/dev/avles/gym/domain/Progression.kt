@@ -18,7 +18,13 @@ data class Recommendation(
     val headline: String,
     val rationale: String,
     val isStepUp: Boolean,
-    val isStalled: Boolean = false
+    val isStalled: Boolean = false,
+    /**
+     * True when this target came from the lift's other variations because the one
+     * asked about has no history yet. The rationale says so; the flag lets the UI
+     * mark it as a starting point rather than a measurement.
+     */
+    val isFromOtherVariations: Boolean = false
 )
 
 /**
@@ -61,8 +67,35 @@ object Progression {
      * than inventing a starting weight, because the app has no business guessing
      * what you can lift before you have shown it once.
      */
-    fun recommend(exercise: Exercise, history: List<SetRow>): Recommendation? {
-        val sessions = sessionsNewestFirst(history.filter { it.exerciseId == exercise.id })
+    /**
+     * [variation] narrows the history to sets performed the same way — the grip,
+     * stance or tempo the next set is going to use.
+     *
+     * This is the whole reason variations are tracked. A close-grip bench and a
+     * wide-grip bench at the same weight are different lifts as far as "what next"
+     * is concerned, and sharing one history means twelve reps on the easier grip
+     * tells you to add weight to the harder one. That is a recommendation that gets
+     * someone stapled to a bench.
+     *
+     * Unspecified ("") is its own bucket, not a wildcard. Sets logged before
+     * variations existed are unspecified, and treating them as matching everything
+     * would reintroduce exactly the mixing this exists to prevent.
+     *
+     * The exception is the first session on a new variation, where a strict reading
+     * gives nothing at all. Rather than refuse, it falls back to the lift's other
+     * variations and says so in the rationale — a starting point you can see the
+     * provenance of beats a blank screen, as long as it does not pretend to be
+     * history it is not.
+     */
+    fun recommend(
+        exercise: Exercise,
+        history: List<SetRow>,
+        variation: String = ""
+    ): Recommendation? {
+        val forLift = history.filter { it.exerciseId == exercise.id }
+        val exact = sessionsNewestFirst(forLift.filter { it.variation == variation })
+        val fellBack = exact.isEmpty()
+        val sessions = if (fellBack) sessionsNewestFirst(forLift) else exact
         if (sessions.isEmpty()) return null
 
         val (topWeight, bestReps) = topOf(sessions.first())
@@ -77,6 +110,15 @@ object Progression {
             lastThree.map { it.first }.distinct().size == 1 &&
             lastThree[0].second <= lastThree[2].second
 
+        // Said once and appended to whichever rationale is built below, so the two
+        // paths cannot drift apart on how they describe the same fallback.
+        val borrowedNote = if (fellBack) {
+            " This is from your other work on ${exercise.name} — nothing logged on " +
+                "this variation yet, so treat it as a starting point."
+        } else {
+            ""
+        }
+
         if (bestReps >= repHigh) {
             val next = toHalfKg(topWeight + exercise.incrementKg)
             return Recommendation(
@@ -84,8 +126,10 @@ object Progression {
                 reps = repLow,
                 headline = "${Training.formatWeight(next)} kg × $repLow",
                 rationale = "You hit $bestReps at ${Training.formatWeight(topWeight)} kg, " +
-                    "the top of this lift's range. Add the $weightWord and build back up to $repHigh.",
-                isStepUp = true
+                    "the top of this lift's range. Add the $weightWord and build back up to $repHigh." +
+                    borrowedNote,
+                isStepUp = true,
+                isFromOtherVariations = fellBack
             )
         }
 
@@ -103,9 +147,10 @@ object Progression {
             weightKg = topWeight,
             reps = targetReps,
             headline = "${Training.formatWeight(topWeight)} kg × $targetReps",
-            rationale = base + stallNote,
+            rationale = base + stallNote + borrowedNote,
             isStepUp = false,
-            isStalled = stalled
+            isStalled = stalled,
+            isFromOtherVariations = fellBack
         )
     }
 

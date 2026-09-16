@@ -1,5 +1,6 @@
 package dev.avles.gym.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
@@ -171,7 +172,26 @@ data class SetEntry(
     val weightKg: Double,
     val reps: Int,
     val isWarmup: Boolean = false,
-    val loggedAt: Long
+    val loggedAt: Long,
+    /**
+     * How this set was performed, when it differs enough from the default to be
+     * worth its own history — "Close grip", "Paused", "Sumo". An attribute of the
+     * set rather than a new exercise, so that the catalogue stays 394 rows instead
+     * of exploding into every combination of lift and grip.
+     *
+     * Empty means unspecified, and that is its own bucket rather than a wildcard.
+     * Every set logged before variations existed is unspecified and stays that way:
+     * the app does not know what grip those sets used, and quietly relabelling them
+     * "standard" would be inventing data. See [dev.avles.gym.domain.Progression] for
+     * what that means for the next-set recommendation.
+     *
+     * @ColumnInfo(defaultValue) is load-bearing, not decoration. SQLite cannot add a
+     * NOT NULL column without a default, so the migration's ALTER has to supply one —
+     * and Room only writes a DEFAULT into its expected schema when this annotation
+     * asks for it. Without the annotation the migration and Room's expectation differ
+     * by that clause, and Room throws on launch for everyone upgrading with data.
+     */
+    @ColumnInfo(defaultValue = "''") val variation: String = ""
 )
 
 @Entity(tableName = "food_item")
@@ -242,8 +262,12 @@ data class SetRow(
     val weightKg: Double,
     val reps: Int,
     val isWarmup: Boolean,
-    val loggedAt: Long
-)
+    val loggedAt: Long,
+    val variation: String = ""
+) {
+    /** What to show beside the lift's name, or nothing when the set is unspecified. */
+    val variationLabel: String? get() = variation.takeIf { it.isNotBlank() }
+}
 
 data class DayVolume(val dateEpochDay: Long, val volume: Double)
 

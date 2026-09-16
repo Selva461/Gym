@@ -29,7 +29,7 @@ import java.io.File
 class MigrationSqlTest {
 
     private companion object {
-        const val SCHEMA_PATH = "dev.avles.gym.GymDatabase/3.json"
+        const val SCHEMA_PATH = "dev.avles.gym.GymDatabase/4.json"
     }
 
     private val candidates: List<File> = listOfNotNull(
@@ -125,11 +125,50 @@ class MigrationSqlTest {
         )
     }
 
+    /**
+     * The v4 column, and the one detail that decides whether the app launches after
+     * the upgrade.
+     *
+     * SQLite cannot add a NOT NULL column to a populated table without a DEFAULT, so
+     * the ALTER has to carry one. Room only writes a DEFAULT into its expected schema
+     * when @ColumnInfo(defaultValue) asks for it — a Kotlin default value is invisible
+     * to the schema. Drop that annotation and the two differ by exactly that clause,
+     * which Room checks on every open and rejects. This is the check that catches it
+     * on a JVM rather than on the phone of the person who had data worth migrating.
+     */
     @Test
-    fun `the exported schema is version 3`() {
+    fun `the set variation column carries the same default on both sides`() {
+        val body = entityBody("set_entry")
+        val field = Regex(
+            """\{[^{}]*"fieldPath"\s*:\s*"variation"[^{}]*}""",
+            RegexOption.DOT_MATCHES_ALL
+        ).find(body)?.value
+        assertTrue("set_entry has no variation field in the exported schema", field != null)
         assertTrue(
-            "exported schema is not version 3",
-            Regex(""""version"\s*:\s*3""").containsMatchIn(json!!)
+            "variation is nullable in the schema but the migration adds it NOT NULL:\n$field",
+            field!!.contains("\"notNull\": true") || field.contains("\"notNull\":true")
+        )
+        assertTrue(
+            "the exported schema carries no DEFAULT for variation, so " +
+                "@ColumnInfo(defaultValue) has been dropped from SetEntry:\n$field",
+            field.contains("defaultValue")
+        )
+        assertTrue(
+            "Room's CREATE TABLE for set_entry does not match what the ALTER produces.\n" +
+                "  expected to contain: ${SchemaSql.EXPECTED_SET_ENTRY_VARIATION_COLUMN}\n" +
+                "  actual: ${expectedCreateSql("set_entry")}",
+            expectedCreateSql("set_entry").contains(SchemaSql.EXPECTED_SET_ENTRY_VARIATION_COLUMN)
+        )
+        assertTrue(
+            SchemaSql.ADD_SET_VARIATION.contains("NOT NULL DEFAULT ''")
+        )
+    }
+
+    @Test
+    fun `the exported schema is version 4`() {
+        assertTrue(
+            "exported schema is not version 4",
+            Regex(""""version"\s*:\s*4""").containsMatchIn(json!!)
         )
     }
 

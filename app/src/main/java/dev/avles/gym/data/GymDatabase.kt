@@ -18,7 +18,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         Split::class,
         SplitExercise::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class GymDatabase : RoomDatabase() {
@@ -86,6 +86,21 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v3 → v4: how a set was performed.
+         *
+         * One column, and deliberately nothing else. No backfill runs: sets logged
+         * before this existed become unspecified rather than "standard grip", because
+         * the app has no idea which grip they used and guessing would put invented
+         * data into a training history. Progression treats unspecified as its own
+         * bucket for the same reason.
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                SchemaSql.V4_STATEMENTS.forEach(db::execSQL)
+            }
+        }
+
         @Volatile private var instance: GymDatabase? = null
 
         fun get(context: Context): GymDatabase = instance ?: synchronized(this) {
@@ -94,7 +109,7 @@ abstract class GymDatabase : RoomDatabase() {
                 GymDatabase::class.java,
                 "gym.db"
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
                 .also { instance = it }
         }

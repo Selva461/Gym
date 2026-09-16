@@ -51,4 +51,34 @@ object SchemaSql {
         INDEX_SPLIT_EXERCISE_EXERCISE_ID,
         ADD_SESSION_SPLIT_ID
     )
+
+    // ---- v4: how a set was performed ---------------------------------------
+
+    /**
+     * Grip, stance or tempo on a logged set.
+     *
+     * NOT NULL with an empty default, which is the only shape SQLite will accept for
+     * a column added to a table that already has rows — and it is also the honest
+     * value. Every set logged before this column existed keeps a meaning the app can
+     * defend: not "standard grip", which would be inventing data, but "nobody said".
+     *
+     * The DEFAULT clause has to survive into Room's own expected schema or the two
+     * disagree and Room throws on every launch after the upgrade. That is what the
+     * @ColumnInfo(defaultValue = "''") on SetEntry.variation is for, and
+     * [EXPECTED_SET_ENTRY_VARIATION_COLUMN] is what MigrationSqlTest checks it
+     * against in the exported schema.
+     */
+    const val ADD_SET_VARIATION =
+        "ALTER TABLE `set_entry` ADD COLUMN `variation` TEXT NOT NULL DEFAULT ''"
+
+    /**
+     * How Room spells that column in the schema it exports. If these two ever drift
+     * apart the app crashes on launch for anyone with data, so the test compares
+     * them rather than trusting that both were written by someone paying attention.
+     */
+    const val EXPECTED_SET_ENTRY_VARIATION_COLUMN =
+        "`variation` TEXT NOT NULL DEFAULT ''"
+
+    /** Every statement the v4 migration runs, in order. */
+    val V4_STATEMENTS = listOf(ADD_SET_VARIATION)
 }

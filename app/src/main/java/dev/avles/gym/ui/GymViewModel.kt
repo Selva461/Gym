@@ -19,6 +19,7 @@ import dev.avles.gym.data.Split
 import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
 import dev.avles.gym.domain.MacroMath
+import dev.avles.gym.domain.ExerciseGuide
 import dev.avles.gym.domain.Progression
 import dev.avles.gym.domain.Recommendation
 import dev.avles.gym.domain.Totals
@@ -75,7 +76,15 @@ data class LiftGuidance(
     val bestE1rm: Double = 0.0,
     val nextMilestone: Double = 0.0,
     val milestoneProgress: Float = 0f,
-    val recentSets: List<SetRow> = emptyList()
+    val recentSets: List<SetRow> = emptyList(),
+    /** How the next set will be performed. Empty means unspecified. */
+    val variation: String = "",
+    /**
+     * The lift's reference — equipment, muscles, how to do it, what goes wrong, and
+     * which variation axes it offers. Derived from the exercise row, so it costs a
+     * computation rather than a query and is available for custom lifts too.
+     */
+    val guide: ExerciseGuide? = null
 )
 
 /** A past session opened for inspection: what it was, and every set on it. */
@@ -116,6 +125,15 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
      */
     private val _selectedExerciseId = MutableStateFlow<Long?>(null)
     val selectedExerciseId: StateFlow<Long?> = _selectedExerciseId.asStateFlow()
+
+    /**
+     * How the next set will be performed — "Close", "Paused", or empty for
+     * unspecified. Held here rather than in the screen so that it survives
+     * navigating away, exactly like the selected lift, and so the recommendation
+     * can react to it.
+     */
+    private val _selectedVariation = MutableStateFlow("")
+    val selectedVariation: StateFlow<String> = _selectedVariation.asStateFlow()
 
     // ---------- Day ----------
 
@@ -277,11 +295,17 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
         cancelRest()
     }
 
-    fun logSet(exerciseId: Long, weightKg: Double, reps: Int, isWarmup: Boolean) =
+    fun logSet(
+        exerciseId: Long,
+        weightKg: Double,
+        reps: Int,
+        isWarmup: Boolean,
+        variation: String = _selectedVariation.value
+    ) =
         viewModelScope.launch {
             val session = trainState.value.active ?: return@launch
             val index = Training.nextSetIndex(trainState.value.sets, exerciseId)
-            val newId = repo.logSet(session.id, exerciseId, index, weightKg, reps, isWarmup)
+            val newId = repo.logSet(session.id, exerciseId, index, weightKg, reps, isWarmup, variation)
 
             if (!isWarmup) {
                 val history = repo.historyForExercise(exerciseId).first()
@@ -306,9 +330,15 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
      * there a moment ago; leaving it on a set whose weight just changed would be the
      * app asserting something it has not rechecked.
      */
-    fun editSet(setId: Long, weightKg: Double, reps: Int, isWarmup: Boolean) =
+    fun editSet(
+        setId: Long,
+        weightKg: Double,
+        reps: Int,
+        isWarmup: Boolean,
+        variation: String = ""
+    ) =
         viewModelScope.launch {
-            repo.editSet(setId, weightKg, reps, isWarmup)
+            repo.editSet(setId, weightKg, reps, isWarmup, variation)
             if (_lastPrSetId.value == setId) _lastPrSetId.value = null
         }
 
@@ -317,7 +347,15 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun selectExercise(id: Long?) {
+        // A grip chosen for a bench press means nothing on a squat, and carrying it
+        // across would silently file the squat's sets under it.
+        if (id != _selectedExerciseId.value) _selectedVariation.value = ""
         _selectedExerciseId.value = id
+    }
+
+    /** Empty clears it back to unspecified, which is a real choice and not a no-op. */
+    fun selectVariation(variation: String) {
+        _selectedVariation.value = variation.trim()
     }
 
     /**
@@ -326,21 +364,25 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
      * target moves up while you are still standing there.
      */
     val guidance: StateFlow<LiftGuidance?> =
-        combine(_selectedExerciseId, repo.exercises) { id, catalogue ->
-            id?.let { wanted -> catalogue.firstOrNull { it.id == wanted } }
-        }.flatMapLatest { exercise ->
+        combine(_selectedExerciseId, _selectedVariation, repo.exercises) { id, variation, catalogue ->
+            id?.let { wanted -> catalogue.firstOrNull { it.id == wanted } } to variation
+        }.flatMapLatest { (exercise, variation) ->
             if (exercise == null) {
                 flowOf(null)
             } else {
                 repo.historyForExercise(exercise.id).map { history ->
+                    // Best and milestone stay across every variation on purpose: your
+                    // best bench is your best bench, whatever grip got you there.
                     val best = Training.bestEstimatedOneRepMax(history)
                     LiftGuidance(
                         exercise = exercise,
-                        recommendation = Progression.recommend(exercise, history),
+                        recommendation = Progression.recommend(exercise, history, variation),
                         bestE1rm = best,
                         nextMilestone = Progression.nextMilestone(best),
                         milestoneProgress = Progression.milestoneProgress(best),
-                        recentSets = history.take(5)
+                        recentSets = history.take(5),
+                        variation = variation,
+                        guide = ExerciseGuide.of(exercise)
                     )
                 }
             }

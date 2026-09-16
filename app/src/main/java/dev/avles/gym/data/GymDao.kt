@@ -97,8 +97,11 @@ interface GymDao {
     // Targeted UPDATE rather than @Update on the whole row: the caller is editing
     // three fields from a joined row and has no business reconstructing the entity,
     // including its loggedAt, just to change a weight.
-    @Query("UPDATE set_entry SET weightKg = :weightKg, reps = :reps, isWarmup = :isWarmup WHERE id = :id")
-    suspend fun editSet(id: Long, weightKg: Double, reps: Int, isWarmup: Boolean)
+    @Query(
+        "UPDATE set_entry SET weightKg = :weightKg, reps = :reps, isWarmup = :isWarmup, " +
+            "variation = :variation WHERE id = :id"
+    )
+    suspend fun editSet(id: Long, weightKg: Double, reps: Int, isWarmup: Boolean, variation: String)
 
     @Query("SELECT * FROM workout_session WHERE id = :id")
     suspend fun sessionById(id: Long): WorkoutSession?
@@ -126,7 +129,8 @@ interface GymDao {
         """
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
-               s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt
+               s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
+               s.variation AS variation
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.sessionId = :sessionId
@@ -139,7 +143,8 @@ interface GymDao {
         """
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
-               s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt
+               s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
+               s.variation AS variation
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.exerciseId = :exerciseId AND s.isWarmup = 0

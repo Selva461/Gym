@@ -152,7 +152,8 @@ class GymRepository(private val dao: GymDao) {
         setIndex: Int,
         weightKg: Double,
         reps: Int,
-        isWarmup: Boolean
+        isWarmup: Boolean,
+        variation: String = ""
     ) = dao.insertSet(
         SetEntry(
             sessionId = sessionId,
@@ -161,7 +162,8 @@ class GymRepository(private val dao: GymDao) {
             weightKg = weightKg,
             reps = reps,
             isWarmup = isWarmup,
-            loggedAt = System.currentTimeMillis()
+            loggedAt = System.currentTimeMillis(),
+            variation = variation.trim()
         )
     )
 
@@ -169,8 +171,14 @@ class GymRepository(private val dao: GymDao) {
         dao.setById(setId)?.let { dao.deleteSet(it) }
     }
 
-    suspend fun editSet(setId: Long, weightKg: Double, reps: Int, isWarmup: Boolean) {
-        if (weightKg > 0 && reps > 0) dao.editSet(setId, weightKg, reps, isWarmup)
+    suspend fun editSet(
+        setId: Long,
+        weightKg: Double,
+        reps: Int,
+        isWarmup: Boolean,
+        variation: String = ""
+    ) {
+        if (weightKg > 0 && reps > 0) dao.editSet(setId, weightKg, reps, isWarmup, variation.trim())
     }
 
     suspend fun addExercise(name: String, muscleGroup: String): Long =
