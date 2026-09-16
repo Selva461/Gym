@@ -136,6 +136,27 @@ jobs:
 
           Download **gym-debug.apk** below."
 
+      # MigrationSqlTest skips rather than fails when the exported schema is absent,
+      # which was the right call — a test that withholds a working APK over where
+      # KSP put a file got the trade backwards, and it did that twice. But a check
+      # that can quietly stop checking needs something watching it, or the migration
+      # goes unverified and nobody finds out until Room throws on somebody's phone.
+      #
+      # This is that watcher. It runs after the APK has been built and published, so
+      # a problem here is loud without ever costing the deliverable, and it reads the
+      # version out of GymDatabase.kt so it cannot go stale when the schema moves on.
+      - name: Confirm the migration check was not silently skipped
+        if: always()
+        run: |
+          VERSION=$(grep -oP 'version\s*=\s*\K[0-9]+' app/src/main/java/dev/avles/gym/data/GymDatabase.kt | head -1)
+          SCHEMA="app/schemas/dev.avles.gym.GymDatabase/${VERSION}.json"
+          if [ ! -f "$SCHEMA" ]; then
+            echo "::error::$SCHEMA was never exported, so MigrationSqlTest skipped and the v${VERSION} migration is UNVERIFIED. Check room.schemaLocation and that KSP ran."
+            exit 1
+          fi
+          echo "Schema v${VERSION} exported — MigrationSqlTest compared the migration against it."
+          grep -o '"defaultValue"[^,}]*' "$SCHEMA" | head -5
+
       # --- Optional: a signed, non-debuggable release APK ---------------
       # The debug APK above is debuggable, which means anyone holding your unlocked
       # phone with USB debugging on can read the database out of it. For a health log
