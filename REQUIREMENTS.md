@@ -97,6 +97,27 @@ them move the one job.
 - **F2.8** A session stays open until explicitly finished. An open session
   survives app restart.
 
+### 4.7 Exercise catalogue
+
+- **F7.1** 394 lifts are seeded, filed under thirteen real muscle groups — Chest,
+  Back, Shoulders, Traps, Triceps, Biceps, Forearms, Quads, Hamstrings, Glutes,
+  Calves, Core, Full body. The original three Push/Pull/Legs buckets were fine for
+  86 lifts and became a scroll at 394; a group has to narrow the list to be worth
+  tapping.
+- **F7.2** Equipment is part of the lift's name — "Cable rope overhead triceps
+  extension", not "Overhead extension (cable)". This is deliberate: the picker
+  already searches names, so typing `cable`, `dumbbell`, `machine` or `smith`
+  filters by equipment without the screen carrying a second filter control.
+- **F7.3** Every major muscle carries work on free weights and on a machine, and
+  every muscle people actually train on cables carries at least four cable
+  movements. Quads are the stated exception: leg extension is a machine and there
+  is no cable quad movement anyone logs, so demanding one would mean inventing an
+  exercise. This is asserted in `SeedDataTest`, not left to review.
+- **F7.4** An upgrade regroups lifts it seeded itself — muscle group and rep range
+  only — so an install made before the regrouping does not show Push, Pull and Legs
+  sitting beside the thirteen new groups. Lifts the user created are never touched,
+  and the pass is gated on a count so it runs once and not on every launch.
+
 ### 4.3 Fuel
 
 - **F3.1** Meal defaults from the clock: breakfast 04–10, lunch 11–15,
@@ -131,7 +152,7 @@ them move the one job.
 - **F6.2** Splits can be created, renamed, reordered lift by lift, and deleted.
 - **F6.3** Starting a session from a split records the link, and the session screen
   lists that split's lifts for one-tap selection. This is the point of the feature:
-  not choosing from a catalogue of 86 between two sets.
+  not choosing from a catalogue of 394 between two sets.
 - **F6.4** Deleting a split leaves sessions already run from it untouched — their
   name and every set stay. Only the plan goes.
 - **F6.5** Splits seed once on an empty table and are never topped up afterwards.
@@ -182,6 +203,7 @@ exactly when the user has the least patience.
 | R6 | A quantity of zero or less cannot be logged. |
 | R7 | Dates after today cannot be selected. |
 | R8 | The catalogue seeds once, on first launch, and never overwrites user edits. |
+| R9 | An upgrade may correct the muscle group and rep range of a lift it seeded itself, and nothing else. A user-created lift and every logged set are untouchable. |
 
 ## 7. Non-functional requirements
 
@@ -255,7 +277,7 @@ missed day as failure.
 
 ### Manual, before trusting a build
 
-1. First launch seeds 54 exercises and 239 foods; an upgrade from v1 keeps every logged set and meal and adds only what is new.
+1. First launch seeds 394 exercises and 439 foods; an upgrade from an earlier version keeps every logged set and meal and adds only what is new.
 2. Log a set, confirm the rest timer starts and the notification fires.
 3. Log a warm-up, confirm no timer and no volume change.
 4. Beat a previous best, confirm the record marker.

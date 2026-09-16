@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -215,6 +217,45 @@ fun EmptyNote(text: String, modifier: Modifier = Modifier) {
         color = Faint,
         modifier = modifier.fillMaxWidth().padding(vertical = 18.dp)
     )
+}
+
+/**
+ * A horizontally scrolling row of selectable chips.
+ *
+ * [PillRow] splits the width evenly between its options, which works for four meals
+ * and falls apart at thirteen muscle groups — every label ends up ellipsised to two
+ * characters. This scrolls instead, so each chip is as wide as its own word.
+ */
+@Composable
+fun ChipRow(
+    options: List<String>,
+    selected: String,
+    accent: Color,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(options, key = { "chip-$it" }) { option ->
+            val isOn = option == selected
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (isOn) accent.copy(alpha = 0.18f) else Raised)
+                    .clickable { onSelect(option) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    option,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isOn) accent else Mute,
+                    maxLines = 1
+                )
+            }
+        }
+    }
 }
 
 @Composable

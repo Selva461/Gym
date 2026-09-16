@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -32,6 +33,34 @@ interface GymDao {
     /** One-shot read, for seeding splits against exercise ids that only exist after insert. */
     @Query("SELECT * FROM exercise ORDER BY muscleGroup, name")
     suspend fun allExercisesOnce(): List<Exercise>
+
+    /**
+     * Seeded lifts whose muscle group is no longer one the app offers.
+     *
+     * An install from before the catalogue was reorganised still has its lifts filed
+     * under Push/Pull/Legs, which would leave the picker showing groups that no
+     * longer exist alongside the new ones. Counting them is how the refresh below
+     * knows whether it has anything to do — so it runs once after an upgrade rather
+     * than on every launch.
+     */
+    @Query("SELECT COUNT(*) FROM exercise WHERE isCustom = 0 AND muscleGroup NOT IN (:groups)")
+    suspend fun staleSeededExerciseCount(groups: List<String>): Int
+
+    @Query(
+        """
+        UPDATE exercise SET muscleGroup = :group, repLow = :low, repHigh = :high, incrementKg = :inc
+        WHERE name = :name AND isCustom = 0
+        """
+    )
+    suspend fun refreshSeededExercise(name: String, group: String, low: Int, high: Int, inc: Double)
+
+    /** One transaction, so a half-applied regrouping is not a state the app can be in. */
+    @Transaction
+    suspend fun refreshSeededExercises(items: List<Exercise>) {
+        items.forEach {
+            refreshSeededExercise(it.name, it.muscleGroup, it.repLow, it.repHigh, it.incrementKg)
+        }
+    }
 
     // ---------- Sessions and sets ----------
 

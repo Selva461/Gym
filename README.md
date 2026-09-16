@@ -57,29 +57,49 @@ warning should never stand between you and a working APK.
 ```
 Today      protein first, calories second, a week strip with a dot per logged day
 Train      split → lift → kg × reps, a target for every lift, rest timer, records
-Fuel       search or browse 239 foods by category, macros and 15 micronutrients
+Fuel       search or browse 439 foods by category, macros and 15 micronutrients
 Progress   weight trend, 14-day volume, training and logging streaks
 Settings   your targets, rest length, nightly reminder
 ```
 
-**86 lifts**, each with its own rep range and increment, across push, pull, legs
-and core.
+**394 lifts**, each with its own rep range and increment, filed under thirteen
+real muscle groups rather than three buckets:
+
+```
+Chest 52   Back 53   Shoulders 43   Traps 12   Triceps 37   Biceps 30
+Forearms 12   Quads 46   Hamstrings 20   Glutes 18   Calves 12   Core 40
+Full body 19
+```
+
+**Equipment is part of the lift's name**, which makes the picker's search box an
+equipment filter without needing one. Type `cable` and you get the 28 cable
+movements, `dumbbell` the 43, `machine` the 37, `smith` the 12. Triceps alone
+carries 37: thirteen on a cable (rope, bar, single-arm, overhead, kickback,
+cross-body), eight with dumbbells, seven with a barbell or EZ bar, three on a
+machine, six bodyweight. Whatever is free, there is a way to train the muscle you
+came for.
 
 **Ten starter splits** — Push, Pull, Legs, Upper, Lower, Full body, Chest and
 triceps, Back and biceps, Shoulders and arms, Arms — and you can build your own.
 Starting a session from a split names it and puts that split's lifts on the
 screen, in order, one tap each. That is the whole point: not picking from a list
-of 86 between two sets. Splits are editable, reorderable and deletable, and
+of 394 between two sets. Splits are editable, reorderable and deletable, and
 deleting one leaves every session already run from it untouched.
 
-**239 foods in 22 categories.** South Indian cooking gets the detail it deserves —
-fifteen dosa varieties (masala, ghee roast, paper, rava, set, neer, ragi, oats,
-pesarattu, adai and the rest), seven kinds of idli, twenty-two tiffin items,
-eighteen rice dishes, twenty-two sides from sambar to vatha kuzhambu. Then Italian,
-Chinese and Indo-Chinese, Middle Eastern, Japanese, Mexican and Continental, plus
-dairy, legumes, vegetables, fruit, nuts, drinks and oils.
+**439 foods in 24 categories.** South Indian cooking gets the detail it deserves —
+twenty-four dosa varieties (masala, Mysore masala, ghee roast, paper, rava, set,
+neer, kal, karam, ragi, kambu, thinai, oats, pesarattu, adai and the rest), seven
+kinds of idli, forty-three tiffin items (pongal, upma, uttapam, kuzhi paniyaram,
+sevai, ragi mudde, kambu koozh, bonda, bajji, vada curry), twenty-eight rice
+dishes (biryani, kuska, puliyodarai, thakkali sadam, ellu sadam, vangi bath) and
+forty-one sides from sambar to ennai kathirikai and paruppu usili. Sixty-two
+protein entries cover chicken chukka, nattu kozhi kuzhambu, mutton pepper fry,
+kola urundai, karuvadu kuzhambu, eral thokku and the rest of the coast. Then
+North Indian, Italian, Chinese and Indo-Chinese, Middle Eastern, Japanese,
+Mexican and Continental, plus dairy, legumes, vegetables, fruit, nuts, sweets,
+drinks and oils.
 
-**21 supplements** — whey, casein, creatine, fish oil, cod liver oil, magnesium
+**33 supplements** — whey, casein, creatine, fish oil, cod liver oil, magnesium
 glycinate and citrate, D3, B12, zinc, calcium, iron, multivitamin, electrolytes,
 psyllium and the rest. They file themselves under their own slot rather than
 landing in dinner, and their numbers come off a label so they are the one honest

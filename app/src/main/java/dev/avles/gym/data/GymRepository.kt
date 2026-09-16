@@ -28,6 +28,25 @@ class GymRepository(private val dao: GymDao) {
             ?.let { dao.insertFoods(it) }
 
         seedSplitsIfEmpty()
+        regroupSeededExercisesIfStale()
+    }
+
+    /**
+     * Brings seeded lifts onto the current muscle groups and rep ranges.
+     *
+     * An install from before the catalogue was reorganised has its lifts filed under
+     * Push/Pull/Legs/Core, and topping up by name leaves those rows exactly as they
+     * were — so the picker would show the old four groups next to the new thirteen.
+     * This rewrites the metadata on seeded lifts only; anything you added yourself is
+     * marked custom and is never touched.
+     *
+     * Gated on there being something to fix, so it runs once after an upgrade and
+     * not on every launch.
+     */
+    private suspend fun regroupSeededExercisesIfStale() {
+        val groups = SeedData.muscleGroups()
+        if (dao.staleSeededExerciseCount(groups) == 0) return
+        dao.refreshSeededExercises(SeedData.exercises())
     }
 
     /**

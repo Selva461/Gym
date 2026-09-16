@@ -21,8 +21,8 @@ class SeedDataTest {
 
     @Test
     fun `the catalogue is the size the README claims`() {
-        assertEquals(86, exercises.size)
-        assertEquals(239, foods.size)
+        assertEquals(394, exercises.size)
+        assertEquals(439, foods.size)
         assertEquals(10, splits.size)
     }
 
@@ -51,10 +51,49 @@ class SeedDataTest {
         assertEquals(splits.size, splits.map { it.first }.toSet().size)
     }
 
+    /**
+     * Groups are real muscle groups now, not Push/Pull/Legs — with close to four
+     * hundred lifts, three buckets is a scroll rather than a menu. Every lift must
+     * land in one the picker and the new-lift dialog actually offer.
+     */
     @Test
-    fun `every lift falls into one of the four session labels`() {
-        val groups = exercises.map { it.muscleGroup }.toSet()
-        assertEquals(setOf("Push", "Pull", "Legs", "Core"), groups)
+    fun `every lift falls into a group the app offers`() {
+        val declared = SeedData.muscleGroups().toSet()
+        val used = exercises.map { it.muscleGroup }.toSet()
+        assertEquals(declared, used)
+    }
+
+    /**
+     * The point of the expansion: you should be able to find a triceps movement for
+     * whatever is free. Equipment lives in the lift's name so that typing "cable"
+     * into the picker filters to cable work, which only holds if the names say so.
+     */
+    @Test
+    fun `every major muscle has work on free weights and on a machine`() {
+        listOf("Chest", "Back", "Shoulders", "Triceps", "Biceps", "Quads").forEach { group ->
+            val inGroup = exercises.filter { it.muscleGroup == group }
+            assertTrue("$group has under 25 lifts", inGroup.size >= 25)
+            listOf("umbbell", "achine").forEach { equipment ->
+                assertTrue(
+                    "$group has nothing containing \"$equipment\" in its name",
+                    inGroup.any { it.name.contains(equipment) }
+                )
+            }
+        }
+    }
+
+    /**
+     * Cable work is required only where cables are actually how the muscle is
+     * trained. Quads are the honest exception — leg extension is a machine, and
+     * there is no cable quad movement anyone logs — so demanding one here would
+     * have meant inventing an exercise to satisfy a test.
+     */
+    @Test
+    fun `the muscles people train on cables have cable work`() {
+        listOf("Chest", "Back", "Shoulders", "Triceps", "Biceps").forEach { group ->
+            val cable = exercises.count { it.muscleGroup == group && it.name.contains("able") }
+            assertTrue("$group has only $cable cable movements", cable >= 4)
+        }
     }
 
     @Test
@@ -183,14 +222,40 @@ class SeedDataTest {
         assertEquals(Meals.DINNER, Meals.slotFor(isSupplement = false, chosen = Meals.DINNER))
     }
 
-    /** The variety the catalogue was expanded for, pinned so it cannot quietly shrink. */
+    /**
+     * The variety the catalogue was expanded for, pinned so it cannot quietly shrink.
+     * South Indian cooking is the bulk of it because it is the bulk of what gets
+     * eaten here; the world cuisines are there so a meal out is still loggable.
+     */
     @Test
     fun `the catalogue covers the range it was built for`() {
         val byCategory = foods.groupBy { it.category }.mapValues { it.value.size }
-        assertTrue("dosa varieties: ${byCategory["Dosa"]}", (byCategory["Dosa"] ?: 0) >= 12)
-        assertTrue("idli varieties: ${byCategory["Idli"]}", (byCategory["Idli"] ?: 0) >= 6)
+        mapOf(
+            "Dosa" to 20, "Idli" to 6, "Tiffin" to 35, "Rice" to 25, "Sides" to 35,
+            "Protein" to 55, "Vegetables" to 20, "Fruit" to 20, "Sweets" to 10,
+            "Drinks" to 15, "Grains" to 15, "Dairy" to 12, "North Indian" to 12
+        ).forEach { (category, least) ->
+            assertTrue(
+                "$category has ${byCategory[category] ?: 0}, expected at least $least",
+                (byCategory[category] ?: 0) >= least
+            )
+        }
         listOf("Italian", "Chinese", "Mexican", "Japanese", "Middle Eastern", "Continental")
             .forEach { assertTrue("no $it food seeded", (byCategory[it] ?: 0) >= 3) }
+    }
+
+    /**
+     * Names are how you find anything in a catalogue this size — the food picker
+     * searches them and nothing else. A duplicate is caught above; this catches the
+     * other end, a name so short it matches everything or so long it is truncated
+     * to uselessness in a list row.
+     */
+    @Test
+    fun `every food name is a usable length`() {
+        foods.forEach { f ->
+            assertTrue("\"${f.name}\" is too short to identify", f.name.length >= 3)
+            assertTrue("\"${f.name}\" is too long for a list row", f.name.length <= 48)
+        }
     }
 
     private companion object {

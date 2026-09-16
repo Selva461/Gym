@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.Exercise
+import dev.avles.gym.data.SeedData
 import dev.avles.gym.data.SessionSummary
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.SplitPlan
@@ -47,6 +48,7 @@ import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.Meter
+import dev.avles.gym.ui.components.ChipRow
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.theme.Bone
@@ -708,7 +710,7 @@ private fun ExercisePicker(
 @Composable
 private fun NewExerciseDialog(onSave: (String, String) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
-    var group by remember { mutableStateOf("Push") }
+    var group by remember { mutableStateOf(SeedData.muscleGroups().first()) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -724,7 +726,15 @@ private fun NewExerciseDialog(onSave: (String, String) -> Unit, onDismiss: () ->
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(14.dp))
-                PillRow(listOf("Push", "Pull", "Legs", "Core"), group, Brass, { group = it })
+                Text(
+                    "Muscle group",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Mute
+                )
+                Spacer(Modifier.height(6.dp))
+                // Thirteen groups: a ChipRow scrolls, where PillRow would squeeze
+                // every label down to two ellipsised characters.
+                ChipRow(SeedData.muscleGroups(), group, Brass, { group = it })
                 Spacer(Modifier.height(10.dp))
                 Text(
                     "New lifts progress in 6-10 reps and 2.5 kg steps until you change them.",
