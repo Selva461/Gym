@@ -1,124 +1,141 @@
 # Gym — handoff
 
+Last updated after the phase 2 work (tiers 0–5), the bundled demonstrations, and
+the Room schema-export fix. Supersedes the version written at the 394-lift
+catalogue commit, which is 15 commits stale.
+
 ## Goal
 
 A personal Android training-and-food log for one phone, offline, no account.
-Named **Gym**, repo `Selva461/Gym`, all work on branch `claude/gym-app-audit-982uq6`.
+Repo `Selva461/Gym`, branch `claude/gym-app-audit-982uq6`.
 
-The current round of work has three parts, all from one request:
+Standing constraints, all deliberate and all enforced by tests:
 
-1. **Fix the crash** that closed the app on the Train tab. *(done, shipped)*
-2. **Massively expand the exercise catalogue** — "in tricep there are different
-   tricep exercises that we can do with a machine and cable and dumbbell and
-   everything I want every possible combination of every exercise". *(done, not
-   yet pushed)*
-3. **Massively expand the food catalogue**, South Indian especially — "it's not
-   enough add more data south indian food more more". *(done, not yet pushed)*
-
-Plus one question to answer rather than build: **how to edit an exercise
-session**, which the user could not work out.
+- **No network, ever.** `INTERNET` and `ACCESS_NETWORK_STATE` are stripped from
+  the merged manifest with `tools:node="remove"`. Anything the app shows must
+  already be inside the APK.
+- **Nothing licensed from anyone else.** No scraped exercise GIFs.
+- **Additive, not destructive.** Every schema change is a hand-written migration;
+  no `fallbackToDestructiveMigration`.
 
 ## Current state
 
-Everything for parts 2 and 3 is written, compiles, and passes the off-device
-test harness — **67 tests green**. Nothing is committed yet.
+**Everything builds and ships. 116 tests green. CI run 25 succeeded.**
 
-- **394 exercises** across 13 real muscle groups (was 86 across Push/Pull/Legs):
-  Chest 52, Back 53, Shoulders 43, Traps 12, Triceps 37, Biceps 30, Forearms 12,
-  Quads 46, Hamstrings 20, Glutes 18, Calves 12, Core 40, Full body 19.
-  Equipment lives in the lift's *name* ("Cable rope overhead triceps extension"),
-  so the picker's existing search box doubles as an equipment filter: `cable`
-  gives 28, `dumbbell` 43, `machine` 37, `smith` 12. Triceps alone has 37 —
-  13 cable, 8 dumbbell, 7 barbell/EZ, 3 machine, 6 bodyweight.
-- **439 foods in 24 categories** (was 239 in 22). ~199 added, heavily South
-  Indian: 24 dosa, 7 idli, 43 tiffin, 28 rice, 41 sides, 62 protein entries,
-  14 North Indian, 12 sweets, 19 drinks, 33 supplements.
-- An integrity probe over all 439 foods found **zero problems**: no duplicate
-  names, no negative values, no fibre or sugar above carbs, no saturated above
-  total fat, no energy drift over 15% against the macros, protein and supplement
-  categories internally consistent.
-- The crash fix is **already pushed and live** (commit `92610af`); the APK at the
-  release link below contains it.
+| | |
+|---|---|
+| Exercises | 394, across 13 real muscle groups, equipment in the name |
+| Demonstrations | 140 lifts, 2 frames each (start/finish), 3.6 MB, public domain |
+| Foods | 439 in 24 categories, heavily South Indian |
+| Database | v5, migrations 1→2→3→4→5, all hand-written |
+| Tests | 116, none needing a device or an emulator |
 
-**APK:** https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk
+Phase 2 tiers, all done: **0** foundation (logging, enforced layering, security
+posture), **1** derived exercise reference, **2** reference UI with a muscle map
+drawn in Compose, **3** per-set grip/stance with split progression and records,
+**4** progress photos, **5** your own picture per lift.
 
-**Note the user still needs:** the currently-installed app was signed by a
-throwaway key that no longer exists, so moving to this build needs **one
-uninstall** (which loses logged data). Every update after that installs over the
-top, because the debug signing key is now pinned in the repo.
+### The one open problem
+
+**The APK will not install over the existing app:** *"App not installed as
+package conflicts with an existing package."*
+
+That is a signature mismatch, not a bug in the build. The currently-installed app
+was signed by an ephemeral key AGP generated on a CI runner that no longer
+exists; every build since `dd89f2c` is signed by the fixed debug key committed at
+`app/keystore/debug.keystore`. Android refuses to replace an app with one signed
+by a different certificate, and some OEM skins word that refusal exactly this way.
+
+**Fix: uninstall the existing app first, then install.** This loses any data
+logged in it — there is no way around that, because the old key is gone. Every
+update after this one installs over the top without uninstalling.
+
+Worth ruling out if uninstall-and-reinstall still fails: the app installed under
+a second user profile or work profile (Settings → Apps → show system → look for
+`dev.avles.gym.debug`), which holds the package name even after the primary
+profile uninstalls it.
 
 ## Files in flight
 
-All uncommitted, in `/home/user/Gym`:
-
-| File | State | What changed |
-|---|---|---|
-| `app/src/main/java/dev/avles/gym/data/SeedExercises.kt` | **new** | All 394 lifts + the 10 starter splits, moved out of `SeedData`. Per-group shorthand builders keep each lift to one line. `Groups.ALL` is the single list of 13 groups. |
-| `app/src/main/java/dev/avles/gym/data/SeedData.kt` | modified | Lifts delegated to `SeedExercises`; ~199 foods appended in 15 new functions; new public `muscleGroups()` so UI and tests share one list. |
-| `app/src/main/java/dev/avles/gym/data/GymDao.kt` | modified | `staleSeededExerciseCount`, `refreshSeededExercise`, transactional `refreshSeededExercises`. |
-| `app/src/main/java/dev/avles/gym/data/GymRepository.kt` | modified | `regroupSeededExercisesIfStale()` — rewrites muscle group and rep range on **seeded lifts only**, gated on a count so it runs once after upgrade. |
-| `app/src/main/java/dev/avles/gym/ui/components/Primitives.kt` | modified | New `ChipRow` — scrolling selectable chips. `PillRow` divides width evenly, which works for 4 meals and collapses at 13 groups. |
-| `app/src/main/java/dev/avles/gym/ui/screens/TrainScreen.kt` | modified | New-lift dialog uses `ChipRow(SeedData.muscleGroups(), …)`. (The key fix in this file is already committed.) |
-| `app/src/test/java/dev/avles/gym/SeedDataTest.kt` | modified | Counts updated to 394/439/10; new tests for group membership, free-weight + machine coverage per muscle, cable coverage, per-category minimums, name length. |
-| `README.md` | modified | New counts, the 13 groups, the equipment-in-the-name convention, the expanded food list. |
-| `REQUIREMENTS.md` | modified | New §4.7 "Exercise catalogue" (F7.1–F7.4), new rule R9 on what an upgrade may rewrite, counts corrected. |
+**None.** Working tree is clean and everything is pushed. `app/schemas/` is now
+committed and CI writes to it on each successful build.
 
 ## Changed
 
-- Fixed and shipped the Train-tab crash: two `items()` in one `LazyColumn` were
-  both keyed on raw `it.id`, so a split and a session sharing an id collided.
-  Keys are now namespaced (`"split-…"`, `"session-…"`, `"set-…"`, `"lift-…"`).
-- Rebuilt the exercise catalogue from 86 to 394 and regrouped it from
-  Push/Pull/Legs onto 13 real muscle groups.
-- Added a one-time upgrade pass so an existing install does not end up showing
-  the old three groups alongside the new thirteen.
-- Grew the food catalogue from 239 to 439.
-- Swapped the muscle-group selector from `PillRow` to a scrolling `ChipRow`.
-- Updated both docs and the test tripwires to match.
+Since the stale handoff, in dependency order:
+
+- **Tier 0 — foundation.** `core/GymLog.kt` (lambda-valued, compiled out of
+  release). `ArchitectureTest` enforcing the layering, an 800-line file cap and
+  no SQL built by interpolation. `SecurityPostureTest` pinning permissions,
+  exported components, obfuscation and signing material. `SECURITY.md`,
+  `ARCHITECTURE.md`. Removed `-keepclassmembers class dev.avles.gym.data.** { *; }`,
+  which had been exempting every table and column from obfuscation.
+- **Tier 1 — `domain/ExerciseGuide.kt`.** Equipment, movement pattern, muscles,
+  setup, execution, cues, mistakes and variation axes, all *derived* from the
+  exercise row. No storage, no migration, and a lift invented on the phone gets a
+  reference the moment it is named.
+- **Tier 2 — `ui/components/MuscleMap.kt`** (vector body, front and back, primary
+  and secondary shading) and `ui/screens/ExerciseReference.kt`.
+- **Tier 3 — schema v4.** `variation` on `set_entry`. Progression and records key
+  on (exercise, variation); volume deliberately does not.
+- **Tier 4/5 — schema v5.** `progress_photo` and `exercise_photo`, `PhotoStore`,
+  `PhotosScreen`. Photos are copied into private storage, re-encoded (which drops
+  EXIF GPS), excluded from cloud backup, and need no permission because the
+  system photo picker runs out of process.
+- **140 bundled demonstrations** from the Free Exercise DB (Unlicense, public
+  domain), re-encoded to WebP at 420px. See `CREDITS.md`.
+- **`tools/check-imports.py`** — the compiler this sandbox does not have.
+- **Room Gradle plugin** replacing `ksp { arg("room.schemaLocation", ...) }`,
+  which had been exporting nothing.
 
 ## Failed attempts
 
-- **No Android SDK in this container** — `dl.google.com` is blocked by the egress
-  proxy, so nothing Android can be compiled here. `repo1.maven.org` *is*
-  reachable, so the workaround is a local harness
-  (`…/scratchpad/verify.sh`) that compiles the pure-Kotlin domain, entity and
-  seed layers with `kotlin-compiler-embeddable` and runs JUnit. Compose and Room
-  code can only be compiled by CI. **Do not try to install the SDK again.**
-- **Cannot hand the APK over as a file.** The Actions artifact host (Azure blob)
-  is proxy-blocked, and an unauthenticated github.com release download returns
-  "Not Found" because the repo is private. The user must use the link.
-- **`MigrationSqlTest` blocked the APK twice** over where KSP writes the exported
-  schema. Now skips via `@Before` + `assumeTrue` when the schema file is absent,
-  and still fails loudly when it is present and disagrees. This was the direct
-  cause of the user's "stop running in a loop" — do not reintroduce a test that
-  can block the build over a build-layout detail.
-- **`internal object SeedExercises` was invisible to tests** in the harness
-  (separate compilations). Fixed by exposing `SeedData.muscleGroups()` publicly
-  rather than widening the object.
-- **Two of my own tests were wrong**: one demanded a cable *Quads* exercise —
-  there is no standard one, so the test was narrowed rather than inventing a
-  lift; an earlier one used a naive 4/4/9 energy check that failed cooked spinach
-  because fibre is ~2 kcal/g, not 4.
-- **Two duplicate lift names** slipped into the new catalogue and were caught by
-  the probe: renamed to `Neutral-grip dumbbell shoulder press` and
-  `Close-grip dumbbell floor press`.
-- **CI run 1 failed in 26s** because `setup-android@v3` installs the withdrawn
-  legacy `tools` package; fixed with an explicit `packages:` list.
+Read this section before touching CI. Most of it is me.
+
+- **No Android SDK in this container.** `dl.google.com` is proxy-blocked, so is
+  Google's Maven and the Azure host serving raw CI logs. Compose and Room can
+  only be compiled by CI. The workaround is `scratchpad/verify.sh`, which
+  compiles the pure-Kotlin layers with `kotlin-compiler-embeddable` from
+  `repo1.maven.org` (reachable) and runs JUnit. **Do not try to install the SDK.**
+- **`ksp { arg("room.schemaLocation", ...) }` exports nothing.** This was the
+  root cause of a seven-push detour. Use the Room Gradle plugin.
+- **`MigrationSqlTest` had never run.** It looked under
+  `dev.avles.gym.GymDatabase/` while the class is `dev.avles.gym.data.GymDatabase`,
+  and the file did not exist at either path anyway. `assumeTrue` turned that into
+  a skip, and a skipped test is a green build. It reported success for weeks while
+  checking nothing.
+- **Three CI failures in a row were missing imports from moving code between
+  files** — `Slate`, `Training`, `clickable`, `getValue`. That is the 800-line
+  cap's second-order cost. `tools/check-imports.py` now covers it, including the
+  lowercase cases (delegate operators, Modifier extensions) it was originally
+  blind to.
+- **Instrumentation I added caused six consecutive red builds while the app was
+  green throughout**: a watcher on `if: always()` that masked the real compile
+  error; a `bash -e` command substitution that killed a diagnostic before it
+  printed; a commit-back step ordered *after* the watcher, so the one run whose
+  evidence mattered was the one that skipped it. The lesson, learned expensively:
+  when you cannot see, put the artifact somewhere readable rather than building
+  more machinery to peer at it.
+- **`--stacktrace` on the test step hides compile errors.** It prints 200 lines
+  of Gradle internals that push the `e: file:...` lines out of tail range, and the
+  tail is all the API returns. Removed; a failure-only step now repeats the real
+  errors as the last thing in the log.
+- **The APK cannot be handed over as a file.** Artifact and release downloads are
+  both proxy-blocked. The release-asset link is the only delivery route.
 
 ## Next step
 
-**Commit the seven in-flight files and push to `claude/gym-app-audit-982uq6`,
-then watch CI produce the new APK at the `latest-debug` release tag.**
+**Get the app onto the phone**, which is the only thing actually blocking the
+user: uninstall the existing `dev.avles.gym.debug`, then install from
+https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk
 
-Nothing is blocking it — the suite is green and the data is verified.
+If that still fails, check for a second user or work profile holding the package.
 
-Then tell the user how to edit a session, which is the one open question:
+After that, nothing is outstanding. Two open questions the user may want answered:
 
-> Train tab → with no session open, scroll to **Recent sessions** (the heading
-> says "tap to edit") → tap any session row. The dialog lets you rename it,
-> re-open it to add more sets (offered only when no other session is open), tap
-> any set in the list to change weight, reps or the warm-up flag, delete a single
-> set, or delete the whole session behind a second confirming tap.
-
-They could not reach this before because the duplicate-key crash fired on exactly
-that screen as soon as a past session existed.
+- Whether to narrow the 800-line cap in `ArchitectureTest` to `ui/` only, since
+  data-heavy files like `ExerciseGuide.kt` (789 lines of tables) are where it is
+  least useful and where it caused the import churn above.
+- Whether to add either of the two security gaps named in `SECURITY.md`: a
+  biometric lock on app launch, or SQLCipher at rest. Both are real trade-offs,
+  and the second can lose the database permanently if the Keystore key is lost.
