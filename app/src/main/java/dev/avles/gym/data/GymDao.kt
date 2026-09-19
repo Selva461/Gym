@@ -343,6 +343,26 @@ interface GymDao {
     )
     fun allWorkingSets(): Flow<List<SetRow>>
 
+    /**
+     * Calories and protein per day, summed in SQL.
+     *
+     * A day with nothing logged is absent from the result rather than present as a
+     * zero. That distinction matters all the way up to the chart: a day you forgot
+     * to log and a day you ate nothing are different, and a line that draws the
+     * first as the second is a picture of your logging habit.
+     */
+    @Query(
+        """
+        SELECT l.dateEpochDay AS dateEpochDay,
+               SUM(f.kcal * l.quantity) AS kcal,
+               SUM(f.proteinG * l.quantity) AS proteinG
+        FROM food_log l
+        JOIN food_item f ON f.id = l.foodId
+        GROUP BY l.dateEpochDay
+        """
+    )
+    fun dailyMacros(): Flow<List<DayMacroRow>>
+
     /** Which day each session belongs to, for counting a training week. */
     @Query("SELECT id, dateEpochDay FROM workout_session")
     fun sessionDays(): Flow<List<SessionDay>>

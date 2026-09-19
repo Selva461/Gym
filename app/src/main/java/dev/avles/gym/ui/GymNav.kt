@@ -26,6 +26,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.avles.gym.ui.screens.CoachScreen
 import dev.avles.gym.ui.screens.FuelScreen
+import dev.avles.gym.ui.screens.PatternsScreen
 import dev.avles.gym.ui.screens.PhotosScreen
 import dev.avles.gym.ui.screens.ProgressScreen
 import dev.avles.gym.ui.screens.SettingsScreen
@@ -76,6 +77,7 @@ fun GymNav(vm: GymViewModel) {
     val liftPhotos by vm.exercisePhotoFiles.collectAsStateWithLifecycle()
     val markers by vm.dayMarkers.collectAsStateWithLifecycle()
     val coach by vm.coachState.collectAsStateWithLifecycle()
+    val patterns by vm.patternState.collectAsStateWithLifecycle()
 
     fun go(route: String) {
         navController.navigate(route) {
@@ -185,12 +187,17 @@ fun GymNav(vm: GymViewModel) {
                     state = progress,
                     onRecordWeight = vm::recordWeight,
                     onOpenPhotos = { go("photos") },
-                    onOpenGoal = { go("goal") }
+                    onOpenGoal = { go("goal") },
+                    onOpenPatterns = { go("patterns") }
                 )
             }
             // Not a sixth tab. Photos are about your body over time, which is what
             // Progress already is, and a five-item bar is already at the point where
             // the labels start truncating.
+            composable("patterns") {
+                PatternsScreen(state = patterns)
+            }
+
             composable("goal") {
                 CoachScreen(state = coach, onChooseGoal = vm::chooseGoal)
             }

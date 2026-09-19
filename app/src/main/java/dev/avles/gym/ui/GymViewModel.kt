@@ -23,7 +23,9 @@ import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.data.DayKinds
 import dev.avles.gym.data.DayMarker
 import dev.avles.gym.domain.Coach
+import dev.avles.gym.domain.Patterns
 import dev.avles.gym.domain.Physique
+import dev.avles.gym.domain.Patterns
 import dev.avles.gym.domain.Physiques
 import dev.avles.gym.domain.ExerciseGuide
 import dev.avles.gym.domain.Photos
@@ -133,6 +135,25 @@ data class CoachState(
     /** Rest and missed days, so the screen can say why a quiet week was quiet. */
     val restDays: Int = 0,
     val missedDays: Int = 0
+)
+
+/**
+ * The shape of your weeks: what you ate, when you trained, and which weekday you
+ * quietly skip. Thirty days, because a week is too short to show a pattern and a
+ * year is too long to show a change.
+ */
+data class PatternState(
+    val kcal: List<Double?> = emptyList(),
+    val protein: List<Double?> = emptyList(),
+    val kcalMean: List<Double?> = emptyList(),
+    val proteinMean: List<Double?> = emptyList(),
+    val weekdays: List<Patterns.DayOfWeek> = emptyList(),
+    val weakestWeekday: Patterns.DayOfWeek? = null,
+    val kcalAdherence: Float = 0f,
+    val proteinAdherence: Float = 0f,
+    val kcalTarget: Double = 0.0,
+    val proteinTarget: Double = 0.0,
+    val windowDays: Int = 30
 )
 
 data class ProgressState(
@@ -290,6 +311,36 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
     fun chooseGoal(id: String) = viewModelScope.launch {
         settingsStore.save(settingsStore.settings.first().copy(goalId = id))
     }
+
+    val patternState: StateFlow<PatternState> = combine(
+        repo.dailyMacros,
+        repo.sessionDays,
+        settingsStore.settings
+    ) { macros, sessionDays, s ->
+        val today = LocalDate.now().toEpochDay()
+        val window = 30
+        val byDay = macros.associate {
+            it.dateEpochDay to Patterns.DayMacros(it.dateEpochDay, it.kcal, it.proteinG)
+        }
+        val trained = sessionDays.map { it.dateEpochDay }.toSet()
+        val kcal = Patterns.series(today, window, byDay) { it.kcal }
+        val protein = Patterns.series(today, window, byDay) { it.proteinG }
+        val weekdays = Patterns.byWeekday(today, window, trained, byDay)
+
+        PatternState(
+            kcal = kcal,
+            protein = protein,
+            kcalMean = Patterns.rollingMean(kcal),
+            proteinMean = Patterns.rollingMean(protein),
+            weekdays = weekdays,
+            weakestWeekday = Patterns.weakestWeekday(weekdays),
+            kcalAdherence = Patterns.adherence(kcal, s.kcalTarget),
+            proteinAdherence = Patterns.adherence(protein, s.proteinTargetG),
+            kcalTarget = s.kcalTarget,
+            proteinTarget = s.proteinTargetG,
+            windowDays = window
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PatternState())
 
     val photoState: StateFlow<PhotoState> = repo.progressPhotos
         .map { photos ->

@@ -47,6 +47,7 @@ fun ProgressScreen(
     onRecordWeight: (Double) -> Unit,
     onOpenPhotos: () -> Unit,
     onOpenGoal: () -> Unit,
+    onOpenPatterns: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var logging by remember { mutableStateOf(false) }
@@ -93,6 +94,16 @@ fun ProgressScreen(
             ) {
                 Text(
                     "Does my training serve my goal?",
+                    color = Brass,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            androidx.compose.material3.TextButton(
+                onClick = onOpenPatterns,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) {
+                Text(
+                    "Eating and training patterns",
                     color = Brass,
                     style = MaterialTheme.typography.bodyMedium
                 )

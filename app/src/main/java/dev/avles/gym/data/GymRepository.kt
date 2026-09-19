@@ -298,6 +298,7 @@ class GymRepository(private val dao: GymDao, private val photos: PhotoStore? = n
     // ---------- Rest and missed days ----------
 
     val allSets: Flow<List<SetRow>> = dao.allWorkingSets()
+    val dailyMacros: Flow<List<DayMacroRow>> = dao.dailyMacros()
     val dayMarkers: Flow<List<DayMarker>> = dao.dayMarkers()
     val sessionDays: Flow<List<SessionDay>> = dao.sessionDays()
 

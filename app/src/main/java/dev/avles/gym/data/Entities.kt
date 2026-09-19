@@ -382,3 +382,6 @@ object DayKinds {
 
 /** A session's id and the day it happened, for windowing weekly volume. */
 data class SessionDay(val id: Long, val dateEpochDay: Long)
+
+/** A day's eating, summed in SQL. Days with nothing logged simply do not appear. */
+data class DayMacroRow(val dateEpochDay: Long, val kcal: Double, val proteinG: Double)
