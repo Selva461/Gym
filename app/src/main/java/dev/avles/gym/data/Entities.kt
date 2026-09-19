@@ -342,3 +342,40 @@ data class ExercisePhoto(
     val fileName: String,
     val addedAt: Long
 )
+
+/**
+ * What a day was, when it was not a training day.
+ *
+ * Two different things get recorded here and the difference matters. A **rest**
+ * day is planned recovery — part of a training programme, not an absence from it.
+ * A **missed** day is one you meant to train and could not: ill, travelling, work
+ * ran late. Both are worth knowing three months later when you are looking at a
+ * gap in the chart and wondering what happened.
+ *
+ * [kind] is a string rather than an enum column so that adding "deload" or
+ * "injured" later is data rather than a migration. The values live in [DayKinds].
+ *
+ * Unique on the date: a day is one thing. Logging a session on a day marked rest
+ * is not forbidden — plans change, and an app that argues with you about what you
+ * actually did is worse than one that records it.
+ */
+@Entity(tableName = "day_marker", indices = [Index(value = ["dateEpochDay"], unique = true)])
+data class DayMarker(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val dateEpochDay: Long,
+    val kind: String,
+    val note: String = "",
+    val markedAt: Long
+)
+
+object DayKinds {
+    /** Planned recovery. Bridges a training streak rather than breaking it. */
+    const val REST = "Rest"
+
+    /** Meant to train, could not. Recorded honestly; does not bridge. */
+    const val MISSED = "Missed"
+
+    val ALL = listOf(REST, MISSED)
+
+    fun bridgesStreak(kind: String): Boolean = kind == REST
+}

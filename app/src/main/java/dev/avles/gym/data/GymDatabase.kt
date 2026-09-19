@@ -18,9 +18,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         Split::class,
         SplitExercise::class,
         ProgressPhoto::class,
-        ExercisePhoto::class
+        ExercisePhoto::class,
+        DayMarker::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class GymDatabase : RoomDatabase() {
@@ -116,6 +117,18 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v5 → v6: rest days and missed days.
+         *
+         * One new table, nothing touched. A day with no marker is exactly what it
+         * was before — unknown — so nothing already logged changes meaning.
+         */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                SchemaSql.V6_STATEMENTS.forEach(db::execSQL)
+            }
+        }
+
         @Volatile private var instance: GymDatabase? = null
 
         fun get(context: Context): GymDatabase = instance ?: synchronized(this) {
@@ -124,7 +137,7 @@ abstract class GymDatabase : RoomDatabase() {
                 GymDatabase::class.java,
                 "gym.db"
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .build()
                 .also { instance = it }
         }

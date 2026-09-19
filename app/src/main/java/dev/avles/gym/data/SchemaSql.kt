@@ -113,6 +113,24 @@ object SchemaSql {
         "CREATE UNIQUE INDEX IF NOT EXISTS `index_exercise_photo_exerciseId` " +
             "ON `exercise_photo` (`exerciseId`)"
 
+    // ---- v6: what a day was, when it was not a training day ----------------
+
+    const val CREATE_DAY_MARKER =
+        "CREATE TABLE IF NOT EXISTS `day_marker` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`dateEpochDay` INTEGER NOT NULL, " +
+            "`kind` TEXT NOT NULL, " +
+            "`note` TEXT NOT NULL, " +
+            "`markedAt` INTEGER NOT NULL)"
+
+    /** Unique: a day is one thing. */
+    const val INDEX_DAY_MARKER_DATE =
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_day_marker_dateEpochDay` " +
+            "ON `day_marker` (`dateEpochDay`)"
+
+    /** Every statement the v6 migration runs, in order. */
+    val V6_STATEMENTS = listOf(CREATE_DAY_MARKER, INDEX_DAY_MARKER_DATE)
+
     /** Every statement the v5 migration runs, in order. */
     val V5_STATEMENTS = listOf(
         CREATE_PROGRESS_PHOTO,

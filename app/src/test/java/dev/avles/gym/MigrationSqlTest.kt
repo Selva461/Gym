@@ -33,7 +33,7 @@ class MigrationSqlTest {
          * Kept in step with @Database(version = ...) by hand, and asserted below so
          * the two cannot drift apart silently.
          */
-        const val DB_VERSION = 5
+        const val DB_VERSION = 6
     }
 
     /**
@@ -220,6 +220,15 @@ class MigrationSqlTest {
         assertTrue(
             "index_exercise_photo_exerciseId is not unique in the exported schema",
             SchemaSql.INDEX_EXERCISE_PHOTO_EXERCISE_ID.contains("CREATE UNIQUE INDEX")
+        )
+    }
+
+    @Test
+    fun `the day marker table is created exactly as Room expects it`() {
+        assertEquals(expectedCreateSql("day_marker"), SchemaSql.CREATE_DAY_MARKER)
+        assertEquals(
+            expectedIndexSql("day_marker", "index_day_marker_dateEpochDay"),
+            SchemaSql.INDEX_DAY_MARKER_DATE
         )
     }
 
