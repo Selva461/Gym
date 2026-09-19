@@ -22,7 +22,7 @@ class SeedDataTest {
     @Test
     fun `the catalogue is the size the README claims`() {
         assertEquals(394, exercises.size)
-        assertEquals(439, foods.size)
+        assertEquals(538, foods.size)
         assertEquals(10, splits.size)
     }
 
@@ -233,7 +233,12 @@ class SeedDataTest {
         mapOf(
             "Dosa" to 20, "Idli" to 6, "Tiffin" to 35, "Rice" to 25, "Sides" to 35,
             "Protein" to 55, "Vegetables" to 20, "Fruit" to 20, "Sweets" to 10,
-            "Drinks" to 15, "Grains" to 15, "Dairy" to 12, "North Indian" to 12
+            "Drinks" to 15, "Grains" to 15, "Dairy" to 12, "North Indian" to 25,
+            // Filed apart from Drinks on purpose: a glass of sugarcane juice is 180
+            // kcal of nearly pure sugar and a tender coconut is 46. Among the teas
+            // and coffees the difference disappears; in a list of its own it is the
+            // first thing you see.
+            "Juices" to 20, "Snacks" to 15
         ).forEach { (category, least) ->
             assertTrue(
                 "$category has ${byCategory[category] ?: 0}, expected at least $least",

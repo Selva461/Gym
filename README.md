@@ -58,7 +58,7 @@ warning should never stand between you and a working APK.
 Today      protein first, calories second, a week strip with a dot per logged day
 Train      split → lift → kg × reps, a target for every lift, rest timer, records
            tap "How to do it" for a muscle map and how the movement works
-Fuel       search or browse 439 foods by category, macros and 15 micronutrients
+Fuel       search or browse 538 foods by category, macros and 15 micronutrients
 Progress   weight trend, 14-day volume, streaks, and progress photos
 Settings   your targets, rest length, nightly reminder
 ```
@@ -126,7 +126,7 @@ screen, in order, one tap each. That is the whole point: not picking from a list
 of 394 between two sets. Splits are editable, reorderable and deletable, and
 deleting one leaves every session already run from it untouched.
 
-**439 foods in 24 categories.** South Indian cooking gets the detail it deserves —
+**538 foods in 25 categories.** South Indian cooking gets the detail it deserves —
 twenty-four dosa varieties (masala, Mysore masala, ghee roast, paper, rava, set,
 neer, kal, karam, ragi, kambu, thinai, oats, pesarattu, adai and the rest), seven
 kinds of idli, forty-three tiffin items (pongal, upma, uttapam, kuzhi paniyaram,
@@ -138,6 +138,12 @@ kola urundai, karuvadu kuzhambu, eral thokku and the rest of the coast. Then
 North Indian, Italian, Chinese and Indo-Chinese, Middle Eastern, Japanese,
 Mexican and Continental, plus dairy, legumes, vegetables, fruit, nuts, sweets,
 drinks and oils.
+
+**Juices are their own category**, not filed under Drinks. A glass of sugarcane
+juice is 180 kcal of almost pure sugar; a tender coconut is 46. Among the teas and
+coffees that difference disappears, and in a list of its own it is the first thing
+you see. Twenty-three of them — sugarcane, mosambi, amla, ash gourd, beetroot,
+carrot, the milkshakes and the lassis.
 
 **33 supplements** — whey, casein, creatine, fish oil, cod liver oil, magnesium
 glycinate and citrate, D3, B12, zinc, calcium, iron, multivitamin, electrolytes,
