@@ -1,8 +1,7 @@
 # Gym — handoff
 
-Last updated after the phase 2 work (tiers 0–5), the bundled demonstrations, and
-the Room schema-export fix. Supersedes the version written at the 394-lift
-catalogue commit, which is 15 commits stale.
+Last updated after the goal coach, patterns, rest days and the catalogue
+expansion. Supersedes every earlier version.
 
 ## Goal
 
@@ -20,20 +19,25 @@ Standing constraints, all deliberate and all enforced by tests:
 
 ## Current state
 
-**Everything builds and ships. 116 tests green. CI run 25 succeeded.**
+**Everything builds and ships. 151 tests green. CI run 34 succeeded.**
 
 | | |
 |---|---|
-| Exercises | 394, across 13 real muscle groups, equipment in the name |
+| Exercises | 486, across 13 real muscle groups, equipment in the name |
 | Demonstrations | 140 lifts, 2 frames each (start/finish), 3.6 MB, public domain |
-| Foods | 439 in 24 categories, heavily South Indian |
-| Database | v5, migrations 1→2→3→4→5, all hand-written |
-| Tests | 116, none needing a device or an emulator |
+| Foods | 538 in 25 categories, heavily South Indian, Juices filed separately |
+| Database | v6, migrations 1→2→3→4→5→6, all hand-written and now actually verified |
+| Tests | 151, none needing a device or an emulator |
 
 Phase 2 tiers, all done: **0** foundation (logging, enforced layering, security
 posture), **1** derived exercise reference, **2** reference UI with a muscle map
 drawn in Compose, **3** per-set grip/stance with split progression and records,
 **4** progress photos, **5** your own picture per lift.
+
+Phase 3, all done: **rest and missed days** (v6, rest bridges a streak and missed
+does not), **the goal coach** (weekly sets per muscle against a Physique, with
+suggestions whose main job is the muscle that is short), **the patterns screen**
+(thirty days of eating and training, by weekday), and the catalogue expansion.
 
 ### The one open problem
 
@@ -57,7 +61,7 @@ profile uninstalls it.
 
 ## Files in flight
 
-**None.** Working tree is clean and everything is pushed. `app/schemas/` is now
+**None.** Working tree is clean and everything is pushed. `app/schemas/` is
 committed and CI writes to it on each successful build.
 
 ## Changed
@@ -109,6 +113,11 @@ Read this section before touching CI. Most of it is me.
   cap's second-order cost. `tools/check-imports.py` now covers it, including the
   lowercase cases (delegate operators, Modifier extensions) it was originally
   blind to.
+- **Scripted multi-file edits need the same care as the code they produce.** Three
+  consecutive CI failures in phase 3 were mechanical: a property named
+  `settingsStore` referenced as `settings`, and a `str.replace` with no count
+  anchored on `...domain.Physique`, which is a prefix of `...domain.Physiques` and
+  so inserted an import twice. Neither was a design error; both cost a full cycle.
 - **Instrumentation I added caused six consecutive red builds while the app was
   green throughout**: a watcher on `if: always()` that masked the real compile
   error; a `bash -e` command substitution that killed a diagnostic before it
@@ -123,6 +132,20 @@ Read this section before touching CI. Most of it is me.
 - **The APK cannot be handed over as a file.** Artifact and release downloads are
   both proxy-blocked. The release-asset link is the only delivery route.
 
+## Phase 3 additions worth knowing
+
+- **`domain/Variations.kt`** — grip, angle and tempo are independent axes encoded
+  into one column, sorted by axis name. Progression keys on that string, so the
+  ordering is load-bearing rather than tidy.
+- **`domain/Physique.kt` / `domain/Coach.kt`** — goals are *data*. Adding one is
+  an entry in `Physiques.ALL`; no logic, no screen. A set counts fully for what a
+  lift is for and half for what it also works. Only the muscles a lift is *for*
+  can be suggested for it.
+- **`domain/Patterns.kt`** — an unlogged day is a gap, never a zero, all the way
+  down to the SQL. Adherence divides by days logged rather than days elapsed.
+- **`SeedFoodsMore.kt` / `SeedExercisesMore.kt`** — the catalogue outgrew its
+  files. Third files when these fill; `SeedData` and `SeedExercises` concatenate.
+
 ## Next step
 
 **Get the app onto the phone**, which is the only thing actually blocking the
@@ -131,7 +154,7 @@ https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk
 
 If that still fails, check for a second user or work profile holding the package.
 
-After that, nothing is outstanding. Two open questions the user may want answered:
+After that, nothing is outstanding. Open questions the user may want answered:
 
 - Whether to narrow the 800-line cap in `ArchitectureTest` to `ui/` only, since
   data-heavy files like `ExerciseGuide.kt` (789 lines of tables) are where it is
