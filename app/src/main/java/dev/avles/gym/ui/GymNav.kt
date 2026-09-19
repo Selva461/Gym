@@ -24,6 +24,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import dev.avles.gym.ui.screens.CoachScreen
 import dev.avles.gym.ui.screens.FuelScreen
 import dev.avles.gym.ui.screens.PhotosScreen
 import dev.avles.gym.ui.screens.ProgressScreen
@@ -73,6 +74,8 @@ fun GymNav(vm: GymViewModel) {
     val summaries by vm.sessionSummaries.collectAsStateWithLifecycle()
     val openSession by vm.openSessionDetail.collectAsStateWithLifecycle()
     val liftPhotos by vm.exercisePhotoFiles.collectAsStateWithLifecycle()
+    val markers by vm.dayMarkers.collectAsStateWithLifecycle()
+    val coach by vm.coachState.collectAsStateWithLifecycle()
 
     fun go(route: String) {
         navController.navigate(route) {
@@ -126,7 +129,9 @@ fun GymNav(vm: GymViewModel) {
                     dots = dots,
                     onSelectDate = vm::selectDate,
                     onGoTrain = { go("train") },
-                    onGoFuel = { go("fuel") }
+                    onGoFuel = { go("fuel") },
+                    dayKind = markers.firstOrNull { it.dateEpochDay == day.date.toEpochDay() }?.kind,
+                    onMarkDay = { kind -> vm.markDay(day.date.toEpochDay(), kind) }
                 )
             }
             composable("train") {
@@ -179,12 +184,17 @@ fun GymNav(vm: GymViewModel) {
                 ProgressScreen(
                     state = progress,
                     onRecordWeight = vm::recordWeight,
-                    onOpenPhotos = { go("photos") }
+                    onOpenPhotos = { go("photos") },
+                    onOpenGoal = { go("goal") }
                 )
             }
             // Not a sixth tab. Photos are about your body over time, which is what
             // Progress already is, and a five-item bar is already at the point where
             // the labels start truncating.
+            composable("goal") {
+                CoachScreen(state = coach, onChooseGoal = vm::chooseGoal)
+            }
+
             composable("photos") {
                 val photos by vm.photoState.collectAsStateWithLifecycle()
                 val photoError by vm.photoError.collectAsStateWithLifecycle()

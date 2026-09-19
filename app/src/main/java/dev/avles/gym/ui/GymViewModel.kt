@@ -20,6 +20,11 @@ import dev.avles.gym.data.Split
 import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
 import dev.avles.gym.domain.MacroMath
+import dev.avles.gym.data.DayKinds
+import dev.avles.gym.data.DayMarker
+import dev.avles.gym.domain.Coach
+import dev.avles.gym.domain.Physique
+import dev.avles.gym.domain.Physiques
 import dev.avles.gym.domain.ExerciseGuide
 import dev.avles.gym.domain.Photos
 import dev.avles.gym.domain.Progression
@@ -112,6 +117,23 @@ data class PhotoState(
 
 /** One photo, with the file it lives in. A null [file] means the picture is gone. */
 data class PhotoRow(val photo: ProgressPhoto, val file: java.io.File?)
+
+/**
+ * What the last seven days of training did for the chosen goal.
+ *
+ * Assembled here rather than in the screen because it is a join across the
+ * catalogue, the session dates and every logged set — and because the screen
+ * should be able to render it without knowing how a week is counted.
+ */
+data class CoachState(
+    val physique: Physique = Physiques.BALANCED,
+    val review: List<Coach.MuscleWeek> = emptyList(),
+    val suggestions: List<Coach.Suggestion> = emptyList(),
+    val verdict: String = "",
+    /** Rest and missed days, so the screen can say why a quiet week was quiet. */
+    val restDays: Int = 0,
+    val missedDays: Int = 0
+)
 
 data class ProgressState(
     val weights: List<BodyWeight> = emptyList(),
@@ -213,6 +235,61 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
     ) { weights, volume, trained, fuelled ->
         ProgressState(weights, volume, trained.toSet(), fuelled.toSet())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProgressState())
+
+    val dayMarkers: StateFlow<List<DayMarker>> = repo.dayMarkers
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun markDay(dateEpochDay: Long, kind: String, note: String = "") =
+        viewModelScope.launch { repo.markDay(dateEpochDay, kind, note) }
+
+    fun clearDayMarker(dateEpochDay: Long) =
+        viewModelScope.launch { repo.clearDayMarker(dateEpochDay) }
+
+    /**
+     * The coach's read on the last seven days.
+     *
+     * Recomputed whenever a set lands, the goal changes or a day is marked, because
+     * all three change the answer. The guide is derived per exercise rather than
+     * stored, so this costs a map build rather than a query.
+     */
+    val coachState: StateFlow<CoachState> = combine(
+        repo.exercises,
+        repo.allSets,
+        repo.sessionDays,
+        repo.dayMarkers,
+        settings.settings
+    ) { catalogue, sets, sessionDays, markers, s ->
+        val physique = Physiques.byId(s.goalId)
+        val guides = catalogue.associate { it.id to ExerciseGuide.of(it) }
+        val dayOf = sessionDays.associate { it.id to it.dateEpochDay }
+        val today = LocalDate.now().toEpochDay()
+
+        val actual = Coach.weeklySets(
+            history = sets,
+            sessionDayOf = { dayOf[it] },
+            guideFor = { guides[it] },
+            today = today
+        )
+        val review = Coach.review(physique, actual)
+        val thisWeek = (today - (Coach.WINDOW_DAYS - 1))..today
+        val trained = sets
+            .filter { dayOf[it.sessionId]?.let { d -> d in thisWeek } == true }
+            .map { it.exerciseId }
+            .toSet()
+
+        CoachState(
+            physique = physique,
+            review = review,
+            suggestions = Coach.suggestions(review, catalogue, { guides[it.id]!! }, trained),
+            verdict = Coach.verdict(review),
+            restDays = markers.count { it.dateEpochDay in thisWeek && it.kind == DayKinds.REST },
+            missedDays = markers.count { it.dateEpochDay in thisWeek && it.kind == DayKinds.MISSED }
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CoachState())
+
+    fun chooseGoal(id: String) = viewModelScope.launch {
+        settings.save(settings.settings.first().copy(goalId = id))
+    }
 
     val photoState: StateFlow<PhotoState> = repo.progressPhotos
         .map { photos ->

@@ -310,4 +310,40 @@ interface GymDao {
 
     @Query("DELETE FROM exercise_photo WHERE exerciseId = :exerciseId")
     suspend fun deleteExercisePhotoRow(exerciseId: Long)
+
+    // ---------- Day markers ----------
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertDayMarker(marker: DayMarker): Long
+
+    @Query("SELECT * FROM day_marker ORDER BY dateEpochDay DESC")
+    fun dayMarkers(): Flow<List<DayMarker>>
+
+    @Query("SELECT * FROM day_marker WHERE dateEpochDay = :day")
+    suspend fun dayMarkerFor(day: Long): DayMarker?
+
+    @Query("DELETE FROM day_marker WHERE dateEpochDay = :day")
+    suspend fun clearDayMarker(day: Long)
+
+    /**
+     * Every working set, for the coach's weekly volume count. Warm-ups are excluded
+     * in SQL rather than in Kotlin because they are never wanted here and a week of
+     * them is a lot of rows to carry across the boundary to throw away.
+     */
+    @Query(
+        """
+        SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
+               e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
+               s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
+               s.variation AS variation
+        FROM set_entry s
+        JOIN exercise e ON e.id = s.exerciseId
+        WHERE s.isWarmup = 0
+        """
+    )
+    fun allWorkingSets(): Flow<List<SetRow>>
+
+    /** Which day each session belongs to, for counting a training week. */
+    @Query("SELECT id, dateEpochDay FROM workout_session")
+    fun sessionDays(): Flow<List<SessionDay>>
 }

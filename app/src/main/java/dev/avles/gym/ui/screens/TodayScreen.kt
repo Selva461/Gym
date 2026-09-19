@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Training
+import dev.avles.gym.data.DayKinds
 import dev.avles.gym.ui.CalendarDots
 import dev.avles.gym.ui.DayState
 import dev.avles.gym.ui.components.BigNumber
@@ -27,6 +28,7 @@ import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.Meter
+import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.StripLegend
 import dev.avles.gym.ui.components.WeekStrip
@@ -49,6 +51,8 @@ fun TodayScreen(
     onSelectDate: (LocalDate) -> Unit,
     onGoTrain: () -> Unit,
     onGoFuel: () -> Unit,
+    dayKind: String?,
+    onMarkDay: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val today = LocalDate.now()
@@ -171,6 +175,39 @@ fun TodayScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) { Text(if (trainedToday) "Open session" else "Start a session") }
+
+            // Offered only on a day with no session. Marking a day you trained as a
+            // rest day is a contradiction the app has no business helping you write
+            // down, and the control would just be clutter on every other day.
+            if (!trainedToday) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "Not training today?",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint
+                )
+                Spacer(Modifier.height(6.dp))
+                PillRow(
+                    options = DayKinds.ALL,
+                    selected = dayKind ?: "",
+                    accent = Mute,
+                    onSelect = onMarkDay
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    when (dayKind) {
+                        DayKinds.REST ->
+                            "Planned recovery. Your streak carries across it."
+                        DayKinds.MISSED ->
+                            "Noted. The streak restarts, but the gap has a reason on it now."
+                        else ->
+                            "A rest day keeps your streak; a missed day is just recorded. " +
+                                "Tap the same one again to clear it."
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint
+                )
+            }
             Spacer(Modifier.height(26.dp))
             Hairline()
             Spacer(Modifier.height(22.dp))

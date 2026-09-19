@@ -379,3 +379,6 @@ object DayKinds {
 
     fun bridgesStreak(kind: String): Boolean = kind == REST
 }
+
+/** A session's id and the day it happened, for windowing weekly volume. */
+data class SessionDay(val id: Long, val dateEpochDay: Long)

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -18,7 +19,13 @@ data class GymSettings(
     val restSeconds: Int = 120,
     val reminderHour: Int = 21,
     val reminderMinute: Int = 45,
-    val remindersOn: Boolean = true
+    val remindersOn: Boolean = true,
+    /**
+     * Which [dev.avles.gym.domain.Physique] the coach measures against. Stored as
+     * its id rather than its index, so reordering the list later cannot silently
+     * change somebody's goal.
+     */
+    val goalId: String = "balanced"
 )
 
 class SettingsStore(private val context: Context) {
@@ -30,6 +37,7 @@ class SettingsStore(private val context: Context) {
         val hour = intPreferencesKey("reminder_hour")
         val minute = intPreferencesKey("reminder_minute")
         val on = intPreferencesKey("reminders_on")
+        val goal = stringPreferencesKey("goal_id")
     }
 
     val settings: Flow<GymSettings> = context.dataStore.data.map { p ->
@@ -39,7 +47,8 @@ class SettingsStore(private val context: Context) {
             restSeconds = p[Keys.rest] ?: 120,
             reminderHour = p[Keys.hour] ?: 21,
             reminderMinute = p[Keys.minute] ?: 45,
-            remindersOn = (p[Keys.on] ?: 1) == 1
+            remindersOn = (p[Keys.on] ?: 1) == 1,
+            goalId = p[Keys.goal] ?: "balanced"
         )
     }
 
@@ -51,6 +60,7 @@ class SettingsStore(private val context: Context) {
             p[Keys.hour] = s.reminderHour
             p[Keys.minute] = s.reminderMinute
             p[Keys.on] = if (s.remindersOn) 1 else 0
+            p[Keys.goal] = s.goalId
         }
     }
 }

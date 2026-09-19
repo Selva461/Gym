@@ -294,4 +294,33 @@ class GymRepository(private val dao: GymDao, private val photos: PhotoStore? = n
     fun photoFile(fileName: String): java.io.File? = photos?.fileFor(fileName)
 
     fun photoBytesUsed(): Long = photos?.bytesUsed() ?: 0L
+
+    // ---------- Rest and missed days ----------
+
+    val allSets: Flow<List<SetRow>> = dao.allWorkingSets()
+    val dayMarkers: Flow<List<DayMarker>> = dao.dayMarkers()
+    val sessionDays: Flow<List<SessionDay>> = dao.sessionDays()
+
+    /**
+     * Marking a day the same thing twice clears it, so the chip that set it also
+     * unsets it. Two taps to undo one tap, with no separate control to find.
+     */
+    suspend fun markDay(dateEpochDay: Long, kind: String, note: String = "") {
+        val existing = dao.dayMarkerFor(dateEpochDay)
+        if (existing?.kind == kind && note.isBlank()) {
+            dao.clearDayMarker(dateEpochDay)
+            return
+        }
+        dao.upsertDayMarker(
+            DayMarker(
+                id = existing?.id ?: 0,
+                dateEpochDay = dateEpochDay,
+                kind = kind,
+                note = note.trim(),
+                markedAt = System.currentTimeMillis()
+            )
+        )
+    }
+
+    suspend fun clearDayMarker(dateEpochDay: Long) = dao.clearDayMarker(dateEpochDay)
 }

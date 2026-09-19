@@ -46,6 +46,7 @@ fun ProgressScreen(
     state: ProgressState,
     onRecordWeight: (Double) -> Unit,
     onOpenPhotos: () -> Unit,
+    onOpenGoal: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var logging by remember { mutableStateOf(false) }
@@ -85,6 +86,16 @@ fun ProgressScreen(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
             ) {
                 Text("Progress photos", color = Brass, style = MaterialTheme.typography.bodyMedium)
+            }
+            androidx.compose.material3.TextButton(
+                onClick = onOpenGoal,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) {
+                Text(
+                    "Does my training serve my goal?",
+                    color = Brass,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
             Spacer(Modifier.height(16.dp))
 
