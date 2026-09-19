@@ -25,7 +25,6 @@ import dev.avles.gym.data.DayMarker
 import dev.avles.gym.domain.Coach
 import dev.avles.gym.domain.Patterns
 import dev.avles.gym.domain.Physique
-import dev.avles.gym.domain.Patterns
 import dev.avles.gym.domain.Physiques
 import dev.avles.gym.domain.ExerciseGuide
 import dev.avles.gym.domain.Photos

@@ -74,9 +74,26 @@ for p in sorted(targets):
     stripped = re.sub(r'"(?:[^"\\]|\\.)*"', '""', code)
 
     imports = set()
+    seen_lines = set()
+    duplicate_imports = []
+    by_simple_name = {}
     for line in code.split('\n'):
-        if line.startswith('import '):
-            imports.add(line.split('.')[-1].strip())
+        if not line.startswith('import '):
+            continue
+        simple = line.split('.')[-1].strip()
+        imports.add(simple)
+        # Kotlin rejects the same simple name imported from two places, and an
+        # exact repeat as "conflicting import ... is ambiguous" — which reads like
+        # a name clash rather than the copy-paste it usually is.
+        if line in seen_lines:
+            duplicate_imports.append(f'{simple}  -> imported twice: {line.strip()}')
+        elif simple in by_simple_name and by_simple_name[simple] != line:
+            duplicate_imports.append(
+                f'{simple}  -> two imports share this name: '
+                f'{by_simple_name[simple].strip()} and {line.strip()}'
+            )
+        seen_lines.add(line)
+        by_simple_name[simple] = line
     # Fully-qualified uses need no import.
     fq = set(re.findall(r'\b(?:[a-z][a-z0-9_]*\.){2,}([A-Z][A-Za-z0-9_]*)', code))
 
@@ -110,6 +127,7 @@ for p in sorted(targets):
     for fn, path in MODIFIER_EXTENSIONS.items():
         if re.search(r'\.' + fn + r'\s*[({]', stripped) and fn not in imports:
             missing.append(f'{fn}  -> import {path}.{fn}')
+    missing.extend(duplicate_imports)
     missing = sorted(set(missing))
     if missing:
         bad += 1
