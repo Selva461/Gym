@@ -263,11 +263,13 @@ data class SetRow(
     val reps: Int,
     val isWarmup: Boolean,
     val loggedAt: Long,
+    /**
+     * Encoded by [dev.avles.gym.domain.Variations] — several axes at once, so that
+     * close grip *and* paused is expressible. Formatted for display there too,
+     * rather than here, so there is one implementation of what it reads as.
+     */
     val variation: String = ""
-) {
-    /** What to show beside the lift's name, or nothing when the set is unspecified. */
-    val variationLabel: String? get() = variation.takeIf { it.isNotBlank() }
-}
+)
 
 data class DayVolume(val dateEpochDay: Long, val volume: Double)
 

@@ -40,6 +40,7 @@ import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
 import dev.avles.gym.domain.Training
+import dev.avles.gym.domain.Variations
 import dev.avles.gym.ui.LiftGuidance
 import dev.avles.gym.ui.SessionDetail
 import dev.avles.gym.ui.TrainState
@@ -521,7 +522,7 @@ private fun ActiveSessionPane(
                     title = row.exerciseName + if (isPr) "  best yet" else "",
                     detail = listOfNotNull(
                         if (row.isWarmup) "warm-up" else "set ${row.setIndex}",
-                        row.variationLabel
+                        Variations.label(row.variation).takeIf { it.isNotBlank() }
                     ).joinToString("  ·  "),
                     trailing = "${Training.formatWeight(row.weightKg)} x ${row.reps}",
                     accent = if (row.isWarmup) Mute else Brass,

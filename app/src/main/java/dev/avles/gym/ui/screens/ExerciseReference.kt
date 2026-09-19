@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.domain.ExerciseGuide
+import dev.avles.gym.domain.Variations
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.ExerciseDemo
 import dev.avles.gym.ui.components.MuscleMap
@@ -264,6 +265,12 @@ private fun ReferenceSection(
 /**
  * The grip, stance and tempo chips shown under the lift while a session is open.
  *
+ * Each axis is an independent question and keeps its own answer. That sounds
+ * obvious and was the bug: every row used to read and write one shared string, so
+ * choosing a tempo overwrote the grip and blanked the row it came from. The
+ * selection is now a [Variations] encoding, each row reads only its own axis, and
+ * each row writes only its own axis.
+ *
  * Every axis carries an explicit "Any" at the front rather than relying on tapping
  * the selected chip again to clear it: unspecified is a real choice — it is what
  * every set logged before this feature existed is — and a choice you cannot see is
@@ -287,9 +294,11 @@ fun VariationPicker(
             )
             dev.avles.gym.ui.components.ChipRow(
                 options = listOf(ANY) + axis.options,
-                selected = selected.ifBlank { ANY },
+                selected = Variations.valueFor(selected, axis.name).ifBlank { ANY },
                 accent = Brass,
-                onSelect = { onSelect(if (it == ANY) "" else it) }
+                onSelect = { chosen ->
+                    onSelect(Variations.with(selected, axis.name, if (chosen == ANY) "" else chosen))
+                }
             )
             Spacer(Modifier.height(8.dp))
         }

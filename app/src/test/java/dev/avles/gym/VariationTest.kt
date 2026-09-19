@@ -4,6 +4,7 @@ import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.Progression
 import dev.avles.gym.domain.Training
+import dev.avles.gym.domain.Variations
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -157,10 +158,27 @@ class VariationTest {
         assertEquals(500.0 + 400.0 + 300.0, Training.volume(sets), 0.001)
     }
 
+    /** Formatting moved to Variations so one implementation decides how this reads. */
     @Test
     fun `a label is offered only when there is something to say`() {
-        assertNull(set(1, 60.0, 5).variationLabel)
-        assertNull(set(2, 60.0, 5, "   ").variationLabel)
-        assertEquals("Close", set(3, 60.0, 5, "Close").variationLabel)
+        assertEquals("", Variations.label(set(1, 60.0, 5).variation))
+        assertEquals("", Variations.label(set(2, 60.0, 5, "   ").variation))
+        assertEquals("Close", Variations.label(set(3, 60.0, 5, "Close").variation))
+    }
+
+    /**
+     * The whole point of the multi-axis fix, at the level progression cares about:
+     * a close-grip paused bench is its own lift, separate from close-grip alone.
+     */
+    @Test
+    fun `two axes together are a different history from either alone`() {
+        val closeOnly = Variations.with("", "Grip width", "Close")
+        val closePaused = Variations.with(closeOnly, "Tempo", "Paused")
+        val history = listOf(
+            set(1, 80.0, 8, closeOnly),
+            set(2, 60.0, 5, closePaused)
+        )
+        assertEquals(60.0, Progression.recommend(bench, history, closePaused)!!.weightKg, 0.001)
+        assertTrue(Progression.recommend(bench, history, closeOnly)!!.isStepUp)
     }
 }
