@@ -105,7 +105,8 @@ internal object SeedExercises {
 
     fun all(): List<Exercise> =
         chest() + back() + shoulders() + traps() + triceps() + biceps() + forearms() +
-            quads() + hamstrings() + glutes() + calves() + core() + fullBody()
+            quads() + hamstrings() + glutes() + calves() + core() + fullBody() +
+            SeedExercisesMore.all()
 
     // ------------------------------------------------------------------ chest
 

@@ -63,13 +63,13 @@ Progress   weight trend, 14-day volume, streaks, and progress photos
 Settings   your targets, rest length, nightly reminder
 ```
 
-**394 lifts**, each with its own rep range and increment, filed under thirteen
+**486 lifts**, each with its own rep range and increment, filed under thirteen
 real muscle groups rather than three buckets:
 
 ```
-Chest 52   Back 53   Shoulders 43   Traps 12   Triceps 37   Biceps 30
-Forearms 12   Quads 46   Hamstrings 20   Glutes 18   Calves 12   Core 40
-Full body 19
+Chest 59   Back 61   Shoulders 51   Traps 22   Triceps 43   Biceps 34
+Forearms 24   Quads 46   Hamstrings 26   Glutes 28   Calves 19   Core 46
+Full body 27
 ```
 
 **Equipment is part of the lift's name**, which makes the picker's search box an
@@ -123,7 +123,7 @@ system photo picker, so the app never asks for access to your photos.
 triceps, Back and biceps, Shoulders and arms, Arms — and you can build your own.
 Starting a session from a split names it and puts that split's lifts on the
 screen, in order, one tap each. That is the whole point: not picking from a list
-of 394 between two sets. Splits are editable, reorderable and deletable, and
+of 486 between two sets. Splits are editable, reorderable and deletable, and
 deleting one leaves every session already run from it untouched.
 
 **538 foods in 25 categories.** South Indian cooking gets the detail it deserves —

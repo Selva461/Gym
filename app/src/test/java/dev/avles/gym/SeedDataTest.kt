@@ -21,7 +21,7 @@ class SeedDataTest {
 
     @Test
     fun `the catalogue is the size the README claims`() {
-        assertEquals(394, exercises.size)
+        assertEquals(486, exercises.size)
         assertEquals(538, foods.size)
         assertEquals(10, splits.size)
     }
@@ -72,7 +72,7 @@ class SeedDataTest {
     fun `every major muscle has work on free weights and on a machine`() {
         listOf("Chest", "Back", "Shoulders", "Triceps", "Biceps", "Quads").forEach { group ->
             val inGroup = exercises.filter { it.muscleGroup == group }
-            assertTrue("$group has under 25 lifts", inGroup.size >= 25)
+            assertTrue("$group has under 30 lifts", inGroup.size >= 30)
             listOf("umbbell", "achine").forEach { equipment ->
                 assertTrue(
                     "$group has nothing containing \"$equipment\" in its name",
@@ -90,10 +90,23 @@ class SeedDataTest {
      */
     @Test
     fun `the muscles people train on cables have cable work`() {
-        listOf("Chest", "Back", "Shoulders", "Triceps", "Biceps").forEach { group ->
+        listOf("Chest", "Back", "Shoulders", "Triceps", "Biceps", "Traps", "Glutes").forEach { group ->
             val cable = exercises.count { it.muscleGroup == group && it.name.contains("able") }
             assertTrue("$group has only $cable cable movements", cable >= 4)
         }
+    }
+
+    /**
+     * The groups the first pass under-served are the ones the coach's weekly
+     * targets will send you looking for, so a dozen lifts each is not enough.
+     */
+    @Test
+    fun `the muscles people neglect still have real choice`() {
+        mapOf("Traps" to 18, "Forearms" to 20, "Calves" to 18, "Glutes" to 22, "Hamstrings" to 24)
+            .forEach { (group, least) ->
+                val count = exercises.count { it.muscleGroup == group }
+                assertTrue("$group has only $count lifts, expected at least $least", count >= least)
+            }
     }
 
     @Test
