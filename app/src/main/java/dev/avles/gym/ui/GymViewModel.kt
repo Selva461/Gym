@@ -257,7 +257,7 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
         repo.allSets,
         repo.sessionDays,
         repo.dayMarkers,
-        settings.settings
+        settingsStore.settings
     ) { catalogue, sets, sessionDays, markers, s ->
         val physique = Physiques.byId(s.goalId)
         val guides = catalogue.associate { it.id to ExerciseGuide.of(it) }
@@ -288,7 +288,7 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CoachState())
 
     fun chooseGoal(id: String) = viewModelScope.launch {
-        settings.save(settings.settings.first().copy(goalId = id))
+        settingsStore.save(settingsStore.settings.first().copy(goalId = id))
     }
 
     val photoState: StateFlow<PhotoState> = repo.progressPhotos
