@@ -213,7 +213,25 @@ data class FoodItem(
      * catalogue: a magnesium tablet's label is a measurement, not an estimate.
      */
     val isSupplement: Boolean = false,
-    @Embedded val micros: Micros = Micros()
+    @Embedded val micros: Micros = Micros(),
+    /**
+     * Other names this dish goes by, separated by " / " — "Pulihora / Elumichai
+     * sadam / Chitranna" for lemon rice. Search matches these as well as [name], so
+     * you can find a dish by what your family calls it rather than by whatever
+     * English label a dataset chose.
+     *
+     * Default values are load-bearing: SQLite cannot add a NOT NULL column to a
+     * populated table without one, and Room only writes a DEFAULT into its expected
+     * schema when @ColumnInfo(defaultValue) asks for it.
+     */
+    @ColumnInfo(defaultValue = "''") val aliases: String = "",
+    /**
+     * Where the numbers came from, in words a person can judge — "INDB 2024.11
+     * recipe estimate" rather than a URL. Empty for foods estimated by this app,
+     * which the food editor says plainly. A number whose origin you cannot see is a
+     * number you have to take on trust, and the app has not earned that.
+     */
+    @ColumnInfo(defaultValue = "''") val source: String = ""
 )
 
 @Entity(tableName = "food_log", indices = [Index("dateEpochDay"), Index("foodId")])

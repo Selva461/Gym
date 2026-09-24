@@ -58,7 +58,7 @@ warning should never stand between you and a working APK.
 Today      protein first, calories second, a week strip with a dot per logged day
 Train      split → lift → kg × reps, a target for every lift, rest timer, records
            tap "How to do it" for a muscle map and how the movement works
-Fuel       search or browse 538 foods by category, macros and 15 micronutrients
+Fuel       search or browse 599 foods by name or local name, macros and 15 micronutrients
 Progress   weight trend, 14-day volume, streaks, and progress photos
 Settings   your targets, rest length, nightly reminder
 ```
@@ -144,6 +144,26 @@ juice is 180 kcal of almost pure sugar; a tender coconut is 46. Among the teas a
 coffees that difference disappears, and in a list of its own it is the first thing
 you see. Twenty-three of them — sugarcane, mosambi, amla, ash gourd, beetroot,
 carrot, the milkshakes and the lassis.
+
+**61 more from the Indian Food Nutrition Dataset (v2)**, bundled in the app and
+added on first launch: the paratha family (aloo, mooli, gobhi, matar, keema, dal,
+besan-palak), makki ki roti, kheers, halwas, phirni, dhokla, sandwiches, rolls,
+Hyderabadi biryani, khichdi and a shelf of drinks. The file holds 724 rows but only
+about 120 dishes — each dish repeated at a dozen weights — so each dish becomes one
+food. A countable thing keeps its own unit ("1 paratha (56 g)"); anything served in a
+cup, glass or bowl is per 100 g or 100 ml, because a vessel is whatever size yours is.
+
+Of the rest, 38 were already here, some under another name, and 23 were **declined
+rather than imported**, each for a stated reason: six had calories but no macros, three
+declared calories their own macros contradict, and the deep-fried recipes (pakoras,
+samosas, cutlets, stuffed pooris) count every drop of the frying oil, arriving at up to
+485 g of fat on a plate. Those numbers agree with each other and are still not food.
+The rules live in `FoodChecks` — the same gate every built-in food passes — and the
+file's own README is beside it in `assets/foods/`.
+
+Every food can carry the other names it goes by. Search matches them, so "aloo" finds
+the potato paratha and "chawal kheer" finds rice kheer, and the editor shows where a
+food's numbers came from — until you change them, when they become yours.
 
 **33 supplements** — whey, casein, creatine, fish oil, cod liver oil, magnesium
 glycinate and citrate, D3, B12, zinc, calcium, iron, multivitamin, electrolytes,

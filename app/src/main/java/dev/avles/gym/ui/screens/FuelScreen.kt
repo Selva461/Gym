@@ -40,6 +40,8 @@ import dev.avles.gym.data.FoodItem
 import dev.avles.gym.data.FoodLogRow
 import dev.avles.gym.data.Meals
 import dev.avles.gym.data.Micros
+import dev.avles.gym.domain.FoodEdits
+import dev.avles.gym.domain.FoodSearch
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.DayState
@@ -90,7 +92,7 @@ fun FuelScreen(
     val matches = remember(query, category, catalogue) {
         when {
             query.isNotBlank() ->
-                catalogue.filter { it.name.contains(query, ignoreCase = true) }.take(20)
+                FoodSearch.search(catalogue, query)
             category != null -> catalogue.filter { it.category == category }
             else -> emptyList()
         }
@@ -404,6 +406,9 @@ private fun FoodPickRow(food: FoodItem, onTap: () -> Unit, onEdit: () -> Unit) {
     ) {
         Column(Modifier.weight(1f)) {
             Text(food.name, style = MaterialTheme.typography.bodyLarge, color = Bone)
+            if (food.aliases.isNotBlank()) {
+                Text(food.aliases, style = MaterialTheme.typography.labelSmall, color = Faint)
+            }
             Text(
                 "${food.unitLabel}   ${food.kcal.roundToInt()} kcal" +
                     if (food.isSupplement) "   supplement" else "",
@@ -519,6 +524,7 @@ private fun FoodEditor(
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf(initial.name) }
+    var aliases by remember { mutableStateOf(initial.aliases) }
     var unit by remember { mutableStateOf(initial.unitLabel) }
     var kcal by remember { mutableStateOf(trimZero(initial.kcal)) }
     var protein by remember { mutableStateOf(trimZero(initial.proteinG)) }
@@ -555,10 +561,24 @@ private fun FoodEditor(
                     style = MaterialTheme.typography.labelSmall,
                     color = Faint
                 )
+                if (initial.source.isNotBlank()) {
+                    Text(
+                        "Numbers from: ${initial.source}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Mute
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = name, onValueChange = { name = it },
                     label = { Text("Name") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = aliases, onValueChange = { aliases = it },
+                    label = { Text("Also called") }, singleLine = true,
+                    placeholder = { Text("Other names, separated by /") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
@@ -637,33 +657,33 @@ private fun FoodEditor(
             TextButton(
                 enabled = name.isNotBlank(),
                 onClick = {
-                    onSave(
-                        initial.copy(
-                            name = name.trim(),
-                            unitLabel = unit.ifBlank { "1 serving" },
-                            kcal = kcal.toDoubleOrNull() ?: 0.0,
-                            proteinG = protein.toDoubleOrNull() ?: 0.0,
-                            carbsG = carbs.toDoubleOrNull() ?: 0.0,
-                            fatG = fat.toDoubleOrNull() ?: 0.0,
-                            micros = Micros(
-                                fiberG = fiber.toDoubleOrNull() ?: 0.0,
-                                sugarG = sugar.toDoubleOrNull() ?: 0.0,
-                                satFatG = satFat.toDoubleOrNull() ?: 0.0,
-                                sodiumMg = sodium.toDoubleOrNull() ?: 0.0,
-                                potassiumMg = potassium.toDoubleOrNull() ?: 0.0,
-                                calciumMg = calcium.toDoubleOrNull() ?: 0.0,
-                                ironMg = iron.toDoubleOrNull() ?: 0.0,
-                                magnesiumMg = magnesium.toDoubleOrNull() ?: 0.0,
-                                zincMg = zinc.toDoubleOrNull() ?: 0.0,
-                                vitAMcg = vitA.toDoubleOrNull() ?: 0.0,
-                                vitCMg = vitC.toDoubleOrNull() ?: 0.0,
-                                vitDMcg = vitD.toDoubleOrNull() ?: 0.0,
-                                vitB12Mcg = b12.toDoubleOrNull() ?: 0.0,
-                                folateMcg = folate.toDoubleOrNull() ?: 0.0,
-                                omega3G = omega3.toDoubleOrNull() ?: 0.0
-                            )
+                    val edited = initial.copy(
+                        name = name.trim(),
+                        aliases = aliases.trim(),
+                        unitLabel = unit.ifBlank { "1 serving" },
+                        kcal = kcal.toDoubleOrNull() ?: 0.0,
+                        proteinG = protein.toDoubleOrNull() ?: 0.0,
+                        carbsG = carbs.toDoubleOrNull() ?: 0.0,
+                        fatG = fat.toDoubleOrNull() ?: 0.0,
+                        micros = Micros(
+                            fiberG = fiber.toDoubleOrNull() ?: 0.0,
+                            sugarG = sugar.toDoubleOrNull() ?: 0.0,
+                            satFatG = satFat.toDoubleOrNull() ?: 0.0,
+                            sodiumMg = sodium.toDoubleOrNull() ?: 0.0,
+                            potassiumMg = potassium.toDoubleOrNull() ?: 0.0,
+                            calciumMg = calcium.toDoubleOrNull() ?: 0.0,
+                            ironMg = iron.toDoubleOrNull() ?: 0.0,
+                            magnesiumMg = magnesium.toDoubleOrNull() ?: 0.0,
+                            zincMg = zinc.toDoubleOrNull() ?: 0.0,
+                            vitAMcg = vitA.toDoubleOrNull() ?: 0.0,
+                            vitCMg = vitC.toDoubleOrNull() ?: 0.0,
+                            vitDMcg = vitD.toDoubleOrNull() ?: 0.0,
+                            vitB12Mcg = b12.toDoubleOrNull() ?: 0.0,
+                            folateMcg = folate.toDoubleOrNull() ?: 0.0,
+                            omega3G = omega3.toDoubleOrNull() ?: 0.0
                         )
                     )
+                    onSave(FoodEdits.withProvenance(initial, edited))
                 }
             ) { Text("Save food", color = if (name.isNotBlank()) Sage else Faint) }
         },

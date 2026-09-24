@@ -15,7 +15,8 @@ Array Char Byte Short Exception Throwable RuntimeException IllegalStateException
 IllegalArgumentException Comparable Iterable Sequence Result Regex Volatile Synchronized
 JvmStatic JvmField Deprecated Suppress OptIn Target AnnotationTarget Retention
 ArrayDeque LinkedHashMap HashMap HashSet MutableList MutableMap MutableSet
-Math System Thread Runnable Comparator Number Enum Companion Class UUID File'''.split())
+Math System Thread Runnable Comparator Number Enum Companion Class UUID File
+StringBuilder CharSequence'''.split())
 
 # Modifier extensions this project uses, and where each one lives. Every one is a
 # top-level function needing its own import — `Modifier.clickable {}` fails with

@@ -2,6 +2,7 @@ package dev.avles.gym
 
 import dev.avles.gym.data.Meals
 import dev.avles.gym.data.SeedData
+import dev.avles.gym.domain.FoodChecks
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -186,15 +187,24 @@ class SeedDataTest {
      */
     @Test
     fun `declared calories agree with the macros that make them up`() {
-        foods.filter { it.kcal >= 20 && it.name !in ENERGY_EXEMPT }.forEach { f ->
-            val fibre = minOf(f.micros.fiberG, f.carbsG)
-            val implied = f.proteinG * 4 + (f.carbsG - fibre) * 4 + fibre * 2 + f.fatG * 9
-            if (implied <= 0.0) return@forEach
-            val drift = kotlin.math.abs(f.kcal - implied) / implied
+        foods.forEach { f ->
+            val drift = FoodChecks.energyDrift(f) ?: return@forEach
             assertTrue(
-                "${f.name}: declared ${f.kcal} kcal but its macros imply $implied",
-                drift <= 0.20
+                "${f.name}: declared ${f.kcal} kcal but its macros imply ${FoodChecks.impliedKcal(f)}",
+                drift <= FoodChecks.ENERGY_TOLERANCE
             )
+        }
+    }
+
+    /**
+     * The importer rejects a dataset row on exactly these rules at runtime, so the
+     * built-in catalogue is held to the same ones. If a rule tightens, this is where
+     * a built-in food that no longer meets it shows up.
+     */
+    @Test
+    fun `every built-in food passes the gate an imported one must pass`() {
+        foods.forEach { f ->
+            assertTrue("${f.name}: ${FoodChecks.problems(f)}", FoodChecks.isValid(f))
         }
     }
 
@@ -274,14 +284,5 @@ class SeedDataTest {
             assertTrue("\"${f.name}\" is too short to identify", f.name.length >= 3)
             assertTrue("\"${f.name}\" is too long for a list row", f.name.length <= 48)
         }
-    }
-
-    private companion object {
-        /**
-         * Foods whose energy is not described by the four macros this app tracks.
-         * Beer's calories are mostly ethanol at 7 kcal/g, so the arithmetic below
-         * cannot reach its label however right the label is.
-         */
-        val ENERGY_EXEMPT = setOf("Beer")
     }
 }

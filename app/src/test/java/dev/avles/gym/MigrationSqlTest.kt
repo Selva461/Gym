@@ -33,7 +33,7 @@ class MigrationSqlTest {
          * Kept in step with @Database(version = ...) by hand, and asserted below so
          * the two cannot drift apart silently.
          */
-        const val DB_VERSION = 6
+        const val DB_VERSION = 7
     }
 
     /**
@@ -230,6 +230,28 @@ class MigrationSqlTest {
             expectedIndexSql("day_marker", "index_day_marker_dateEpochDay"),
             SchemaSql.INDEX_DAY_MARKER_DATE
         )
+    }
+
+    /**
+     * Version 7 gives every food two text columns: the names a dish goes by and where
+     * its numbers came from. Both are added to a populated table, so both need the
+     * DEFAULT that the variation column needed, for the same reason.
+     */
+    @Test
+    fun `the food aliases and source columns carry the same default on both sides`() {
+        val create = expectedCreateSql("food_item")
+        assertTrue(
+            "Room's CREATE TABLE for food_item does not match what the ALTER produces.\n" +
+                "  expected to contain: ${SchemaSql.EXPECTED_FOOD_ALIASES_COLUMN}\n  actual: $create",
+            create.contains(SchemaSql.EXPECTED_FOOD_ALIASES_COLUMN)
+        )
+        assertTrue(
+            "Room's CREATE TABLE for food_item does not match what the ALTER produces.\n" +
+                "  expected to contain: ${SchemaSql.EXPECTED_FOOD_SOURCE_COLUMN}\n  actual: $create",
+            create.contains(SchemaSql.EXPECTED_FOOD_SOURCE_COLUMN)
+        )
+        assertTrue(SchemaSql.ADD_FOOD_ALIASES.endsWith(SchemaSql.EXPECTED_FOOD_ALIASES_COLUMN))
+        assertTrue(SchemaSql.ADD_FOOD_SOURCE.endsWith(SchemaSql.EXPECTED_FOOD_SOURCE_COLUMN))
     }
 
     @Test

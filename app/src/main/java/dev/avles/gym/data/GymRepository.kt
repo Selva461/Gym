@@ -1,5 +1,6 @@
 package dev.avles.gym.data
 
+import dev.avles.gym.core.GymLog
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
@@ -8,8 +9,16 @@ import java.time.LocalDate
  * Context — which is what keeps every non-photo test able to build one. When it is
  * absent the photo methods are no-ops rather than crashes: a caller with no store
  * cannot have a picture to lose.
+ *
+ * [bundledFoods] reads the food dataset shipped inside the app, as text. A function
+ * rather than a file path because where an app's bundled files live is the one
+ * thing Android and iOS disagree on; everything after the read is shared.
  */
-class GymRepository(private val dao: GymDao, private val photos: PhotoStore? = null) {
+class GymRepository(
+    private val dao: GymDao,
+    private val photos: PhotoStore? = null,
+    private val bundledFoods: (() -> String?)? = null
+) {
 
     /**
      * Fills the catalogue on first launch, and tops it up on later ones.
@@ -32,9 +41,29 @@ class GymRepository(private val dao: GymDao, private val photos: PhotoStore? = n
             .filter { it.name !in knownFoods }
             .takeIf { it.isNotEmpty() }
             ?.let { dao.insertFoods(it) }
+        seedBundledFoods()
 
         seedSplitsIfEmpty()
         regroupSeededExercisesIfStale()
+    }
+
+    /**
+     * Adds the dishes from the bundled dataset that are not already here, by the same
+     * top-up rule as the built-in catalogue. Runs after it, so that a dish both
+     * contain is the hand-checked built-in one.
+     *
+     * A file that cannot be read costs the dataset and nothing else; the app still
+     * starts with everything it had.
+     */
+    private suspend fun seedBundledFoods() {
+        val csv = bundledFoods?.let { read -> runCatching(read).getOrNull() } ?: return
+        val result = FoodDataset.parse(csv, dao.foodNames().toSet())
+        if (result.foods.isNotEmpty()) dao.insertFoods(result.foods)
+        GymLog.i(GymLog.Tag.SEED) {
+            "dataset: ${result.foods.size} added, ${result.alreadyPresent.size} already here, " +
+                "${result.rejected.size} declined"
+        }
+        result.rejected.forEach { GymLog.d(GymLog.Tag.SEED) { "declined ${it.dish}: ${it.reason}" } }
     }
 
     /**

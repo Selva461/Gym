@@ -21,7 +21,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ExercisePhoto::class,
         DayMarker::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class GymDatabase : RoomDatabase() {
@@ -129,6 +129,18 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v6 → v7: other names for a food, and where its numbers came from.
+         *
+         * Two columns with empty defaults. Every food already in the database gets
+         * no aliases and no stated source, which is accurate: nobody recorded either.
+         */
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                SchemaSql.V7_STATEMENTS.forEach(db::execSQL)
+            }
+        }
+
         @Volatile private var instance: GymDatabase? = null
 
         fun get(context: Context): GymDatabase = instance ?: synchronized(this) {
@@ -137,7 +149,7 @@ abstract class GymDatabase : RoomDatabase() {
                 GymDatabase::class.java,
                 "gym.db"
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .build()
                 .also { instance = it }
         }

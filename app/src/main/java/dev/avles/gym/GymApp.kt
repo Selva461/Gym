@@ -1,6 +1,7 @@
 package dev.avles.gym
 
 import android.app.Application
+import dev.avles.gym.data.FoodDataset
 import dev.avles.gym.data.GymDatabase
 import dev.avles.gym.data.GymRepository
 import dev.avles.gym.data.PhotoStore
@@ -27,7 +28,11 @@ class GymApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        repository = GymRepository(GymDatabase.get(this).dao(), PhotoStore(this))
+        repository = GymRepository(
+            dao = GymDatabase.get(this).dao(),
+            photos = PhotoStore(this),
+            bundledFoods = { assets.open(FoodDataset.ASSET_PATH).bufferedReader().use { it.readText() } }
+        )
         settings = SettingsStore(this)
         Notifications.createChannels(this)
 

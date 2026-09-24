@@ -131,6 +131,21 @@ object SchemaSql {
     /** Every statement the v6 migration runs, in order. */
     val V6_STATEMENTS = listOf(CREATE_DAY_MARKER, INDEX_DAY_MARKER_DATE)
 
+    // ---- v7: alternative names and provenance on foods --------------------
+
+    const val ADD_FOOD_ALIASES =
+        "ALTER TABLE `food_item` ADD COLUMN `aliases` TEXT NOT NULL DEFAULT ''"
+
+    const val ADD_FOOD_SOURCE =
+        "ALTER TABLE `food_item` ADD COLUMN `source` TEXT NOT NULL DEFAULT ''"
+
+    /** How Room spells these in its exported schema, for MigrationSqlTest. */
+    const val EXPECTED_FOOD_ALIASES_COLUMN = "`aliases` TEXT NOT NULL DEFAULT ''"
+    const val EXPECTED_FOOD_SOURCE_COLUMN = "`source` TEXT NOT NULL DEFAULT ''"
+
+    /** Every statement the v7 migration runs, in order. */
+    val V7_STATEMENTS = listOf(ADD_FOOD_ALIASES, ADD_FOOD_SOURCE)
+
     /** Every statement the v5 migration runs, in order. */
     val V5_STATEMENTS = listOf(
         CREATE_PROGRESS_PHOTO,
