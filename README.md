@@ -1,8 +1,8 @@
 # Gym
 
-A training and food log for one person, one phone, no network.
-Kotlin, Jetpack Compose, Room. Built on GitHub Actions because the phone is the
-whole development environment.
+A training and food log for one person, one phone, no network — on Android and
+on iPhone, from one codebase. Kotlin Multiplatform, Compose Multiplatform, Room.
+Built on GitHub Actions because the phone is the whole development environment.
 
 Full spec: [REQUIREMENTS.md](REQUIREMENTS.md)
 
@@ -11,7 +11,7 @@ Full spec: [REQUIREMENTS.md](REQUIREMENTS.md)
 ## Read this first
 
 **It builds.** CI is green: the whole app compiles — Kotlin, Compose, Room's
-generated code — lint passes, the 32 unit tests pass, and `gym-debug-apk` comes
+generated code — lint passes, the 180 unit tests pass, and `gym-debug-apk` comes
 back as an artifact. The pinned toolchain below is a working set, not a guess.
 
 What has *not* happened is anyone running it on a phone. Compiling is not the
@@ -22,16 +22,19 @@ editing a seeded food recomputes past entries.
 
 **If a later build fails, look at versions before you look at code.** The
 toolchain in `gradle/libs.versions.toml` is pinned as a matched set that is
-known to work together, but it may be behind what the Android plugins expect
-now. The fix is to bump AGP, Kotlin, KSP and the Compose BOM **together** —
-bumping one alone will break the other three.
+known to work together. Kotlin, KSP, Compose Multiplatform and the JetBrains
+lifecycle/navigation ports move **together**: Kotlin/Native reads a library only
+if it was built by the same or an older compiler, so bumping one alone breaks
+the iOS build even when Android still compiles.
 
 ```toml
-agp        = "8.7.3"
-kotlin     = "2.0.21"
-ksp        = "2.0.21-1.0.28"   # must track the Kotlin version exactly
-composeBom = "2024.10.01"
-room       = "2.6.1"
+agp                  = "8.10.1"
+kotlin               = "2.1.21"
+ksp                  = "2.1.21-2.0.2"   # must track the Kotlin version exactly
+composeMultiplatform = "1.8.2"
+jetbrainsLifecycle   = "2.9.1"
+jetbrainsNavigation  = "2.9.0-beta03"
+room                 = "2.7.1"
 ```
 
 ## Getting the APK
@@ -39,8 +42,9 @@ room       = "2.6.1"
 1. Push to any branch. `.github/workflows/android.yml` has no branch filter, so
    the build runs wherever the work is — you do not have to merge to `main` to
    get an APK.
-2. Open the **Actions** tab, click the run, scroll to **Artifacts**, download
-   `gym-debug-apk`.
+2. Download it on the phone from the fixed address every green build updates:
+   `https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk`
+   (or: **Actions** tab → the run → **Artifacts** → `gym-debug-apk`).
 3. Unzip on the phone and install. Android will ask you to allow installs from
    that source once.
 
@@ -51,6 +55,36 @@ alongside anything else without conflict.
 Two other artifacts come back from every run: `unit-test-report` and
 `lint-report`. The tests gate the build; lint does not, deliberately — a style
 warning should never stand between you and a working APK.
+
+## Installing on an iPhone
+
+The iOS build is `.github/workflows/ios.yml`. It runs when `main` moves, or on
+demand from **Actions → Build iOS app → Run workflow** (it is not run on every
+push: this repository is private, and GitHub bills a Mac minute as ten Linux
+ones). Each run publishes the app at a fixed address:
+
+    https://github.com/Selva461/Gym/releases/download/latest-ios/gym-unsigned.ipa
+
+**It is unsigned, and that is not something a build can fix on its own.** iOS
+installs only apps signed for the device, by an Apple ID. So the last step
+happens on your side, once:
+
+1. On a Windows PC or a Mac, install **Sideloadly** (or **AltStore**).
+2. Plug the iPhone in, drop `gym-unsigned.ipa` onto Sideloadly, sign in with your
+   Apple ID, press Start. It signs the app for your phone and installs it.
+3. On the iPhone: Settings → General → VPN & Device Management → trust your
+   Apple ID. On iOS 16 and later, also turn on Settings → Privacy & Security →
+   Developer Mode (the phone restarts once).
+
+With a **free** Apple ID the signature lasts **7 days**; re-run step 2 to renew
+it (your data stays). With a paid Apple Developer account ($99/year) it lasts a
+year, and CI can sign the IPA itself if you add the certificate and
+provisioning profile as repository secrets — say so and that is a small change.
+
+The iPhone app is the same app as the Android one, compiled from the same code:
+same screens, same catalogue, same Indian dataset, same exercise demonstrations.
+Its data lives in the app's private Application Support directory; photos are
+excluded from iCloud backup, as they are left out of Android's cloud backup.
 
 ## What's in it
 
@@ -229,24 +263,42 @@ rather than a phone app.
 
 ## Structure
 
+One Gradle module, `app`, compiled for two platforms.
+
 ```
-data/      Room entities, one DAO, repository, seed catalogue, DataStore settings
-domain/    pure Kotlin — macro and micronutrient maths, 1RM and records, streaks,
-           progression. All of it unit tested.
-ui/        one ViewModel, five screens, a small set of shared components
-notify/    notification channels, rest timer alert, nightly reminder, boot re-schedule
+app/src/commonMain/   everything that is the same on both phones — nearly all of it
+  data/               Room entities, one DAO, repository, seed catalogue, the
+                      Indian dataset importer, DataStore settings
+  domain/             pure Kotlin — macro and micronutrient maths, 1RM and records,
+                      streaks, progression, food checks and search. All unit tested.
+  ui/                 one ViewModel, the screens, a small set of shared components
+  core/               the log, the clock and calendar
+  composeResources/   exercise demonstrations and the food dataset, bundled
+app/src/androidMain/  Android: GymApp, MainActivity, notifications, photo store
+app/src/iosMain/      iOS: MainViewController, notifications, photo store
+iosApp/               the Xcode project (XcodeGen spec) and a few lines of Swift
 ```
 
-`domain/` holds no Android types, and neither do the row classes it works on.
-That is not tidiness for its own sake — it is what lets the maths be compiled and
-tested without an emulator, or without an SDK at all.
+What differs between the platforms is kept to a handful of seams, each small
+enough to read in one sitting:
 
-The domain layer holds no Android types, which is why it can be tested without
-an emulator. Anything that can move into it, should.
+| Seam | Android | iOS |
+| --- | --- | --- |
+| `PhotoStore` | copies from a content URI, applies EXIF | redraws a UIImage upright |
+| `Notifier` | AlarmManager + broadcast | UNUserNotificationCenter triggers |
+| `rememberImagePicker` | system photo picker | PHPickerViewController |
+| `decodeImageFile` | BitmapFactory, sampled | Skia, scaled |
+| `writePlatformLog` | logcat | NSLog |
+| database / settings location | the files every earlier version wrote | Application Support |
 
-There is no dependency injection framework. One app, one user, five screens —
-a graph builder would be more machinery than the problem deserves. `GymApp`
-constructs the repository and hands it to a single ViewModel.
+`commonMain` may not import `android.*` or `java.*` — ArchitectureTest and
+`tools/check-imports.py` both refuse it — so a change that would break the iOS
+build is caught on the Linux build first.
+
+There is no dependency injection framework. One app, one user, a handful of
+screens — a graph builder would be more machinery than the problem deserves.
+Each platform's entry point makes the four things only it can make and hands
+them to `AppContainer`, which assembles the rest identically on both.
 
 ## Design
 

@@ -1,0 +1,68 @@
+# The iOS app's Xcode project, described rather than committed.
+#
+# `xcodegen generate` (brew install xcodegen) turns this into Gym.xcodeproj. A
+# generated project is reviewable as text and cannot drift into the merge
+# conflicts a hand-edited .pbxproj is famous for.
+#
+# The app itself is a few lines of Swift that host the shared Kotlin UI; all of
+# the app — screens, database, catalogue — is compiled from app/src/commonMain
+# into the GymKit framework by the Gradle step below.
+name: Gym
+options:
+  bundleIdPrefix: dev.avles
+  deploymentTarget:
+    iOS: "15.0"
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Gym:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Gym
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIUserInterfaceStyle: Dark
+        # Compose drives its own frame timing; without this it is held to 60 Hz
+        # on ProMotion screens and refuses to start.
+        CADisableMinimumFrameDurationOnPhone: true
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.avles.gym
+        PRODUCT_NAME: Gym
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        # The Gradle step writes the framework outside Xcode's sandbox.
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        FRAMEWORK_SEARCH_PATHS:
+          - $(inherited)
+          - $(SRCROOT)/../app/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+        OTHER_LDFLAGS:
+          - $(inherited)
+          - -framework
+          - GymKit
+          - -framework
+          - PhotosUI
+          - -framework
+          - UserNotifications
+    preBuildScripts:
+      # Compiles the shared Kotlin code for the device being built for, and copies
+      # the bundled files (exercise demonstrations, the food dataset) into the app.
+      # GRADLE_BIN lets CI name its Gradle; locally, `gradle` on the PATH is used.
+      - name: Compile shared Kotlin (GymKit)
+        basedOnDependencyAnalysis: false
+        script: |
+          cd "$SRCROOT/.."
+          "${GRADLE_BIN:-gradle}" :app:embedAndSignAppleFrameworkForXcode --no-daemon
+    scheme: {}

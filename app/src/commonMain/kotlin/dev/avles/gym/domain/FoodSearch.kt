@@ -46,6 +46,23 @@ object FoodSearch {
         }
     }
 
-    private fun words(text: String): List<String> =
-        text.split(Regex("[^\\p{L}\\p{N}]+")).filter { it.isNotEmpty() }
+    /**
+     * Runs of letters and digits. A loop rather than a Unicode-class regex, because
+     * regex engines differ across platforms in exactly that corner and this has to
+     * split "Aloo-ka paratha" the same way on both phones.
+     */
+    private fun words(text: String): List<String> {
+        val out = mutableListOf<String>()
+        val current = StringBuilder()
+        for (c in text) {
+            if (c.isLetterOrDigit()) {
+                current.append(c)
+            } else if (current.isNotEmpty()) {
+                out += current.toString()
+                current.clear()
+            }
+        }
+        if (current.isNotEmpty()) out += current.toString()
+        return out
+    }
 }

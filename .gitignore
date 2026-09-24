@@ -8,3 +8,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Generated from iosApp/project.yml by XcodeGen; the spec is the source of truth.
+/iosApp/*.xcodeproj
+/iosApp/build

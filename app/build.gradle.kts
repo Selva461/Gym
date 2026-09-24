@@ -27,6 +27,16 @@ kotlin {
         }
     }
 
+    // A real iPhone, and the simulator on an Apple-silicon Mac. Static, so the
+    // framework links into the app rather than shipping beside it — nothing extra
+    // to embed or sign.
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
+        target.binaries.framework {
+            baseName = "GymKit"
+            isStatic = true
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -57,6 +67,9 @@ kotlin {
             // nothing but the bytes it is handed — no network, which matters in an app
             // whose INTERNET permission is removed at build time.
             implementation(libs.androidx.exifinterface)
+        }
+        iosMain.dependencies {
+            implementation(libs.okio)
         }
         val androidUnitTest by getting {
             dependencies {
@@ -207,4 +220,6 @@ tasks.withType<Test>().configureEach {
 // Room's code generator runs once per target; each gets its own generated DAO.
 dependencies {
     add("kspAndroid", libs.androidx.room.compiler)
+    add("kspIosArm64", libs.androidx.room.compiler)
+    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
 }

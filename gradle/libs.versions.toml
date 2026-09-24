@@ -16,6 +16,7 @@ sqlite = "2.5.1"
 datastore = "1.1.4"
 coroutines = "1.10.2"
 kotlinxDatetime = "0.6.2"
+okio = "3.9.1"
 junit = "4.13.2"
 
 [libraries]
@@ -33,6 +34,7 @@ androidx-datastore-preferences-core = { group = "androidx.datastore", name = "da
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
+okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]
