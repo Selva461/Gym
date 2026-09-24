@@ -5,7 +5,6 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -46,21 +45,21 @@ interface GymDao {
     @Query("SELECT COUNT(*) FROM exercise WHERE isCustom = 0 AND muscleGroup NOT IN (:groups)")
     suspend fun staleSeededExerciseCount(groups: List<String>): Int
 
-    @Query(
-        """
-        UPDATE exercise SET muscleGroup = :group, repLow = :low, repHigh = :high, incrementKg = :inc
-        WHERE name = :name AND isCustom = 0
-        """
-    )
-    suspend fun refreshSeededExercise(name: String, group: String, low: Int, high: Int, inc: Double)
+    @Query("SELECT * FROM exercise WHERE isCustom = 0")
+    suspend fun seededExercises(): List<Exercise>
 
-    /** One transaction, so a half-applied regrouping is not a state the app can be in. */
-    @Transaction
-    suspend fun refreshSeededExercises(items: List<Exercise>) {
-        items.forEach {
-            refreshSeededExercise(it.name, it.muscleGroup, it.repLow, it.repHigh, it.incrementKg)
-        }
-    }
+    /**
+     * One call, so one transaction: Room wraps a list @Update in a single one, and a
+     * half-applied regrouping is not a state the app can be in.
+     *
+     * This replaced a @Transaction function with a body on this interface. Room
+     * handles an interface function with a body through a JVM-only calling
+     * convention, and fails on the iOS targets ("cannot find required type
+     * kotlin.coroutines.Continuation"). The DAO stays bodies-free; logic lives in
+     * the repository.
+     */
+    @Update
+    suspend fun updateExercises(items: List<Exercise>)
 
     // ---------- Sessions and sets ----------
 

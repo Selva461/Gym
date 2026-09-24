@@ -84,7 +84,17 @@ class GymRepository(
     private suspend fun regroupSeededExercisesIfStale() {
         val groups = SeedData.muscleGroups()
         if (dao.staleSeededExerciseCount(groups) == 0) return
-        dao.refreshSeededExercises(SeedData.exercises())
+        val seeds = SeedData.exercises().associateBy { it.name }
+        val refreshed = dao.seededExercises().mapNotNull { row ->
+            val seed = seeds[row.name] ?: return@mapNotNull null
+            row.copy(
+                muscleGroup = seed.muscleGroup,
+                repLow = seed.repLow,
+                repHigh = seed.repHigh,
+                incrementKg = seed.incrementKg
+            ).takeIf { it != row }
+        }
+        if (refreshed.isNotEmpty()) dao.updateExercises(refreshed)
     }
 
     /**
