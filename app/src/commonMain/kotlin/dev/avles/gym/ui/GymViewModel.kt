@@ -595,6 +595,7 @@ class GymViewModel(
         val lift = exerciseName
             ?: trainState.value.sets.lastOrNull()?.exerciseName
             ?: "the next lift"
+        notifier.restStarted(total, lift)
         restJob = viewModelScope.launch {
             var left = total
             while (left > 0) {
@@ -610,6 +611,7 @@ class GymViewModel(
     fun cancelRest() {
         restJob?.cancel()
         _restRemaining.value = null
+        notifier.restCancelled()
     }
 
     fun clearPrFlag() {

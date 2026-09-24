@@ -25,7 +25,8 @@ IllegalArgumentException Comparable Iterable Sequence Result Regex Volatile Sync
 JvmStatic JvmField Deprecated Suppress OptIn Target AnnotationTarget Retention
 ArrayDeque LinkedHashMap HashMap HashSet MutableList MutableMap MutableSet
 Math System Thread Runnable Comparator Number Enum Companion Class UUID File
-StringBuilder CharSequence'''.split())
+StringBuilder CharSequence ByteArray IntArray LongArray FloatArray DoubleArray CharArray
+BooleanArray ShortArray UByte UShort UInt ULong'''.split())
 
 # Modifier extensions this project uses, and where each one lives. Every one is a
 # top-level function needing its own import — `Modifier.clickable {}` fails with

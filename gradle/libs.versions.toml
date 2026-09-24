@@ -1,5 +1,5 @@
 [versions]
-agp = "8.7.3"
+agp = "8.10.1"
 # Kotlin, KSP, Compose Multiplatform and the JetBrains lifecycle/navigation ports
 # move together: Kotlin/Native reads a library only if it was built by the same or
 # an older compiler, so these four are one decision, not four.

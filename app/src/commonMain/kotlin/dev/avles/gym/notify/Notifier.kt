@@ -8,6 +8,17 @@ package dev.avles.gym.notify
  */
 interface Notifier {
 
+    /**
+     * A rest of [seconds] has begun. iOS suspends a backgrounded app, so the in-app
+     * countdown cannot fire anything there; it schedules the alert up front instead.
+     * Android keeps running the countdown and ignores this.
+     */
+    fun restStarted(seconds: Int, exerciseName: String) {}
+
+    /** The rest ended early — skipped, or replaced by a new one. */
+    fun restCancelled() {}
+
+    /** The in-app countdown reached zero. Android alerts here; iOS already scheduled it. */
     fun restFinished(exerciseName: String)
 
     fun scheduleDailyReminder(hour: Int, minute: Int)
