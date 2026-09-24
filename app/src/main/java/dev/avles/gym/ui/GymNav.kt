@@ -24,6 +24,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import dev.avles.gym.core.epochDay
 import dev.avles.gym.ui.screens.CoachScreen
 import dev.avles.gym.ui.screens.FuelScreen
 import dev.avles.gym.ui.screens.PatternsScreen
@@ -132,8 +133,8 @@ fun GymNav(vm: GymViewModel) {
                     onSelectDate = vm::selectDate,
                     onGoTrain = { go("train") },
                     onGoFuel = { go("fuel") },
-                    dayKind = markers.firstOrNull { it.dateEpochDay == day.date.toEpochDay() }?.kind,
-                    onMarkDay = { kind -> vm.markDay(day.date.toEpochDay(), kind) }
+                    dayKind = markers.firstOrNull { it.dateEpochDay == day.date.epochDay }?.kind,
+                    onMarkDay = { kind -> vm.markDay(day.date.epochDay, kind) }
                 )
             }
             composable("train") {

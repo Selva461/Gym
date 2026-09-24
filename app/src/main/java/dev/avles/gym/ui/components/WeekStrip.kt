@@ -24,7 +24,9 @@ import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
 import dev.avles.gym.ui.theme.Sage
-import java.time.LocalDate
+import dev.avles.gym.core.Dates
+import dev.avles.gym.core.epochDay
+import kotlinx.datetime.LocalDate
 
 /**
  * The seven days around the selected one, with two dots under each day: brass if
@@ -41,16 +43,16 @@ fun WeekStrip(
     onSelect: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val start = selected.minusDays(3)
+    val start = selected.epochDay - 3
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         (0..6).forEach { offset ->
-            val day = start.plusDays(offset.toLong())
-            val epoch = day.toEpochDay()
+            val epoch = start + offset
+            val day = Dates.ofEpochDay(epoch)
             val isSelected = day == selected
-            val isFuture = day.isAfter(today)
+            val isFuture = day > today
 
             Column(
                 modifier = Modifier

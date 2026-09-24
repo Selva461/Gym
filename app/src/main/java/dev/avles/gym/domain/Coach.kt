@@ -2,7 +2,6 @@ package dev.avles.gym.domain
 
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.SetRow
-import kotlin.math.roundToInt
 
 /**
  * Whether the training you are actually doing serves the look you are after, and
@@ -153,5 +152,5 @@ object Coach {
     }
 
     private fun format(sets: Double): String =
-        if (sets % 1.0 == 0.0) sets.roundToInt().toString() else String.format("%.1f", sets)
+        Numbers.trimmed(sets)
 }

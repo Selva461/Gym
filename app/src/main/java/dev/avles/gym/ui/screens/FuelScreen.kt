@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.core.Dates
 import dev.avles.gym.data.FoodItem
 import dev.avles.gym.data.FoodLogRow
 import dev.avles.gym.data.Meals
@@ -43,6 +44,7 @@ import dev.avles.gym.data.Micros
 import dev.avles.gym.domain.FoodEdits
 import dev.avles.gym.domain.FoodSearch
 import dev.avles.gym.domain.MacroMath
+import dev.avles.gym.domain.Numbers
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.DayState
 import dev.avles.gym.ui.components.EmptyNote
@@ -507,12 +509,12 @@ private fun QuantityDialog(
 private fun notableMicros(micros: Micros, qty: Double): String {
     val scaled = micros * qty
     val bits = buildList {
-        if (scaled.omega3G >= 0.1) add("${"%.1f".format(scaled.omega3G)} g omega-3")
+        if (scaled.omega3G >= 0.1) add("${Numbers.fixed(scaled.omega3G, 1)} g omega-3")
         if (scaled.magnesiumMg >= 20) add("${scaled.magnesiumMg.roundToInt()} mg magnesium")
-        if (scaled.ironMg >= 1.0) add("${"%.1f".format(scaled.ironMg)} mg iron")
+        if (scaled.ironMg >= 1.0) add("${Numbers.fixed(scaled.ironMg, 1)} mg iron")
         if (scaled.calciumMg >= 80) add("${scaled.calciumMg.roundToInt()} mg calcium")
-        if (scaled.vitDMcg >= 1.0) add("${"%.1f".format(scaled.vitDMcg)} mcg vitamin D")
-        if (scaled.fiberG >= 2.0) add("${"%.1f".format(scaled.fiberG)} g fibre")
+        if (scaled.vitDMcg >= 1.0) add("${Numbers.fixed(scaled.vitDMcg, 1)} mcg vitamin D")
+        if (scaled.fiberG >= 2.0) add("${Numbers.fixed(scaled.fiberG, 1)} g fibre")
     }
     return bits.take(3).joinToString(" · ")
 }
@@ -711,7 +713,7 @@ private fun NumberField(
 private fun trimZero(v: Double): String =
     if (v == 0.0) "" else if (v % 1.0 == 0.0) v.roundToInt().toString() else v.toString()
 
-private fun defaultMealForNow(): String = when (java.time.LocalTime.now().hour) {
+private fun defaultMealForNow(): String = when (Dates.hourNow()) {
     in 4..10 -> Meals.BREAKFAST
     in 11..15 -> Meals.LUNCH
     in 16..19 -> Meals.SNACK

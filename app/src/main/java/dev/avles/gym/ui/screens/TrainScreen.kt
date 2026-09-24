@@ -33,12 +33,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.core.Dates
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.SeedData
 import dev.avles.gym.data.SessionSummary
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
+import dev.avles.gym.domain.Numbers
 import dev.avles.gym.domain.Training
 import dev.avles.gym.domain.Variations
 import dev.avles.gym.ui.LiftGuidance
@@ -248,7 +250,7 @@ private fun StartSessionPane(
                 val summary = summaries[session.id]
                 val minutes = session.endedAt?.let { ((it - session.startedAt) / 60000).toInt() }
                 val detail = buildString {
-                    append(java.time.LocalDate.ofEpochDay(session.dateEpochDay).toString())
+                    append(Dates.ofEpochDay(session.dateEpochDay).toString())
                     summary?.let { append("   ${it.setCount} sets   ${it.volume.roundToInt()} kg") }
                 }
                 EntryRow(
@@ -674,7 +676,7 @@ private fun RestBanner(secondsLeft: Int, onSkip: () -> Unit) {
     ) {
         Column {
             Text(
-                "%d:%02d".format(secondsLeft / 60, secondsLeft % 60),
+                Numbers.clock(secondsLeft),
                 style = MaterialTheme.typography.displaySmall,
                 color = Brass
             )

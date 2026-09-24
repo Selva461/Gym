@@ -2,7 +2,9 @@ package dev.avles.gym.data
 
 import dev.avles.gym.core.GymLog
 import kotlinx.coroutines.flow.Flow
-import java.time.LocalDate
+import dev.avles.gym.core.Dates
+import dev.avles.gym.core.epochDay
+import kotlinx.datetime.LocalDate
 
 /**
  * [photos] is optional so that the repository stays constructible without an Android
@@ -145,7 +147,7 @@ class GymRepository(
     val trainedDays: Flow<List<Long>> = dao.allTrainedDays()
 
     fun recentSessions(limit: Int = 20): Flow<List<WorkoutSession>> = dao.recentSessions(limit)
-    fun sessionsOn(day: LocalDate): Flow<List<WorkoutSession>> = dao.sessionsOn(day.toEpochDay())
+    fun sessionsOn(day: LocalDate): Flow<List<WorkoutSession>> = dao.sessionsOn(day.epochDay)
     fun setsForSession(sessionId: Long): Flow<List<SetRow>> = dao.setsForSession(sessionId)
     fun historyForExercise(exerciseId: Long, limit: Int = 30): Flow<List<SetRow>> =
         dao.historyForExercise(exerciseId, limit)
@@ -154,13 +156,13 @@ class GymRepository(
 
     suspend fun startSession(
         label: String,
-        day: LocalDate = LocalDate.now(),
+        day: LocalDate = Dates.today(),
         splitId: Long? = null
     ): Long = dao.insertSession(
         WorkoutSession(
-            dateEpochDay = day.toEpochDay(),
+            dateEpochDay = day.epochDay,
             label = label,
-            startedAt = System.currentTimeMillis(),
+            startedAt = Dates.nowMillis(),
             splitId = splitId
         )
     )
@@ -179,7 +181,7 @@ class GymRepository(
     }
 
     suspend fun finishSession(session: WorkoutSession) =
-        dao.updateSession(session.copy(endedAt = System.currentTimeMillis()))
+        dao.updateSession(session.copy(endedAt = Dates.nowMillis()))
 
     suspend fun logSet(
         sessionId: Long,
@@ -197,7 +199,7 @@ class GymRepository(
             weightKg = weightKg,
             reps = reps,
             isWarmup = isWarmup,
-            loggedAt = System.currentTimeMillis(),
+            loggedAt = Dates.nowMillis(),
             variation = variation.trim()
         )
     )
@@ -225,16 +227,16 @@ class GymRepository(
     val loggedFoodDays: Flow<List<Long>> = dao.allLoggedFoodDays()
 
     fun quickPicks(limit: Int = 8): Flow<List<FoodItem>> = dao.mostLoggedFoods(limit)
-    fun foodLogFor(day: LocalDate): Flow<List<FoodLogRow>> = dao.foodLogFor(day.toEpochDay())
+    fun foodLogFor(day: LocalDate): Flow<List<FoodLogRow>> = dao.foodLogFor(day.epochDay)
 
     suspend fun logFood(day: LocalDate, foodId: Long, meal: String, quantity: Double) =
         dao.insertFoodLog(
             FoodLog(
-                dateEpochDay = day.toEpochDay(),
+                dateEpochDay = day.epochDay,
                 foodId = foodId,
                 meal = meal,
                 quantity = quantity,
-                loggedAt = System.currentTimeMillis()
+                loggedAt = Dates.nowMillis()
             )
         )
 
@@ -252,7 +254,7 @@ class GymRepository(
     val latestWeight: Flow<BodyWeight?> = dao.latestWeight()
 
     suspend fun recordWeight(day: LocalDate, kg: Double, note: String = "") =
-        dao.upsertWeight(BodyWeight(dateEpochDay = day.toEpochDay(), weightKg = kg, note = note))
+        dao.upsertWeight(BodyWeight(dateEpochDay = day.epochDay, weightKg = kg, note = note))
 
     // ---------- Photos ----------
 
@@ -273,7 +275,7 @@ class GymRepository(
                 dateEpochDay = dateEpochDay,
                 fileName = fileName,
                 label = label.trim(),
-                takenAt = System.currentTimeMillis()
+                takenAt = Dates.nowMillis()
             )
         )
         return true
@@ -296,7 +298,7 @@ class GymRepository(
         // row, which would otherwise leave its file on disk with nothing pointing at it.
         val previous = dao.exercisePhotoFor(exerciseId)
         dao.insertExercisePhoto(
-            ExercisePhoto(exerciseId = exerciseId, fileName = fileName, addedAt = System.currentTimeMillis())
+            ExercisePhoto(exerciseId = exerciseId, fileName = fileName, addedAt = Dates.nowMillis())
         )
         previous?.let { store.delete(it.fileName) }
         return true
@@ -347,7 +349,7 @@ class GymRepository(
                 dateEpochDay = dateEpochDay,
                 kind = kind,
                 note = note.trim(),
-                markedAt = System.currentTimeMillis()
+                markedAt = Dates.nowMillis()
             )
         )
     }

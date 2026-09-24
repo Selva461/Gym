@@ -40,7 +40,9 @@ import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
-import java.time.LocalDate
+import dev.avles.gym.core.Dates
+import dev.avles.gym.core.epochDay
+import kotlinx.datetime.LocalDate
 
 /**
  * Progress photos: a timeline, and the oldest against the newest.
@@ -74,7 +76,7 @@ fun PhotosScreen(
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
-        if (uri != null) onAdd(uri, today.toEpochDay(), pendingLabel)
+        if (uri != null) onAdd(uri, today.epochDay, pendingLabel)
         pendingLabel = ""
     }
 
@@ -178,7 +180,7 @@ private fun ComparisonHalf(row: PhotoRow, label: String, modifier: Modifier = Mo
     Column(modifier) {
         PhotoImage(
             file = row.file,
-            contentDescription = "$label, ${LocalDate.ofEpochDay(row.photo.dateEpochDay)}",
+            contentDescription = "$label, ${Dates.ofEpochDay(row.photo.dateEpochDay)}",
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(0.72f)
@@ -186,7 +188,7 @@ private fun ComparisonHalf(row: PhotoRow, label: String, modifier: Modifier = Mo
         Spacer(Modifier.height(6.dp))
         Text(label, style = MaterialTheme.typography.labelSmall, color = Brass)
         Text(
-            LocalDate.ofEpochDay(row.photo.dateEpochDay).toString(),
+            Dates.ofEpochDay(row.photo.dateEpochDay).toString(),
             style = MaterialTheme.typography.labelSmall,
             color = Faint
         )
@@ -205,7 +207,7 @@ private fun PhotoCard(row: PhotoRow, onClick: () -> Unit) {
         )
         Column(Modifier.padding(start = 14.dp)) {
             Text(
-                LocalDate.ofEpochDay(row.photo.dateEpochDay).toString(),
+                Dates.ofEpochDay(row.photo.dateEpochDay).toString(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Bone
             )
@@ -238,7 +240,7 @@ private fun PhotoEditorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(LocalDate.ofEpochDay(row.photo.dateEpochDay).toString(), color = Bone) },
+        title = { Text(Dates.ofEpochDay(row.photo.dateEpochDay).toString(), color = Bone) },
         text = {
             Column {
                 OutlinedTextField(

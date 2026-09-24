@@ -38,7 +38,7 @@ import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Sage
 import dev.avles.gym.ui.theme.Slate
-import java.time.LocalDate
+import dev.avles.gym.core.Dates
 import kotlin.math.abs
 
 @Composable
@@ -51,7 +51,7 @@ fun ProgressScreen(
     modifier: Modifier = Modifier
 ) {
     var logging by remember { mutableStateOf(false) }
-    val today = LocalDate.now().toEpochDay()
+    val today = Dates.todayEpochDay()
 
     val weights = state.weights
     val latest = weights.lastOrNull()

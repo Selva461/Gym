@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.domain.Coach
+import dev.avles.gym.domain.Numbers
 import dev.avles.gym.domain.Physiques
 import dev.avles.gym.ui.CoachState
 import dev.avles.gym.ui.components.ChipRow
@@ -36,7 +37,6 @@ import dev.avles.gym.ui.theme.Line
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Sage
 import dev.avles.gym.ui.theme.Slate
-import kotlin.math.roundToInt
 
 /**
  * Whether the last seven days served the goal, and what is missing if not.
@@ -209,6 +209,6 @@ private fun MuscleBar(week: Coach.MuscleWeek) {
 }
 
 private fun trim(sets: Double): String =
-    if (sets % 1.0 == 0.0) sets.roundToInt().toString() else String.format("%.1f", sets)
+    Numbers.trimmed(sets)
 
 private fun plural(n: Int) = if (n == 1) "" else "s"

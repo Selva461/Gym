@@ -47,7 +47,7 @@ import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
 import dev.avles.gym.ui.theme.Slate
-import java.time.LocalDate
+import dev.avles.gym.core.Dates
 import kotlin.math.roundToInt
 
 /**
@@ -158,7 +158,7 @@ fun SessionDetailDialog(
         text = {
             Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
                 Text(
-                    LocalDate.ofEpochDay(detail.session.dateEpochDay).toString() +
+                    Dates.ofEpochDay(detail.session.dateEpochDay).toString() +
                         "  ·  $setCount ${if (setCount == 1) "set" else "sets"}" +
                         "  ·  ${volume.roundToInt()} kg" +
                         if (detail.session.endedAt == null) "  ·  still open" else "",

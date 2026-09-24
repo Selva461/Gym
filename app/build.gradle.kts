@@ -164,6 +164,9 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
 
+    // Dates and the wall clock, the same on Android and iOS. See core/Dates.kt.
+    implementation(libs.kotlinx.datetime)
+
     // Reading the orientation tag out of a picked photo. Without it every picture
     // taken in portrait displays on its side, because neither BitmapFactory nor
     // Compose rotates by EXIF on its own. ~100 KB, first-party, and it touches

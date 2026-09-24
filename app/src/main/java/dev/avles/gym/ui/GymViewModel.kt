@@ -47,10 +47,11 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.LocalDate
+import dev.avles.gym.core.Dates
+import kotlinx.datetime.LocalDate
 
 data class DayState(
-    val date: LocalDate = LocalDate.now(),
+    val date: LocalDate = Dates.today(),
     val rows: List<FoodLogRow> = emptyList(),
     val totals: Totals = Totals(),
     val byMeal: Map<String, Totals> = emptyMap(),
@@ -168,7 +169,7 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = (app as GymApp).repository
     private val settingsStore = (app as GymApp).settings
 
-    private val _selectedDate = MutableStateFlow(LocalDate.now())
+    private val _selectedDate = MutableStateFlow(Dates.today())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
     private val _restRemaining = MutableStateFlow<Int?>(null)
@@ -229,7 +230,7 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun selectDate(date: LocalDate) {
-        if (!date.isAfter(LocalDate.now())) _selectedDate.value = date
+        if (date <= Dates.today()) _selectedDate.value = date
     }
 
     // ---------- Training ----------
@@ -282,7 +283,7 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
         val physique = Physiques.byId(s.goalId)
         val guides = catalogue.associate { it.id to ExerciseGuide.of(it) }
         val dayOf = sessionDays.associate { it.id to it.dateEpochDay }
-        val today = LocalDate.now().toEpochDay()
+        val today = Dates.todayEpochDay()
 
         val actual = Coach.weeklySets(
             history = sets,
@@ -316,7 +317,7 @@ class GymViewModel(app: Application) : AndroidViewModel(app) {
         repo.sessionDays,
         settingsStore.settings
     ) { macros, sessionDays, s ->
-        val today = LocalDate.now().toEpochDay()
+        val today = Dates.todayEpochDay()
         val window = 30
         val byDay = macros.associate {
             it.dateEpochDay to Patterns.DayMacros(it.dateEpochDay, it.kcal, it.proteinG)

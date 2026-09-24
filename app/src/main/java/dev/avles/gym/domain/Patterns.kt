@@ -1,6 +1,5 @@
 package dev.avles.gym.domain
 
-import java.time.LocalDate
 
 /**
  * What your weeks actually look like, as opposed to what you think they look like.
@@ -42,7 +41,8 @@ object Patterns {
         val enoughToRead: Boolean get() = samples >= 3
     }
 
-    fun weekdayIndex(epochDay: Long): Int = LocalDate.ofEpochDay(epochDay).dayOfWeek.value - 1
+    /** Monday is 0. Epoch day 0, 1970-01-01, was a Thursday. */
+    fun weekdayIndex(epochDay: Long): Int = (((epochDay + 3) % 7 + 7) % 7).toInt()
 
     /**
      * Every weekday over [windowDays] ending at [today], with how often you trained

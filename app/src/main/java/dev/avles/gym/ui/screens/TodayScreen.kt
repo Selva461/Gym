@@ -37,12 +37,10 @@ import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Sage
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import dev.avles.gym.core.Dates
+import kotlinx.datetime.LocalDate
 import kotlin.math.roundToInt
 
-private val dayName = DateTimeFormatter.ofPattern("EEEE")
-private val dayDate = DateTimeFormatter.ofPattern("d MMMM")
 
 @Composable
 fun TodayScreen(
@@ -55,7 +53,7 @@ fun TodayScreen(
     onMarkDay: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val today = LocalDate.now()
+    val today = Dates.today()
     val protein = day.totals.proteinG
     val kcal = day.totals.kcal
     val proteinTarget = day.settings.proteinTargetG
@@ -78,12 +76,12 @@ fun TodayScreen(
             ) {
                 Column {
                     Text(
-                        if (day.date == today) "Today" else day.date.format(dayName),
+                        if (day.date == today) "Today" else Dates.dayName(day.date),
                         style = MaterialTheme.typography.headlineMedium,
                         color = Bone
                     )
                     Text(
-                        day.date.format(dayDate),
+                        Dates.dayAndMonth(day.date),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Mute
                     )
@@ -214,7 +212,7 @@ fun TodayScreen(
             SectionHeading(
                 // The strip lets you walk back through the week, so this heading has to
                 // say which day it is listing rather than always claiming to be today.
-                title = if (day.date == today) "Logged today" else "Logged on ${day.date.format(dayDate)}",
+                title = if (day.date == today) "Logged today" else "Logged on ${Dates.dayAndMonth(day.date)}",
                 trailing = if (day.rows.isEmpty()) null else "${day.rows.size} entries"
             )
             Spacer(Modifier.height(10.dp))

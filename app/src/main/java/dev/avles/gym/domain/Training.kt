@@ -1,8 +1,6 @@
 package dev.avles.gym.domain
 
 import dev.avles.gym.data.SetRow
-import java.util.Locale
-import kotlin.math.roundToInt
 
 object Training {
 
@@ -61,5 +59,5 @@ object Training {
      * a locale that formats 62.5 as "62,5" would round-trip it into 625 kg.
      */
     fun formatWeight(kg: Double): String =
-        if (kg % 1.0 == 0.0) kg.roundToInt().toString() else String.format(Locale.US, "%.1f", kg)
+        Numbers.trimmed(kg)
 }

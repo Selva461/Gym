@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.Micros
 import dev.avles.gym.domain.Direction
+import dev.avles.gym.domain.Numbers
 import dev.avles.gym.domain.NutrientRef
 import dev.avles.gym.domain.Nutrients
 import dev.avles.gym.ui.theme.Bone
@@ -28,7 +29,6 @@ import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
 import dev.avles.gym.ui.theme.Sage
-import java.util.Locale
 
 /**
  * Collapsed by default, and that is the design rather than an oversight.
@@ -137,7 +137,7 @@ private fun NutrientRow(ref: NutrientRef, micros: Micros) {
 
 /** Locale-pinned for the same reason weights are: a comma here would read as a thousands mark. */
 private fun format(v: Double, decimals: Int): String =
-    String.format(Locale.US, "%.${decimals}f", v)
+    Numbers.fixed(v, decimals)
 
 /**
  * A single nutrient, small, for putting one number next to a meal without opening
