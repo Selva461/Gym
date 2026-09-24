@@ -52,6 +52,25 @@ jobs:
           path: ~/.konan
           key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
 
+      # The Kotlin/Native toolchain carries the native standard library. Gradle
+      # fetches it only when a native compile task runs, and Room's code generator
+      # (KSP) runs before those — so on a fresh runner KSP analyses the code with
+      # no standard library at all and fails with "cannot find required type
+      # kotlin.coroutines.Continuation". Fetched first, from Maven Central, at the
+      # version the project pins.
+      - name: Provision the Kotlin/Native toolchain
+        run: |
+          KOTLIN=$(grep -E '^kotlin = ' gradle/libs.versions.toml | cut -d'"' -f2)
+          case "$(uname -m)" in arm64) ARCH=aarch64 ;; *) ARCH=x86_64 ;; esac
+          DIST="kotlin-native-prebuilt-macos-$ARCH-$KOTLIN"
+          if [ ! -f "$HOME/.konan/$DIST/konan/konan.properties" ]; then
+            mkdir -p "$HOME/.konan"
+            curl -fsSL --retry 4 \
+              "https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-native-prebuilt/$KOTLIN/kotlin-native-prebuilt-$KOTLIN-macos-$ARCH.tar.gz" \
+              | tar -xz -C "$HOME/.konan"
+          fi
+          ls "$HOME/.konan/$DIST"
+
       # Compiling the shared code on its own first means a Kotlin error is reported
       # here, plainly, rather than buried in an Xcode build phase's output.
       - name: Compile shared code for iOS
