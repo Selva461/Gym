@@ -1,43 +1,51 @@
 # Gym — handoff
 
-Last updated after the goal coach, patterns, rest days and the catalogue
-expansion. Supersedes every earlier version.
+Last updated after the Indian food dataset import and the port to Kotlin
+Multiplatform with an iPhone build. Supersedes every earlier version.
 
 ## Goal
 
-A personal Android training-and-food log for one phone, offline, no account.
-Repo `Selva461/Gym`, branch `claude/gym-app-audit-982uq6`.
+A personal training-and-food log for one phone, offline, no account — now on
+**Android and iPhone from one codebase**. Repo `Selva461/Gym` (private), branch
+`claude/gym-app-audit-982uq6`, merged to `main` once both platforms build.
 
 Standing constraints, all deliberate and all enforced by tests:
 
 - **No network, ever.** `INTERNET` and `ACCESS_NETWORK_STATE` are stripped from
   the merged manifest with `tools:node="remove"`. Anything the app shows must
-  already be inside the APK.
+  already be inside the app.
 - **Nothing licensed from anyone else.** No scraped exercise GIFs.
 - **Additive, not destructive.** Every schema change is a hand-written migration;
   no `fallbackToDestructiveMigration`.
+- **commonMain is portable.** No `android.*` or `java.*` imports there —
+  ArchitectureTest and `tools/check-imports.py` both refuse them.
 
 ## Current state
 
-**Everything builds and ships. 151 tests green. CI run 34 succeeded.**
-
 | | |
 |---|---|
-| Exercises | 486, across 13 real muscle groups, equipment in the name |
-| Demonstrations | 140 lifts, 2 frames each (start/finish), 3.6 MB, public domain |
-| Foods | 538 in 25 categories, heavily South Indian, Juices filed separately |
-| Database | v6, migrations 1→2→3→4→5→6, all hand-written and now actually verified |
-| Tests | 151, none needing a device or an emulator |
+| Platforms | Android (APK, every push) and iOS (unsigned IPA, on `main` or on demand) |
+| Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
+| Foods | 538 built in + 61 from the Indian Food Nutrition Dataset v2 on first launch |
+| Database | v7 (food `aliases` and `source`), migrations 1→…→7, Room 2.7 KMP |
+| Tests | 180, none needing a device |
+| Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 |
 
-Phase 2 tiers, all done: **0** foundation (logging, enforced layering, security
-posture), **1** derived exercise reference, **2** reference UI with a muscle map
-drawn in Compose, **3** per-set grip/stance with split progression and records,
-**4** progress photos, **5** your own picture per lift.
+This phase, in order:
 
-Phase 3, all done: **rest and missed days** (v6, rest bridges a streak and missed
-does not), **the goal coach** (weekly sets per muscle against a Physique, with
-suggestions whose main job is the muscle that is short), **the patterns screen**
-(thirty days of eating and training, by weekday), and the catalogue expansion.
+1. **Dataset import** (`data/FoodDataset.kt`, `domain/FoodChecks.kt`). One food
+   per dish, not per row. 61 added, 38 already present (some via `SAME_AS`),
+   23 declined with reasons (blank macros, self-contradicting energy, and
+   deep-fried INDB recipes that count all the frying oil — `dishProblems`).
+2. **Features it enabled:** `domain/FoodSearch.kt` (aliases, ranking),
+   `domain/FoodEdits.kt` (provenance turns to "Edited from …" when numbers change).
+3. **Portability:** `core/Dates.kt` (kotlinx-datetime), `domain/Numbers.kt`
+   (String.format replacement, checked digit-for-digit against it).
+4. **KMP restructure:** `app/src/{commonMain,androidMain,iosMain}`, seams listed
+   in README → Structure. Room with the bundled SQLite driver against the same
+   `gym.db`; settings keep their DataStore file; demos and the CSV are Compose
+   resources.
+5. **iOS:** `iosMain`, `iosApp/` (XcodeGen spec + Swift host), `ios.yml`.
 
 ### The one open problem
 
@@ -61,8 +69,7 @@ profile uninstalls it.
 
 ## Files in flight
 
-**None.** Working tree is clean and everything is pushed. `app/schemas/` is
-committed and CI writes to it on each successful build.
+**None.** Everything is pushed. `app/schemas/` is committed and CI writes to it.
 
 ## Changed
 
@@ -132,6 +139,15 @@ Read this section before touching CI. Most of it is me.
 - **The APK cannot be handed over as a file.** Artifact and release downloads are
   both proxy-blocked. The release-asset link is the only delivery route.
 
+- **AGP 8.7's lint crashes on Compose 1.8 / lifecycle 2.9** ("Found class
+  KaCallableMemberCall, but interface was expected"). The libraries ship lint
+  checks built for a newer lint API. AGP 8.10.1 (Gradle 8.11.1) fixed it.
+- **No iOS toolchain here, and none reachable.** download.jetbrains.com and
+  Google's Maven are proxy-blocked, so iOS code is checked only by `ios.yml`
+  on a Mac runner. Kept deliberately to members of ObjC classes rather than
+  category methods (which K/N imports as extensions needing their own imports)
+  to cut down on blind guesses.
+
 ## Phase 3 additions worth knowing
 
 - **`domain/Variations.kt`** — grip, angle and tempo are independent axes encoded
@@ -148,17 +164,20 @@ Read this section before touching CI. Most of it is me.
 
 ## Next step
 
-**Get the app onto the phone**, which is the only thing actually blocking the
-user: uninstall the existing `dev.avles.gym.debug`, then install from
-https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk
+**Install on both phones.**
 
-If that still fails, check for a second user or work profile holding the package.
+- Android: uninstall any old copy signed before `dd89f2c` (signature mismatch),
+  then install https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk
+- iPhone: https://github.com/Selva461/Gym/releases/download/latest-ios/gym-unsigned.ipa
+  through Sideloadly or AltStore with the user's Apple ID (README → Installing on
+  an iPhone). Free Apple ID: re-sign every 7 days.
 
-After that, nothing is outstanding. Open questions the user may want answered:
+Then, in order of value:
 
-- Whether to narrow the 800-line cap in `ArchitectureTest` to `ui/` only, since
-  data-heavy files like `ExerciseGuide.kt` (789 lines of tables) are where it is
-  least useful and where it caused the import churn above.
-- Whether to add either of the two security gaps named in `SECURITY.md`: a
-  biometric lock on app launch, or SQLCipher at rest. Both are real trade-offs,
-  and the second can lose the database permanently if the Keystore key is lost.
+- Run the manual pass (REQUIREMENTS.md §9) on the iPhone, which has never been
+  run on a device: photo picking, the rest alert with the app backgrounded, the
+  evening reminder, and that the Indian dataset seeded (search "aloo").
+- If the user gets a paid Apple Developer account: sign in CI (certificate +
+  provisioning profile as secrets, `xcodebuild archive` + `-exportArchive`).
+- The two security gaps in `SECURITY.md` (biometric lock, SQLCipher) are still
+  open questions for the user.
