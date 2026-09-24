@@ -9,7 +9,16 @@ mistake that costs a CI round trip, and the only one worth a script.
 """
 import re, sys, os, collections
 
-ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app/src/main/java/dev/avles/gym')
+APP_SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app/src')
+# Kotlin Multiplatform source sets. Code in commonMain sees only commonMain; a
+# platform source set sees commonMain plus itself.
+SOURCE_SETS = ['commonMain', 'androidMain', 'iosMain']
+ROOT = APP_SRC
+
+
+def source_set_of(path):
+    rel = os.path.relpath(path, APP_SRC)
+    return rel.split(os.sep, 1)[0]
 KOTLIN = set('''String Long Boolean Int Unit List Map Double Float Set Any Nothing Pair Triple
 Array Char Byte Short Exception Throwable RuntimeException IllegalStateException
 IllegalArgumentException Comparable Iterable Sequence Result Regex Volatile Synchronized
@@ -44,9 +53,10 @@ MODIFIER_EXTENSIONS = {
 }
 
 # Everything the project declares, and which package it lives in.
-decls = collections.defaultdict(set)
+decls_by_set = collections.defaultdict(lambda: collections.defaultdict(set))
 files = []
-for dirpath, _, names in os.walk(ROOT):
+for source_set in SOURCE_SETS:
+  for dirpath, _, names in os.walk(os.path.join(APP_SRC, source_set, 'kotlin')):
     for n in names:
         if n.endswith('.kt'):
             p = os.path.join(dirpath, n)
@@ -57,22 +67,38 @@ for dirpath, _, names in os.walk(ROOT):
             for m in re.finditer(
                 r'^\s*(?:@\w+\s+)*(?:public |internal |private |abstract |sealed |open |data |value |enum |annotation )*'
                 r'(?:class|interface|object|enum class)\s+([A-Z][A-Za-z0-9_]*)', src, re.M):
-                decls[pkg].add(m.group(1))
+                decls_by_set[source_set][pkg].add(m.group(1))
             for m in re.finditer(r'^\s*(?:@Composable\s+)?(?:internal |private |public )?fun\s+([A-Z][A-Za-z0-9_]*)\s*\(', src, re.M):
-                decls[pkg].add(m.group(1))
+                decls_by_set[source_set][pkg].add(m.group(1))
             for m in re.finditer(r'^\s*(?:internal |private |public )?(?:const )?val\s+([A-Z][A-Za-z0-9_]*)\s*[:=]', src, re.M):
-                decls[pkg].add(m.group(1))
+                decls_by_set[source_set][pkg].add(m.group(1))
+
+def visible_decls(source_set):
+    merged = collections.defaultdict(set)
+    for ss in ('commonMain', source_set):
+        for pkg, names in decls_by_set[ss].items():
+            merged[pkg] |= names
+    return merged
+
 
 targets = sys.argv[1:] or files
 bad = 0
 for p in sorted(targets):
     src = open(p).read()
+    decls = visible_decls(source_set_of(os.path.abspath(p)))
+    platform_imports = []
+    if source_set_of(os.path.abspath(p)) == 'commonMain':
+        # Shared code is compiled for iOS too, where none of these exist.
+        for line in src.split('\n'):
+            if re.match(r'import (android|java|javax)\.', line):
+                platform_imports.append(f'{line[7:].strip()}  -> not available on iOS; move it to androidMain behind a seam')
     pkg = re.search(r'^package\s+(\S+)', src, re.M)
     pkg = pkg.group(1) if pkg else ''
     code = re.sub(r'/\*.*?\*/', '', src, flags=re.S)
     code = re.sub(r'//[^\n]*', '', code)
     interp = ' '.join(re.findall(r'\$\{([^}]*)\}', code))
     stripped = re.sub(r'"(?:[^"\\]|\\.)*"', '""', code)
+    stripped = re.sub(r"'(?:[^'\\]|\\.)'", "' '", stripped)   # char literals: 'E' is not a type
 
     imports = set()
     seen_lines = set()
@@ -129,6 +155,7 @@ for p in sorted(targets):
         if re.search(r'\.' + fn + r'\s*[({]', stripped) and fn not in imports:
             missing.append(f'{fn}  -> import {path}.{fn}')
     missing.extend(duplicate_imports)
+    missing.extend(platform_imports)
     missing = sorted(set(missing))
     if missing:
         bad += 1

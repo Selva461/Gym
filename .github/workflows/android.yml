@@ -185,7 +185,7 @@ jobs:
       - name: Confirm the migration check was not silently skipped
         if: success()
         run: |
-          VERSION=$(grep -oP 'version\s*=\s*\K[0-9]+' app/src/main/java/dev/avles/gym/data/GymDatabase.kt | head -1)
+          VERSION=$(grep -oP 'version\s*=\s*\K[0-9]+' app/src/commonMain/kotlin/dev/avles/gym/data/GymDatabase.kt | head -1)
           # Searched, not assumed. Room keys the directory on the fully qualified
           # class name, and hardcoding that path is what let MigrationSqlTest skip
           # silently from the day it was written — it looked under

@@ -1,9 +1,80 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
+    alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room)
+}
+
+/**
+ * One module, two apps.
+ *
+ * Everything that is the same on both phones — the database, the catalogue, every
+ * screen — lives in commonMain and is compiled for each. What genuinely differs
+ * lives beside it in androidMain and iosMain, behind a handful of small seams:
+ * where files go, how a photo is picked and decoded, how a notification is
+ * scheduled, and how a log line is written. See the README's "Two platforms".
+ */
+kotlin {
+    androidTarget {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.ui)
+            implementation(compose.components.resources)
+            implementation(libs.jetbrains.lifecycle.viewmodel.compose)
+            implementation(libs.jetbrains.lifecycle.runtime.compose)
+            implementation(libs.jetbrains.navigation.compose)
+            implementation(libs.androidx.room.runtime)
+            // SQLite compiled into the app rather than borrowed from the OS, so the
+            // database engine is the same on both phones.
+            implementation(libs.androidx.sqlite.bundled)
+            implementation(libs.androidx.datastore.preferences.core)
+            implementation(libs.kotlinx.coroutines.core)
+            // Dates and the wall clock, the same on Android and iOS. See core/Dates.kt.
+            implementation(libs.kotlinx.datetime)
+        }
+        androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.datastore.preferences)
+            implementation(libs.kotlinx.coroutines.android)
+            // Reading the orientation tag out of a picked photo. Without it every picture
+            // taken in portrait displays on its side, because neither BitmapFactory nor
+            // Compose rotates by EXIF on its own. ~100 KB, first-party, and it touches
+            // nothing but the bytes it is handed — no network, which matters in an app
+            // whose INTERNET permission is removed at build time.
+            implementation(libs.androidx.exifinterface)
+        }
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(libs.junit)
+            }
+        }
+    }
+}
+
+/**
+ * The generated accessor for bundled files (exercise demonstrations, the food
+ * dataset). Internal, because nothing outside this module has any business
+ * reaching into them.
+ */
+compose.resources {
+    packageOfResClass = "dev.avles.gym.resources"
+    publicResClass = false
+    generateResClass = always
 }
 
 /**
@@ -84,12 +155,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
-        compose = true
         // GymLog compiles itself out of release builds by branching on
         // BuildConfig.DEBUG, which R8 then folds away entirely. That needs
         // BuildConfig generated, which AGP 8 no longer does by default.
@@ -130,10 +196,6 @@ room {
     schemaDirectory("$projectDir/schemas")
 }
 
-ksp {
-    arg("room.incremental", "true")
-}
-
 // MigrationSqlTest compares the hand-written v3 migration against the schema Room
 // exports here. Handing it the directory as a system property removes any guess
 // about the test task's working directory — the one assumption that is invisible
@@ -142,37 +204,7 @@ tasks.withType<Test>().configureEach {
     systemProperty("gym.schemaDir", "$projectDir/schemas")
 }
 
+// Room's code generator runs once per target; each gets its own generated DAO.
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-
-    implementation(libs.androidx.navigation.compose)
-
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-
-    implementation(libs.androidx.datastore.preferences)
-
-    // Dates and the wall clock, the same on Android and iOS. See core/Dates.kt.
-    implementation(libs.kotlinx.datetime)
-
-    // Reading the orientation tag out of a picked photo. Without it every picture
-    // taken in portrait displays on its side, because neither BitmapFactory nor
-    // Compose rotates by EXIF on its own. ~100 KB, first-party, and it touches
-    // nothing but the bytes it is handed — no network, which matters in an app
-    // whose INTERNET permission is removed at build time.
-    implementation(libs.androidx.exifinterface)
-
-    testImplementation(libs.junit)
+    add("kspAndroid", libs.androidx.room.compiler)
 }
