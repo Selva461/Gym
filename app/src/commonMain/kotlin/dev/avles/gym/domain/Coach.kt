@@ -75,8 +75,8 @@ object Coach {
             .filter { row -> sessionDayOf(row.sessionId)?.let { it in since..today } == true }
             .forEach { row ->
                 val guide = guideFor(row.exerciseId) ?: return@forEach
-                guide.primary.forEach { counts.merge(it, 1.0, Double::plus) }
-                guide.secondary.forEach { counts.merge(it, SECONDARY_WEIGHT, Double::plus) }
+                guide.primary.forEach { counts[it] = (counts[it] ?: 0.0) + 1.0 }
+                guide.secondary.forEach { counts[it] = (counts[it] ?: 0.0) + SECONDARY_WEIGHT }
             }
         return counts
     }

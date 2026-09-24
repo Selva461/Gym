@@ -90,6 +90,11 @@ for p in sorted(targets):
     platform_imports = []
     if source_set_of(os.path.abspath(p)) == 'commonMain':
         # Shared code is compiled for iOS too, where none of these exist.
+        # Java's own collection methods, reachable on Android because a Kotlin
+        # MutableMap is a java.util.Map there, and absent on iOS. No import to
+        # catch, so they are caught by name.
+        for m in re.finditer(r'\.(merge|compute|computeIfAbsent|computeIfPresent|putIfAbsent|removeIf|stream)\(', src):
+            platform_imports.append(f'.{m.group(1)}(  -> a java.util method, not available on iOS')
         for line in src.split('\n'):
             if re.match(r'import (android|java|javax)\.', line):
                 platform_imports.append(f'{line[7:].strip()}  -> not available on iOS; move it to androidMain behind a seam')

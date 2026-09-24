@@ -60,6 +60,20 @@ class ArchitectureTest {
                 "android import ends that."
         ),
         Rule(
+            inPackage = "",
+            mustNotReference = ".merge(",
+            because = "MutableMap.merge is java.util.Map's, reachable on Android and absent " +
+                "on iOS — the first iOS build failed on exactly this. Use " +
+                "map[key] = (map[key] ?: 0.0) + x.",
+            sourceSets = listOf("commonMain")
+        ),
+        Rule(
+            inPackage = "",
+            mustNotReference = ".computeIfAbsent(",
+            because = "java.util.Map's, absent on iOS. Use getOrPut.",
+            sourceSets = listOf("commonMain")
+        ),
+        Rule(
             inPackage = "domain",
             mustNotReference = "import dev.avles.gym.ui",
             because = "Dependencies point inward. The domain cannot know what a screen is."
