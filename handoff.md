@@ -24,7 +24,7 @@ Standing constraints, all deliberate and all enforced by tests:
 
 | | |
 |---|---|
-| Platforms | Android (APK, every push) and iOS (unsigned IPA, on `main` or on demand) |
+| Platforms | Android (APK, every push) and iOS (unsigned IPA, on `main` or on demand) — both green |
 | Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | 538 built in + 61 from the Indian Food Nutrition Dataset v2 on first launch |
 | Database | v7 (food `aliases` and `source`), migrations 1→…→7, Room 2.7 KMP |
@@ -142,6 +142,15 @@ Read this section before touching CI. Most of it is me.
 - **AGP 8.7's lint crashes on Compose 1.8 / lifecycle 2.9** ("Found class
   KaCallableMemberCall, but interface was expected"). The libraries ship lint
   checks built for a newer lint API. AGP 8.10.1 (Gradle 8.11.1) fixed it.
+- **The first four iOS builds failed on setup, not on the app.** KSP (Room's code
+  generator) runs before Gradle downloads the Kotlin/Native toolchain, so on a
+  fresh Mac runner it analysed without a native standard library: KSP2 said
+  "cannot find required type kotlin.coroutines.Continuation", KSP1 said "Can't
+  find env_blacklist file". Switching KSP versions and reshaping the DAO were
+  both wrong turns. The fix is `ios.yml`'s "Provision the Kotlin/Native
+  toolchain" step. Keep it.
+- **The only real iOS compile error was `MutableMap.merge`** — java.util's,
+  reachable on Android. The checker and ArchitectureTest now reject it.
 - **No iOS toolchain here, and none reachable.** download.jetbrains.com and
   Google's Maven are proxy-blocked, so iOS code is checked only by `ios.yml`
   on a Mac runner. Kept deliberately to members of ObjC classes rather than
