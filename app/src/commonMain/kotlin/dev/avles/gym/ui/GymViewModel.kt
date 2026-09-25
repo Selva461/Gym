@@ -18,6 +18,7 @@ import dev.avles.gym.data.SettingsStore
 import dev.avles.gym.data.Split
 import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
+import dev.avles.gym.domain.Assistance
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.data.DayKinds
 import dev.avles.gym.data.DayMarker
@@ -82,6 +83,8 @@ data class LiftGuidance(
     val exercise: Exercise,
     val recommendation: Recommendation? = null,
     val bestE1rm: Double = 0.0,
+    /** The least help ever used, on an assisted lift; null on every other lift. */
+    val leastHelp: Double? = null,
     val nextMilestone: Double = 0.0,
     val milestoneProgress: Float = 0f,
     val recentSets: List<SetRow> = emptyList(),
@@ -567,12 +570,18 @@ class GymViewModel(
                     // Best and milestone stay across every variation on purpose: your
                     // best bench is your best bench, whatever grip got you there.
                     val best = Training.bestEstimatedOneRepMax(history)
+                    // On an assisted machine the milestone is the next round number of
+                    // help *below* the least you have used, not a max above.
+                    val leastHelp = if (exercise.isAssisted) Assistance.leastHelp(history) else null
                     LiftGuidance(
                         exercise = exercise,
                         recommendation = Progression.recommend(exercise, history, variation),
                         bestE1rm = best,
-                        nextMilestone = Progression.nextMilestone(best),
-                        milestoneProgress = Progression.milestoneProgress(best),
+                        leastHelp = leastHelp,
+                        nextMilestone = leastHelp?.let { Assistance.nextMilestone(it) }
+                            ?: Progression.nextMilestone(best),
+                        milestoneProgress = leastHelp?.let { Assistance.milestoneProgress(it) }
+                            ?: Progression.milestoneProgress(best),
                         recentSets = history.take(5),
                         variation = variation,
                         guide = ExerciseGuide.of(exercise)

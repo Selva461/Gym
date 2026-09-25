@@ -33,7 +33,7 @@ class MigrationSqlTest {
          * Kept in step with @Database(version = ...) by hand, and asserted below so
          * the two cannot drift apart silently.
          */
-        const val DB_VERSION = 7
+        const val DB_VERSION = 8
     }
 
     /**
@@ -252,6 +252,25 @@ class MigrationSqlTest {
         )
         assertTrue(SchemaSql.ADD_FOOD_ALIASES.endsWith(SchemaSql.EXPECTED_FOOD_ALIASES_COLUMN))
         assertTrue(SchemaSql.ADD_FOOD_SOURCE.endsWith(SchemaSql.EXPECTED_FOOD_SOURCE_COLUMN))
+    }
+
+    /**
+     * Version 8 flags assisted machines. The column needs the same DEFAULT as every
+     * other added column, and the backfill must flag rows by the same rule new lifts
+     * are flagged by, or an upgraded install and a fresh one would disagree about
+     * which way an existing lift's weight points.
+     */
+    @Test
+    fun `the assisted column carries the same default on both sides and is backfilled`() {
+        val create = expectedCreateSql("exercise")
+        assertTrue(
+            "Room's CREATE TABLE for exercise does not match what the ALTER produces.\n" +
+                "  expected to contain: ${SchemaSql.EXPECTED_EXERCISE_ASSISTED_COLUMN}\n  actual: $create",
+            create.contains(SchemaSql.EXPECTED_EXERCISE_ASSISTED_COLUMN)
+        )
+        assertTrue(SchemaSql.ADD_EXERCISE_ASSISTED.endsWith(SchemaSql.EXPECTED_EXERCISE_ASSISTED_COLUMN))
+        assertTrue(SchemaSql.FLAG_ASSISTED_EXERCISES.contains("'%assisted%'"))
+        assertEquals(listOf(SchemaSql.ADD_EXERCISE_ASSISTED, SchemaSql.FLAG_ASSISTED_EXERCISES), SchemaSql.V8_STATEMENTS)
     }
 
     @Test

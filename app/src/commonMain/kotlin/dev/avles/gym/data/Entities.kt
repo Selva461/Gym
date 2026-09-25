@@ -98,7 +98,14 @@ data class Exercise(
      */
     val repLow: Int = 6,
     val repHigh: Int = 10,
-    val incrementKg: Double = 2.5
+    val incrementKg: Double = 2.5,
+    /**
+     * The weight on this lift is help, not load: an assisted pull-up or dip machine,
+     * where more kilos is easier. Progression, records and volume all turn around
+     * for it — see [dev.avles.gym.domain.Assistance]. Set from the name when a lift
+     * is created.
+     */
+    @ColumnInfo(defaultValue = "0") val isAssisted: Boolean = false
 )
 
 @Entity(tableName = "workout_session", indices = [Index("dateEpochDay")])
@@ -286,7 +293,9 @@ data class SetRow(
      * close grip *and* paused is expressible. Formatted for display there too,
      * rather than here, so there is one implementation of what it reads as.
      */
-    val variation: String = ""
+    val variation: String = "",
+    /** Copied from the exercise, so rules that read a set know which way its weight points. */
+    val isAssisted: Boolean = false
 )
 
 data class DayVolume(val dateEpochDay: Long, val volume: Double)

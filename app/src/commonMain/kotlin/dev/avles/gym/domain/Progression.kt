@@ -47,14 +47,18 @@ object Progression {
      * progressing off them would suggest a weight you never actually worked at.
      */
     fun sessionsNewestFirst(history: List<SetRow>): List<List<SetRow>> =
-        history.filter { !it.isWarmup && it.reps > 0 && it.weightKg > 0 }
+        // Zero help on an assisted machine is a real set — the hardest one there is.
+        history.filter { !it.isWarmup && it.reps > 0 && (it.weightKg > 0 || (it.isAssisted && it.weightKg == 0.0)) }
             .groupBy { it.sessionId }
             .values
             .sortedByDescending { session -> session.maxOf { it.loggedAt } }
 
-    /** Heaviest weight worked in a session, and the best reps achieved at it. */
-    private fun topOf(session: List<SetRow>): Pair<Double, Int> {
-        val topWeight = session.maxOf { it.weightKg }
+    /**
+     * The hardest weight worked in a session, and the best reps achieved at it: the
+     * heaviest on a normal lift, the least help on an assisted one.
+     */
+    private fun topOf(session: List<SetRow>, assisted: Boolean = false): Pair<Double, Int> {
+        val topWeight = if (assisted) session.minOf { it.weightKg } else session.maxOf { it.weightKg }
         val bestReps = session.filter { it.weightKg == topWeight }.maxOf { it.reps }
         return topWeight to bestReps
     }
@@ -97,6 +101,7 @@ object Progression {
         val fellBack = exact.isEmpty()
         val sessions = if (fellBack) sessionsNewestFirst(forLift) else exact
         if (sessions.isEmpty()) return null
+        if (exercise.isAssisted) return recommendAssisted(exercise, sessions, fellBack)
 
         val (topWeight, bestReps) = topOf(sessions.first())
         val repHigh = exercise.repHigh.coerceAtLeast(1)
@@ -147,6 +152,75 @@ object Progression {
             weightKg = topWeight,
             reps = targetReps,
             headline = "${Training.formatWeight(topWeight)} kg × $targetReps",
+            rationale = base + stallNote + borrowedNote,
+            isStepUp = false,
+            isStalled = stalled,
+            isFromOtherVariations = fellBack
+        )
+    }
+
+    /**
+     * The same double progression run backwards, for a machine where the weight
+     * helps. Hit the top of the range and the *help* comes down by the lift's
+     * increment; otherwise the help stays and one more rep is the target. At zero
+     * help the next step is the lift itself, and the rationale says so.
+     */
+    private fun recommendAssisted(
+        exercise: Exercise,
+        sessions: List<List<SetRow>>,
+        fellBack: Boolean
+    ): Recommendation {
+        val (help, bestReps) = topOf(sessions.first(), assisted = true)
+        val repHigh = exercise.repHigh.coerceAtLeast(1)
+        val repLow = exercise.repLow.coerceIn(1, repHigh)
+        val w = Training::formatWeight
+
+        val lastThree = sessions.take(3).map { topOf(it, assisted = true) }
+        val stalled = lastThree.size == 3 &&
+            lastThree.map { it.first }.distinct().size == 1 &&
+            lastThree[0].second <= lastThree[2].second
+
+        val borrowedNote = if (fellBack) {
+            " This is from your other work on ${exercise.name} — nothing logged on " +
+                "this variation yet, so treat it as a starting point."
+        } else {
+            ""
+        }
+
+        if (bestReps >= repHigh) {
+            val next = toHalfKg((help - exercise.incrementKg).coerceAtLeast(0.0))
+            val rationale = if (help <= 0.0) {
+                "$bestReps reps with no help at all — that is the unassisted lift. " +
+                    "Time to log it as the real thing."
+            } else {
+                "You hit $bestReps with ${w(help)} kg of help, the top of this lift's range. " +
+                    "On this machine more weight is easier, so take ${w(help - next)} kg of help " +
+                    "off and build back up to $repHigh." +
+                    if (next == 0.0) " That is no help at all — the lift itself." else ""
+            }
+            return Recommendation(
+                weightKg = next,
+                reps = repLow,
+                headline = "${w(next)} kg help × $repLow",
+                rationale = rationale + borrowedNote,
+                isStepUp = true,
+                isFromOtherVariations = fellBack
+            )
+        }
+
+        val targetReps = (bestReps + 1).coerceAtMost(repHigh)
+        val base = "Last time $bestReps with ${w(help)} kg of help. One more rep, same help — " +
+            "at $repHigh the help comes down."
+        val stallNote = if (stalled) {
+            " Third session here without the reps moving; if it holds again, " +
+                "${w(toHalfKg(help + exercise.incrementKg))} kg of help and a run back up is the usual way out."
+        } else {
+            ""
+        }
+        return Recommendation(
+            weightKg = help,
+            reps = targetReps,
+            headline = "${w(help)} kg help × $targetReps",
             rationale = base + stallNote + borrowedNote,
             isStepUp = false,
             isStalled = stalled,

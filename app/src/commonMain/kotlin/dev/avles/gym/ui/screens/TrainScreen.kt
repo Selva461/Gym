@@ -461,7 +461,7 @@ private fun ActiveSessionPane(
                 OutlinedTextField(
                     value = weight,
                     onValueChange = { weight = it.filter { c -> c.isDigit() || c == '.' } },
-                    label = { Text("kg") },
+                    label = { Text(if (selectedExercise?.isAssisted == true) "kg of help" else "kg") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.weight(1f)
@@ -476,6 +476,16 @@ private fun ActiveSessionPane(
                 )
             }
 
+            if (selectedExercise?.isAssisted == true) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Assisted machine: more weight is easier. You progress by taking weight off, " +
+                        "and your best is the least help for the most reps.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint
+                )
+            }
+
             Spacer(Modifier.height(12.dp))
             PillRow(
                 options = listOf("Working set", "Warm-up"),
@@ -485,8 +495,10 @@ private fun ActiveSessionPane(
             )
 
             Spacer(Modifier.height(12.dp))
+            // Zero is a real weight on an assisted machine: no help at all.
+            val kg = weight.toDoubleOrNull()
             val canLog = selectedExercise != null &&
-                (weight.toDoubleOrNull() ?: 0.0) > 0 &&
+                kg != null && (kg > 0 || (kg == 0.0 && selectedExercise.isAssisted)) &&
                 (reps.toIntOrNull() ?: 0) > 0
             Button(
                 onClick = {
@@ -527,7 +539,7 @@ private fun ActiveSessionPane(
                         if (row.isWarmup) "warm-up" else "set ${row.setIndex}",
                         Variations.label(row.variation).takeIf { it.isNotBlank() }
                     ).joinToString("  ·  "),
-                    trailing = "${Training.formatWeight(row.weightKg)} x ${row.reps}",
+                    trailing = Training.formatSet(row),
                     accent = if (row.isWarmup) Mute else Brass,
                     onClick = { onEditSetRow(row) },
                     modifier = Modifier.padding(bottom = 6.dp)
@@ -639,7 +651,8 @@ private fun TargetCard(guidance: LiftGuidance, onUseTarget: (Double, Int) -> Uni
             color = Mute
         )
 
-        if (guidance.bestE1rm > 0) {
+        val leastHelp = guidance.leastHelp
+        if (guidance.bestE1rm > 0 || leastHelp != null) {
             Spacer(Modifier.height(14.dp))
             Hairline()
             Spacer(Modifier.height(12.dp))
@@ -648,12 +661,17 @@ private fun TargetCard(guidance: LiftGuidance, onUseTarget: (Double, Int) -> Uni
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "estimated max ${Training.formatWeight(guidance.bestE1rm)} kg",
+                    if (leastHelp != null) "least help ${Training.formatWeight(leastHelp)} kg"
+                    else "estimated max ${Training.formatWeight(guidance.bestE1rm)} kg",
                     style = MaterialTheme.typography.labelSmall,
                     color = Mute
                 )
                 Text(
-                    "next ${Training.formatWeight(guidance.nextMilestone)} kg",
+                    when {
+                        leastHelp == null -> "next ${Training.formatWeight(guidance.nextMilestone)} kg"
+                        leastHelp <= 0.0 -> "next: the unassisted lift"
+                        else -> "next ${Training.formatWeight(guidance.nextMilestone)} kg help"
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = Brass
                 )

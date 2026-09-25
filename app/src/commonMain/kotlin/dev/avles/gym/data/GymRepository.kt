@@ -1,6 +1,7 @@
 package dev.avles.gym.data
 
 import dev.avles.gym.core.GymLog
+import dev.avles.gym.domain.Assistance
 import kotlinx.coroutines.flow.Flow
 import dev.avles.gym.core.Dates
 import dev.avles.gym.core.epochDay
@@ -230,7 +231,14 @@ class GymRepository(
     }
 
     suspend fun addExercise(name: String, muscleGroup: String): Long =
-        dao.insertExercise(Exercise(name = name, muscleGroup = muscleGroup, isCustom = true))
+        dao.insertExercise(
+            Exercise(
+                name = name,
+                muscleGroup = muscleGroup,
+                isCustom = true,
+                isAssisted = Assistance.looksAssisted(name)
+            )
+        )
 
     // ---------- Fuel ----------
 

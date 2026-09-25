@@ -116,9 +116,11 @@ interface GymDao {
         """
         SELECT w.id AS sessionId,
                COUNT(s.id) AS setCount,
-               COALESCE(SUM(CASE WHEN s.isWarmup = 0 THEN s.weightKg * s.reps ELSE 0 END), 0.0) AS volume
+               COALESCE(SUM(CASE WHEN s.isWarmup = 0 AND COALESCE(e.isAssisted, 0) = 0
+                                 THEN s.weightKg * s.reps ELSE 0 END), 0.0) AS volume
         FROM workout_session w
         LEFT JOIN set_entry s ON s.sessionId = w.id
+        LEFT JOIN exercise e ON e.id = s.exerciseId
         GROUP BY w.id
         """
     )
@@ -129,7 +131,7 @@ interface GymDao {
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
                s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-               s.variation AS variation
+               s.variation AS variation, e.isAssisted AS isAssisted
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.sessionId = :sessionId
@@ -143,7 +145,7 @@ interface GymDao {
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
                s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-               s.variation AS variation
+               s.variation AS variation, e.isAssisted AS isAssisted
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.exerciseId = :exerciseId AND s.isWarmup = 0
@@ -155,9 +157,11 @@ interface GymDao {
 
     @Query(
         """
-        SELECT w.dateEpochDay AS dateEpochDay, SUM(s.weightKg * s.reps) AS volume
+        SELECT w.dateEpochDay AS dateEpochDay,
+               SUM(CASE WHEN COALESCE(e.isAssisted, 0) = 0 THEN s.weightKg * s.reps ELSE 0 END) AS volume
         FROM set_entry s
         JOIN workout_session w ON w.id = s.sessionId
+        LEFT JOIN exercise e ON e.id = s.exerciseId
         WHERE s.isWarmup = 0
         GROUP BY w.dateEpochDay
         ORDER BY w.dateEpochDay ASC
@@ -334,7 +338,7 @@ interface GymDao {
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
                s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-               s.variation AS variation
+               s.variation AS variation, e.isAssisted AS isAssisted
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.isWarmup = 0

@@ -1,5 +1,7 @@
 package dev.avles.gym.data
 
+import dev.avles.gym.domain.Assistance
+
 /**
  * Starter catalogue: lifts with a progression range, and food with macros and
  * micronutrients.
@@ -31,7 +33,10 @@ object SeedData {
      * The lift catalogue and the starter splits live in [SeedExercises]. They are
      * long enough to need their own file, and nothing about them is food.
      */
-    fun exercises(): List<Exercise> = SeedExercises.all()
+    /** Assisted machines are flagged here, once, by the same rule a lift you add gets. */
+    fun exercises(): List<Exercise> = SeedExercises.all().map {
+        if (Assistance.looksAssisted(it.name)) it.copy(isAssisted = true) else it
+    }
 
     fun splits(): List<Pair<String, List<String>>> = SeedExercises.splits()
 

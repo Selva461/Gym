@@ -146,6 +146,24 @@ object SchemaSql {
     /** Every statement the v7 migration runs, in order. */
     val V7_STATEMENTS = listOf(ADD_FOOD_ALIASES, ADD_FOOD_SOURCE)
 
+    // ---- v8: lifts whose weight is help, not load ---------------------------
+
+    const val ADD_EXERCISE_ASSISTED =
+        "ALTER TABLE `exercise` ADD COLUMN `isAssisted` INTEGER NOT NULL DEFAULT 0"
+
+    /**
+     * Existing lifts are flagged by the same rule new ones are
+     * ([dev.avles.gym.domain.Assistance.looksAssisted]): by name. That covers the
+     * two seeded machines and any assisted lift you added yourself, and history
+     * already logged on them is read the right way round from the first launch.
+     */
+    const val FLAG_ASSISTED_EXERCISES =
+        "UPDATE `exercise` SET `isAssisted` = 1 WHERE LOWER(`name`) LIKE '%assisted%'"
+
+    const val EXPECTED_EXERCISE_ASSISTED_COLUMN = "`isAssisted` INTEGER NOT NULL DEFAULT 0"
+
+    val V8_STATEMENTS = listOf(ADD_EXERCISE_ASSISTED, FLAG_ASSISTED_EXERCISES)
+
     /** Every statement the v5 migration runs, in order. */
     val V5_STATEMENTS = listOf(
         CREATE_PROGRESS_PHOTO,

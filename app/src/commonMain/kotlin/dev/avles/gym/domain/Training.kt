@@ -4,9 +4,13 @@ import dev.avles.gym.data.SetRow
 
 object Training {
 
-    /** Working volume only. Warm-ups are effort, not stimulus, so they stay out. */
+    /**
+     * Working volume only. Warm-ups are effort, not stimulus, so they stay out, and
+     * so does the help on an assisted machine — it is weight taken off, not lifted,
+     * the same way a bodyweight lift's bodyweight is not counted.
+     */
     fun volume(sets: List<SetRow>): Double =
-        sets.filter { !it.isWarmup }.sumOf { it.weightKg * it.reps }
+        sets.filter { !it.isWarmup && !it.isAssisted }.sumOf { it.weightKg * it.reps }
 
     /** Epley estimate. Loses accuracy above roughly ten reps; that is expected. */
     fun estimatedOneRepMax(weightKg: Double, reps: Int): Double {
@@ -15,8 +19,9 @@ object Training {
         return weightKg * (1 + reps / 30.0)
     }
 
+    /** Zero for an assisted lift, whose weight is help and has no estimated max. */
     fun bestEstimatedOneRepMax(sets: List<SetRow>): Double =
-        sets.filter { !it.isWarmup }
+        sets.filter { !it.isWarmup && !it.isAssisted }
             .maxOfOrNull { estimatedOneRepMax(it.weightKg, it.reps) } ?: 0.0
 
     /**
@@ -36,6 +41,9 @@ object Training {
      */
     fun isPersonalRecord(candidate: SetRow, history: List<SetRow>): Boolean {
         if (candidate.isWarmup) return false
+        // Less help is the record on an assisted machine, so an estimated max — which
+        // would crown the set with the most help — is the wrong measure entirely.
+        if (candidate.isAssisted) return Assistance.isRecord(candidate, history)
         val candidateScore = estimatedOneRepMax(candidate.weightKg, candidate.reps)
         if (candidateScore <= 0.0) return false
         val best = history
@@ -60,4 +68,8 @@ object Training {
      */
     fun formatWeight(kg: Double): String =
         Numbers.trimmed(kg)
+
+    /** "60 × 8", or "30 help × 8" on an assisted machine, where the kilos are help. */
+    fun formatSet(row: SetRow): String =
+        formatWeight(row.weightKg) + (if (row.isAssisted) " help" else "") + " × " + row.reps
 }

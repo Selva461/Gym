@@ -250,6 +250,14 @@ and the reps reset to the bottom. Ranges and increments are per lift, because a
 squat absorbs a 5 kg jump and a lateral raise does not. Three sessions at one weight
 without the reps moving gets called a stall, and the panel says so.
 
+**Assisted machines run the other way.** On an assisted pull-up or dip machine the
+weight you pin is help — more kilos is easier. Those lifts are flagged (by name, so a
+custom "Assisted chin-up" is too) and everything turns round: at the top of the range
+the *help* comes down, a record is doing as many reps with less help than ever
+before, the milestone counts down towards the unassisted lift, and the help is never
+added to your volume. The weight field says "kg of help" so the number is never read
+the wrong way.
+
 Nothing is computed from your age, weight or "level", and the app will not invent a
 starting weight for a lift you have never done — it says so and waits. Tapping
 **Use** fills the weight and reps fields, because a target that needs typing is no

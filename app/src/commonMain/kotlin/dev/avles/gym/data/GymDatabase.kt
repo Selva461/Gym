@@ -25,7 +25,7 @@ import kotlinx.coroutines.IO
         ExercisePhoto::class,
         DayMarker::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 @ConstructedBy(GymDatabaseConstructor::class)
@@ -146,8 +146,20 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v7 → v8: which lifts are assisted, where more weight is easier. One column,
+         * then the existing rows flagged by name, so history already logged on an
+         * assisted machine is read the right way round straight away.
+         */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(connection: SQLiteConnection) {
+                SchemaSql.V8_STATEMENTS.forEach { connection.execSQL(it) }
+            }
+        }
+
         val MIGRATIONS = arrayOf(
-            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+            MIGRATION_7_8
         )
 
         /** The file name, the same on both platforms; only the directory differs. */

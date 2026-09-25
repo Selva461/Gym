@@ -69,7 +69,9 @@ fun SetEditorDialog(
     var reps by remember(row.setId) { mutableStateOf(row.reps.toString()) }
     var warmup by remember(row.setId) { mutableStateOf(row.isWarmup) }
 
-    val valid = (weight.toDoubleOrNull() ?: 0.0) > 0 && (reps.toIntOrNull() ?: 0) > 0
+    // Zero is a real weight on an assisted machine: no help at all.
+    val kg = weight.toDoubleOrNull()
+    val valid = kg != null && (kg > 0 || (kg == 0.0 && row.isAssisted)) && (reps.toIntOrNull() ?: 0) > 0
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -87,7 +89,7 @@ fun SetEditorDialog(
                     OutlinedTextField(
                         value = weight,
                         onValueChange = { weight = it.filter { c -> c.isDigit() || c == '.' } },
-                        label = { Text("kg") },
+                        label = { Text(if (row.isAssisted) "kg of help" else "kg") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f)
@@ -217,7 +219,7 @@ fun SessionDetailDialog(
                                 )
                             }
                             Text(
-                                "${Training.formatWeight(row.weightKg)} × ${row.reps}",
+                                Training.formatSet(row),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = if (row.isWarmup) Mute else Brass
                             )
