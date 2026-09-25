@@ -2,6 +2,7 @@ package dev.avles.gym
 
 import dev.avles.gym.data.SchemaSql
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -145,9 +146,11 @@ class MigrationSqlTest {
             RegexOption.DOT_MATCHES_ALL
         ).find(body)?.value
         assertTrue("workout_session has no splitId field in the exported schema", field != null)
-        assertTrue(
+        // Room 2.6 wrote "notNull": false; Room 2.7 leaves a false default out of the
+        // file entirely. Either way the column is nullable unless it says true.
+        assertFalse(
             "splitId is NOT NULL in the schema but the migration adds it without a default",
-            field!!.contains("\"notNull\": false") || field.contains("\"notNull\":false")
+            Regex(""""notNull"\s*:\s*true""").containsMatchIn(field!!)
         )
         assertTrue(
             SchemaSql.ADD_SESSION_SPLIT_ID.contains("INTEGER") &&
