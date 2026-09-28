@@ -23,7 +23,7 @@ class SeedDataTest {
     @Test
     fun `the catalogue is the size the README claims`() {
         assertEquals(486, exercises.size)
-        assertEquals(538, foods.size)
+        assertEquals(614, foods.size)
         assertEquals(10, splits.size)
     }
 

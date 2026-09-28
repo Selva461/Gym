@@ -1,6 +1,7 @@
 package dev.avles.gym
 
 import dev.avles.gym.data.FoodItem
+import dev.avles.gym.data.SeedData
 import dev.avles.gym.domain.FoodEdits
 import dev.avles.gym.domain.FoodSearch
 import org.junit.Assert.assertEquals
@@ -43,6 +44,18 @@ class FoodSearchTest {
     fun `a name match beats an alias match`() {
         val list = listOf(food("Kheer"), food("Rice pudding", aliases = "Kheer"))
         assertEquals(listOf("Kheer", "Rice pudding"), FoodSearch.search(list, "kheer").map { it.name })
+    }
+
+    /** The Tamil curries are named in Tamil; English is how many people will look for them. */
+    @Test
+    fun `an English word finds the Tamil-named curry`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue(names("brinjal").containsAll(listOf("Kathirikai kara kuzhambu", "Kathirikai sambar")))
+        assertTrue(names("drumstick").containsAll(listOf("Murungakkai sambar", "Murungakkai puli kuzhambu")))
+        assertTrue("Vendakkai puli kuzhambu" in names("okra"))
+        assertTrue("Kollu rasam" in names("horse gram"))
+        assertTrue("Nandu kuzhambu" in names("crab"))
     }
 
     @Test

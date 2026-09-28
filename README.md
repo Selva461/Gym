@@ -92,7 +92,7 @@ excluded from iCloud backup, as they are left out of Android's cloud backup.
 Today      protein first, calories second, a week strip with a dot per logged day
 Train      split → lift → kg × reps, a target for every lift, rest timer, records
            tap "How to do it" for a muscle map and how the movement works
-Fuel       search or browse 599 foods by name or local name, macros and 15 micronutrients
+Fuel       search or browse 675 foods by name or local name, macros and 15 micronutrients
 Progress   weight trend, 14-day volume, streaks, and progress photos
 Settings   your targets, rest length, nightly reminder
 ```
@@ -160,7 +160,7 @@ screen, in order, one tap each. That is the whole point: not picking from a list
 of 486 between two sets. Splits are editable, reorderable and deletable, and
 deleting one leaves every session already run from it untouched.
 
-**538 foods in 25 categories.** South Indian cooking gets the detail it deserves —
+**614 built-in foods in 25 categories.** South Indian cooking gets the detail it deserves —
 twenty-four dosa varieties (masala, Mysore masala, ghee roast, paper, rava, set,
 neer, kal, karam, ragi, kambu, thinai, oats, pesarattu, adai and the rest), seven
 kinds of idli, forty-three tiffin items (pongal, upma, uttapam, kuzhi paniyaram,
@@ -172,6 +172,18 @@ kola urundai, karuvadu kuzhambu, eral thokku and the rest of the coast. Then
 North Indian, Italian, Chinese and Indo-Chinese, Middle Eastern, Japanese,
 Mexican and Continental, plus dairy, legumes, vegetables, fruit, nuts, sweets,
 drinks and oils.
+
+**Tamil curries, properly.** Beyond the everyday sambar, rasam and kuzhambus, 76
+more: every kuzhambu named for what goes in it (vendakkai, kathirikai, poondu,
+vengaya, manathakkali, kollu, karamani, paruppu urundai), sambar as it actually
+varies (vengaya, murungakkai, mullangi, arachuvitta, tiffin, keerai), kootus,
+poriyals and roasts, the herbal rasams (mudakathan, thuthuvalai, kollu), tiffin
+gravies (poori masala, Bombay chutney, kosamalli, kothsu, empty salna, vellai
+kurma) and the Chettinad, Kongu and coastal non-vegetarian dishes (salna, uppu
+kari, paya, kudal, Pallipalayam chicken, nandu and eral kuzhambu, karuvadu).
+Each carries its English names too, so "brinjal", "drumstick" or "horse gram"
+finds it. Their calories are computed from their macros rather than typed, so
+none can disagree with itself.
 
 **Juices are their own category**, not filed under Drinks. A glass of sugarcane
 juice is 180 kcal of almost pure sugar; a tender coconut is 46. Among the teas and
