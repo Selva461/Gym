@@ -146,9 +146,11 @@ fun SessionDetailDialog(
     onReopen: () -> Unit,
     onDeleteSession: () -> Unit,
     onEditSet: (SetRow) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onSaveAsSplit: ((String, List<Long>) -> Unit)? = null
 ) {
     var label by remember(detail.session.id) { mutableStateOf(detail.session.label) }
+    var savedAsSplit by remember(detail.session.id) { mutableStateOf(false) }
     var confirmingDelete by remember(detail.session.id) { mutableStateOf(false) }
 
     val setCount = detail.sets.size
@@ -224,6 +226,22 @@ fun SessionDetailDialog(
                                 color = if (row.isWarmup) Mute else Brass
                             )
                         }
+                    }
+                }
+
+                // A session that went well is the best template there is: its lifts,
+                // in the order they were done, become a split to start from next time.
+                val lifts = detail.sets.map { it.exerciseId }.distinct()
+                if (onSaveAsSplit != null && lifts.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(enabled = !savedAsSplit, onClick = {
+                        onSaveAsSplit(label.ifBlank { detail.session.label }, lifts)
+                        savedAsSplit = true
+                    }) {
+                        Text(
+                            if (savedAsSplit) "Saved as a split" else "Save these ${lifts.size} lifts as a split",
+                            color = if (savedAsSplit) Faint else Brass
+                        )
                     }
                 }
 

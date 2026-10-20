@@ -176,7 +176,8 @@ fun TrainScreen(
             onReopen = { onReopenSession(detail.session) },
             onDeleteSession = { onDeleteSession(detail.session.id) },
             onEditSet = { editingSet = it },
-            onDismiss = { onOpenSession(null) }
+            onDismiss = { onOpenSession(null) },
+            onSaveAsSplit = { name, ids -> onSaveSplit(0L, name, ids) }
         )
     }
 
