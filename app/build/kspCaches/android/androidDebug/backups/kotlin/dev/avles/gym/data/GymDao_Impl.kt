@@ -56,6 +56,10 @@ public class GymDao_Impl(
 
   private val __insertAdapterOfBodyMeasurement: EntityInsertAdapter<BodyMeasurement>
 
+  private val __insertAdapterOfSavedMeal: EntityInsertAdapter<SavedMeal>
+
+  private val __insertAdapterOfSavedMealItem: EntityInsertAdapter<SavedMealItem>
+
   private val __deleteAdapterOfSetEntry: EntityDeleteOrUpdateAdapter<SetEntry>
 
   private val __updateAdapterOfExercise: EntityDeleteOrUpdateAdapter<Exercise>
@@ -298,6 +302,27 @@ public class GymDao_Impl(
         statement.bindDouble(4, entity.cm)
       }
     }
+    this.__insertAdapterOfSavedMeal = object : EntityInsertAdapter<SavedMeal>() {
+      protected override fun createQuery(): String =
+          "INSERT OR ABORT INTO `saved_meal` (`id`,`name`,`createdAt`) VALUES (nullif(?, 0),?,?)"
+
+      protected override fun bind(statement: SQLiteStatement, entity: SavedMeal) {
+        statement.bindLong(1, entity.id)
+        statement.bindText(2, entity.name)
+        statement.bindLong(3, entity.createdAt)
+      }
+    }
+    this.__insertAdapterOfSavedMealItem = object : EntityInsertAdapter<SavedMealItem>() {
+      protected override fun createQuery(): String =
+          "INSERT OR ABORT INTO `saved_meal_item` (`id`,`mealId`,`foodId`,`quantity`) VALUES (nullif(?, 0),?,?,?)"
+
+      protected override fun bind(statement: SQLiteStatement, entity: SavedMealItem) {
+        statement.bindLong(1, entity.id)
+        statement.bindLong(2, entity.mealId)
+        statement.bindLong(3, entity.foodId)
+        statement.bindDouble(4, entity.quantity)
+      }
+    }
     this.__deleteAdapterOfSetEntry = object : EntityDeleteOrUpdateAdapter<SetEntry>() {
       protected override fun createQuery(): String = "DELETE FROM `set_entry` WHERE `id` = ?"
 
@@ -481,6 +506,17 @@ public class GymDao_Impl(
   public override suspend fun upsertMeasurements(rows: List<BodyMeasurement>): Unit =
       performSuspending(__db, false, true) { _connection ->
     __insertAdapterOfBodyMeasurement.insert(_connection, rows)
+  }
+
+  public override suspend fun insertSavedMeal(meal: SavedMeal): Long = performSuspending(__db,
+      false, true) { _connection ->
+    val _result: Long = __insertAdapterOfSavedMeal.insertAndReturnId(_connection, meal)
+    _result
+  }
+
+  public override suspend fun insertSavedMealItems(items: List<SavedMealItem>): Unit =
+      performSuspending(__db, false, true) { _connection ->
+    __insertAdapterOfSavedMealItem.insert(_connection, items)
   }
 
   public override suspend fun deleteSet(entry: SetEntry): Unit = performSuspending(__db, false,
@@ -2449,6 +2485,56 @@ public class GymDao_Impl(
     }
   }
 
+  public override fun savedMealRows(): Flow<List<SavedMealRow>> {
+    val _sql: String = """
+        |
+        |        SELECT m.id AS mealId, m.name AS mealName, i.foodId AS foodId, f.name AS foodName,
+        |               i.quantity AS quantity, f.kcal AS kcal, f.proteinG AS proteinG
+        |        FROM saved_meal m
+        |        JOIN saved_meal_item i ON i.mealId = m.id
+        |        JOIN food_item f ON f.id = i.foodId
+        |        ORDER BY m.createdAt DESC, i.id ASC
+        |        
+        """.trimMargin()
+    return createFlow(__db, false, arrayOf("saved_meal", "saved_meal_item", "food_item")) {
+        _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        val _columnIndexOfMealId: Int = 0
+        val _columnIndexOfMealName: Int = 1
+        val _columnIndexOfFoodId: Int = 2
+        val _columnIndexOfFoodName: Int = 3
+        val _columnIndexOfQuantity: Int = 4
+        val _columnIndexOfKcal: Int = 5
+        val _columnIndexOfProteinG: Int = 6
+        val _result: MutableList<SavedMealRow> = mutableListOf()
+        while (_stmt.step()) {
+          val _item: SavedMealRow
+          val _tmpMealId: Long
+          _tmpMealId = _stmt.getLong(_columnIndexOfMealId)
+          val _tmpMealName: String
+          _tmpMealName = _stmt.getText(_columnIndexOfMealName)
+          val _tmpFoodId: Long
+          _tmpFoodId = _stmt.getLong(_columnIndexOfFoodId)
+          val _tmpFoodName: String
+          _tmpFoodName = _stmt.getText(_columnIndexOfFoodName)
+          val _tmpQuantity: Double
+          _tmpQuantity = _stmt.getDouble(_columnIndexOfQuantity)
+          val _tmpKcal: Double
+          _tmpKcal = _stmt.getDouble(_columnIndexOfKcal)
+          val _tmpProteinG: Double
+          _tmpProteinG = _stmt.getDouble(_columnIndexOfProteinG)
+          _item =
+              SavedMealRow(_tmpMealId,_tmpMealName,_tmpFoodId,_tmpFoodName,_tmpQuantity,_tmpKcal,_tmpProteinG)
+          _result.add(_item)
+        }
+        _result
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
   public override suspend fun editSet(
     id: Long,
     weightKg: Double,
@@ -2678,6 +2764,34 @@ public class GymDao_Impl(
         _stmt.bindText(_argIndex, notes)
         _argIndex = 2
         _stmt.bindLong(_argIndex, id)
+        _stmt.step()
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
+  public override suspend fun deleteSavedMealItems(mealId: Long) {
+    val _sql: String = "DELETE FROM saved_meal_item WHERE mealId = ?"
+    return performSuspending(__db, false, true) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        var _argIndex: Int = 1
+        _stmt.bindLong(_argIndex, mealId)
+        _stmt.step()
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
+  public override suspend fun deleteSavedMeal(mealId: Long) {
+    val _sql: String = "DELETE FROM saved_meal WHERE id = ?"
+    return performSuspending(__db, false, true) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        var _argIndex: Int = 1
+        _stmt.bindLong(_argIndex, mealId)
         _stmt.step()
       } finally {
         _stmt.close()

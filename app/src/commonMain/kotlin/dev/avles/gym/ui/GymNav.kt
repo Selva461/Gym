@@ -100,6 +100,7 @@ fun GymNav(vm: GymViewModel) {
     val quickPicks by vm.quickPicks.collectAsStateWithLifecycle()
     val foods by vm.foods.collectAsStateWithLifecycle()
     val recentFoods by vm.recentFoods.collectAsStateWithLifecycle()
+    val savedMeals by vm.savedMeals.collectAsStateWithLifecycle()
     val rest by vm.restRemaining.collectAsStateWithLifecycle()
     val prSetId by vm.lastPrSetId.collectAsStateWithLifecycle()
     val guidance by vm.guidance.collectAsStateWithLifecycle()
@@ -271,7 +272,11 @@ fun GymNav(vm: GymViewModel) {
                     onCopyMeal = { meal, done -> vm.copyMealFromDayBefore(meal, done) },
                     recentFoods = recentFoods,
                     onStartFast = { vm.startFast(it) },
-                    onEndFast = { vm.endFast() }
+                    onEndFast = { vm.endFast() },
+                    savedMeals = savedMeals,
+                    onLogSavedMeal = { m, slot -> vm.logSavedMeal(m, slot) },
+                    onDeleteSavedMeal = { vm.deleteSavedMeal(it) },
+                    onSaveMeal = { name, slot -> vm.saveMeal(name, slot) }
                 )
             }
             composable("progress") {

@@ -46,6 +46,7 @@ import dev.avles.gym.domain.FoodEdits
 import dev.avles.gym.domain.FoodSearch
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Numbers
+import dev.avles.gym.domain.SavedMeals
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.DayState
 import dev.avles.gym.ui.components.Chip
@@ -85,7 +86,11 @@ fun FuelScreen(
     onCopyMeal: (String, (Int) -> Unit) -> Unit = { _, _ -> },
     recentFoods: List<FoodItem> = emptyList(),
     onStartFast: (Int) -> Unit = {},
-    onEndFast: () -> Unit = {}
+    onEndFast: () -> Unit = {},
+    savedMeals: List<SavedMeals.Meal> = emptyList(),
+    onLogSavedMeal: (SavedMeals.Meal, String) -> Unit = { _, _ -> },
+    onDeleteSavedMeal: (Long) -> Unit = {},
+    onSaveMeal: (String, String) -> Unit = { _, _ -> }
 ) {
     var meal by remember { mutableStateOf(defaultMealForNow()) }
     var query by remember { mutableStateOf("") }
@@ -212,6 +217,7 @@ fun FuelScreen(
                     Spacer(Modifier.height(10.dp))
                     FoodChipRow(recent, "recent") { pending = it }
                 }
+                SavedMealsRow(savedMeals, meal, { onLogSavedMeal(it, meal) }, onDeleteSavedMeal)
                 Spacer(Modifier.height(20.dp))
             }
         } else {
@@ -261,6 +267,9 @@ fun FuelScreen(
                         onClick = { editingEntry = row },
                         modifier = Modifier.animateItem().padding(bottom = 6.dp)
                     )
+                }
+                if (slot != Meals.SUPPLEMENT) {
+                    item { SaveMealButton(slot) { name -> onSaveMeal(name, slot) } }
                 }
                 item { Spacer(Modifier.height(16.dp)) }
             }

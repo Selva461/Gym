@@ -422,4 +422,30 @@ interface GymDao {
 
     @Query("UPDATE exercise SET notes = :notes WHERE id = :id")
     suspend fun setExerciseNotes(id: Long, notes: String)
+
+    // ---- Saved meals ----
+
+    @Insert
+    suspend fun insertSavedMeal(meal: SavedMeal): Long
+
+    @Insert
+    suspend fun insertSavedMealItems(items: List<SavedMealItem>)
+
+    @Query(
+        """
+        SELECT m.id AS mealId, m.name AS mealName, i.foodId AS foodId, f.name AS foodName,
+               i.quantity AS quantity, f.kcal AS kcal, f.proteinG AS proteinG
+        FROM saved_meal m
+        JOIN saved_meal_item i ON i.mealId = m.id
+        JOIN food_item f ON f.id = i.foodId
+        ORDER BY m.createdAt DESC, i.id ASC
+        """
+    )
+    fun savedMealRows(): Flow<List<SavedMealRow>>
+
+    @Query("DELETE FROM saved_meal_item WHERE mealId = :mealId")
+    suspend fun deleteSavedMealItems(mealId: Long)
+
+    @Query("DELETE FROM saved_meal WHERE id = :mealId")
+    suspend fun deleteSavedMeal(mealId: Long)
 }

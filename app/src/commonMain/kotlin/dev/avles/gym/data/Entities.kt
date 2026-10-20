@@ -451,3 +451,34 @@ data class BodyMeasurement(
     val part: String,
     val cm: Double
 )
+
+/**
+ * A meal kept for logging again in one tap, the "saved meals" of the food apps:
+ * the same idli, sambar and coffee most mornings. Its foods are [SavedMealItem]s.
+ */
+@Entity(tableName = "saved_meal")
+data class SavedMeal(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val createdAt: Long
+)
+
+/** One food in a saved meal, with how many of its unit. */
+@Entity(tableName = "saved_meal_item", indices = [Index("mealId")])
+data class SavedMealItem(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val mealId: Long,
+    val foodId: Long,
+    val quantity: Double
+)
+
+/** A saved meal's food joined to its numbers, one row per food. */
+data class SavedMealRow(
+    val mealId: Long,
+    val mealName: String,
+    val foodId: Long,
+    val foodName: String,
+    val quantity: Double,
+    val kcal: Double,
+    val proteinG: Double
+)

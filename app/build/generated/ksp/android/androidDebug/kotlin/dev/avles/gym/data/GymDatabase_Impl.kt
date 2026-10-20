@@ -32,8 +32,8 @@ public class GymDatabase_Impl : GymDatabase() {
   }
 
   protected override fun createOpenDelegate(): RoomOpenDelegate {
-    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(11,
-        "aeaf3ebf046c642bbe24ec97c316b1a8", "032bfa23c3c0681bcd1b376c418969cd") {
+    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(12,
+        "42217f036b20720b3472ae428673da25", "3aa7fed716e8515eb52e0f05ab49ce47") {
       public override fun createAllTables(connection: SQLiteConnection) {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `exercise` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `muscleGroup` TEXT NOT NULL, `isBodyweight` INTEGER NOT NULL, `isCustom` INTEGER NOT NULL, `repLow` INTEGER NOT NULL, `repHigh` INTEGER NOT NULL, `incrementKg` REAL NOT NULL, `isAssisted` INTEGER NOT NULL DEFAULT 0, `notes` TEXT NOT NULL DEFAULT '')")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `workout_session` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `label` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER, `notes` TEXT NOT NULL, `splitId` INTEGER)")
@@ -59,8 +59,11 @@ public class GymDatabase_Impl : GymDatabase() {
         connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_day_marker_dateEpochDay` ON `day_marker` (`dateEpochDay`)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `body_measurement` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `part` TEXT NOT NULL, `cm` REAL NOT NULL)")
         connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_body_measurement_dateEpochDay_part` ON `body_measurement` (`dateEpochDay`, `part`)")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `saved_meal` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `saved_meal_item` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `mealId` INTEGER NOT NULL, `foodId` INTEGER NOT NULL, `quantity` REAL NOT NULL)")
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_saved_meal_item_mealId` ON `saved_meal_item` (`mealId`)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
-        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aeaf3ebf046c642bbe24ec97c316b1a8')")
+        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '42217f036b20720b3472ae428673da25')")
       }
 
       public override fun dropAllTables(connection: SQLiteConnection) {
@@ -76,6 +79,8 @@ public class GymDatabase_Impl : GymDatabase() {
         connection.execSQL("DROP TABLE IF EXISTS `exercise_photo`")
         connection.execSQL("DROP TABLE IF EXISTS `day_marker`")
         connection.execSQL("DROP TABLE IF EXISTS `body_measurement`")
+        connection.execSQL("DROP TABLE IF EXISTS `saved_meal`")
+        connection.execSQL("DROP TABLE IF EXISTS `saved_meal_item`")
       }
 
       public override fun onCreate(connection: SQLiteConnection) {
@@ -482,6 +487,52 @@ public class GymDatabase_Impl : GymDatabase() {
               | Found:
               |""".trimMargin() + _existingBodyMeasurement)
         }
+        val _columnsSavedMeal: MutableMap<String, TableInfo.Column> = mutableMapOf()
+        _columnsSavedMeal.put("id", TableInfo.Column("id", "INTEGER", true, 1, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsSavedMeal.put("name", TableInfo.Column("name", "TEXT", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsSavedMeal.put("createdAt", TableInfo.Column("createdAt", "INTEGER", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        val _foreignKeysSavedMeal: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
+        val _indicesSavedMeal: MutableSet<TableInfo.Index> = mutableSetOf()
+        val _infoSavedMeal: TableInfo = TableInfo("saved_meal", _columnsSavedMeal,
+            _foreignKeysSavedMeal, _indicesSavedMeal)
+        val _existingSavedMeal: TableInfo = read(connection, "saved_meal")
+        if (!_infoSavedMeal.equals(_existingSavedMeal)) {
+          return RoomOpenDelegate.ValidationResult(false, """
+              |saved_meal(dev.avles.gym.data.SavedMeal).
+              | Expected:
+              |""".trimMargin() + _infoSavedMeal + """
+              |
+              | Found:
+              |""".trimMargin() + _existingSavedMeal)
+        }
+        val _columnsSavedMealItem: MutableMap<String, TableInfo.Column> = mutableMapOf()
+        _columnsSavedMealItem.put("id", TableInfo.Column("id", "INTEGER", true, 1, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsSavedMealItem.put("mealId", TableInfo.Column("mealId", "INTEGER", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsSavedMealItem.put("foodId", TableInfo.Column("foodId", "INTEGER", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsSavedMealItem.put("quantity", TableInfo.Column("quantity", "REAL", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        val _foreignKeysSavedMealItem: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
+        val _indicesSavedMealItem: MutableSet<TableInfo.Index> = mutableSetOf()
+        _indicesSavedMealItem.add(TableInfo.Index("index_saved_meal_item_mealId", false,
+            listOf("mealId"), listOf("ASC")))
+        val _infoSavedMealItem: TableInfo = TableInfo("saved_meal_item", _columnsSavedMealItem,
+            _foreignKeysSavedMealItem, _indicesSavedMealItem)
+        val _existingSavedMealItem: TableInfo = read(connection, "saved_meal_item")
+        if (!_infoSavedMealItem.equals(_existingSavedMealItem)) {
+          return RoomOpenDelegate.ValidationResult(false, """
+              |saved_meal_item(dev.avles.gym.data.SavedMealItem).
+              | Expected:
+              |""".trimMargin() + _infoSavedMealItem + """
+              |
+              | Found:
+              |""".trimMargin() + _existingSavedMealItem)
+        }
         return RoomOpenDelegate.ValidationResult(true, null)
       }
     }
@@ -493,13 +544,14 @@ public class GymDatabase_Impl : GymDatabase() {
     val _viewTables: MutableMap<String, Set<String>> = mutableMapOf()
     return InvalidationTracker(this, _shadowTablesMap, _viewTables, "exercise", "workout_session",
         "set_entry", "food_item", "food_log", "body_weight", "split", "split_exercise",
-        "progress_photo", "exercise_photo", "day_marker", "body_measurement")
+        "progress_photo", "exercise_photo", "day_marker", "body_measurement", "saved_meal",
+        "saved_meal_item")
   }
 
   public override fun clearAllTables() {
     super.performClear(false, "exercise", "workout_session", "set_entry", "food_item", "food_log",
         "body_weight", "split", "split_exercise", "progress_photo", "exercise_photo", "day_marker",
-        "body_measurement")
+        "body_measurement", "saved_meal", "saved_meal_item")
   }
 
   protected override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {

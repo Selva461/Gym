@@ -34,6 +34,7 @@ import dev.avles.gym.domain.Photos
 import dev.avles.gym.domain.Progression
 import dev.avles.gym.domain.Recommendation
 import dev.avles.gym.domain.RestTimes
+import dev.avles.gym.domain.SavedMeals
 import dev.avles.gym.domain.Totals
 import dev.avles.gym.domain.Training
 import dev.avles.gym.notify.Notifier
@@ -581,6 +582,24 @@ class GymViewModel(
         }
 
     fun removeFoodLog(logId: Long) = viewModelScope.launch { repo.removeFoodLog(logId) }
+
+    // ---------- Saved meals ----------
+
+    val savedMeals: StateFlow<List<SavedMeals.Meal>> = repo.savedMealRows
+        .map { SavedMeals.group(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Keeps the selected day's [slot] entries as a meal called [name]. */
+    fun saveMeal(name: String, slot: String) = viewModelScope.launch {
+        repo.saveMeal(name, dayState.value.rows.filter { it.meal == slot })
+    }
+
+    fun logSavedMeal(meal: SavedMeals.Meal, slot: String) = viewModelScope.launch {
+        val day = _selectedDate.value
+        meal.items.forEach { repo.logFood(day, it.foodId, slot, it.quantity) }
+    }
+
+    fun deleteSavedMeal(mealId: Long) = viewModelScope.launch { repo.deleteSavedMeal(mealId) }
 
     // ---------- Water ----------
 

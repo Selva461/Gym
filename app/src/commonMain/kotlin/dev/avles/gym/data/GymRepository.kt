@@ -260,6 +260,20 @@ class GymRepository(
     fun foodLogFor(day: LocalDate): Flow<List<FoodLogRow>> = dao.foodLogFor(day.epochDay)
     suspend fun allFoodLog(): List<FoodLogRow> = dao.allFoodLog()
 
+    val savedMealRows: Flow<List<SavedMealRow>> = dao.savedMealRows()
+
+    /** Keeps [rows] as a meal called [name]. Nothing is saved for an empty meal. */
+    suspend fun saveMeal(name: String, rows: List<FoodLogRow>) {
+        if (rows.isEmpty() || name.isBlank()) return
+        val id = dao.insertSavedMeal(SavedMeal(name = name.trim(), createdAt = Dates.nowMillis()))
+        dao.insertSavedMealItems(rows.map { SavedMealItem(mealId = id, foodId = it.foodId, quantity = it.quantity) })
+    }
+
+    suspend fun deleteSavedMeal(mealId: Long) {
+        dao.deleteSavedMealItems(mealId)
+        dao.deleteSavedMeal(mealId)
+    }
+
     suspend fun logFood(day: LocalDate, foodId: Long, meal: String, quantity: Double) =
         dao.insertFoodLog(
             FoodLog(

@@ -24,9 +24,11 @@ import kotlinx.coroutines.IO
         ProgressPhoto::class,
         ExercisePhoto::class,
         DayMarker::class,
-        BodyMeasurement::class
+        BodyMeasurement::class,
+        SavedMeal::class,
+        SavedMealItem::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 @ConstructedBy(GymDatabaseConstructor::class)
@@ -186,9 +188,17 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /** v11 → v12: saved meals, two new tables. Nothing existing is touched. */
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(connection: SQLiteConnection) {
+                SchemaSql.V12_STATEMENTS.forEach { connection.execSQL(it) }
+            }
+        }
+
         val MIGRATIONS = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
-            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11
+            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
+            MIGRATION_11_12
         )
 
         /** The file name, the same on both platforms; only the directory differs. */

@@ -3,6 +3,7 @@ package dev.avles.gym
 import dev.avles.gym.data.BodyMeasurement
 import dev.avles.gym.data.BodyWeight
 import dev.avles.gym.data.Exercise
+import dev.avles.gym.data.SavedMealRow
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.Achievements
 import dev.avles.gym.domain.Energy
@@ -13,6 +14,7 @@ import dev.avles.gym.domain.Measurements
 import dev.avles.gym.domain.MonthGrid
 import dev.avles.gym.domain.Plates
 import dev.avles.gym.domain.RestTimes
+import dev.avles.gym.domain.SavedMeals
 import dev.avles.gym.domain.SetKinds
 import dev.avles.gym.domain.Warmups
 import dev.avles.gym.domain.WeightGoal
@@ -348,5 +350,18 @@ class ToolkitTest {
         assertNull(WeightGoal.daysToGoal(78.7, 82.0, rate)) // heading the other way
         assertEquals(0, WeightGoal.daysToGoal(72.3, 72.3, rate))
         assertNull(WeightGoal.weeklyRate(weights.take(2), today = 113))
+    }
+
+    @Test
+    fun `saved meals group their foods and total a serving`() {
+        val rows = listOf(
+            SavedMealRow(2, "Breakfast usual", 10, "Idli", 3.0, 39.0, 2.0),
+            SavedMealRow(2, "Breakfast usual", 11, "Sambar", 1.0, 130.0, 6.0),
+            SavedMealRow(1, "Post-workout", 12, "Whey", 1.0, 120.0, 24.0)
+        )
+        val meals = SavedMeals.group(rows)
+        assertEquals(listOf("Breakfast usual", "Post-workout"), meals.map { it.name })
+        assertEquals(247.0, meals.first().kcal, 1e-9)
+        assertEquals(12.0, meals.first().proteinG, 1e-9)
     }
 }

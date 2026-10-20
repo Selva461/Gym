@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.MacroMathTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:49:06.599Z" hostname="vm" time="0.005">
+<testsuite name="dev.avles.gym.MacroMathTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:59:42.026Z" hostname="vm" time="0.004">
   <properties/>
   <testcase name="meals are grouped independently" classname="dev.avles.gym.MacroMathTest" time="0.002"/>
   <testcase name="totals scale with quantity" classname="dev.avles.gym.MacroMathTest" time="0.001"/>

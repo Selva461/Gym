@@ -197,6 +197,26 @@ object SchemaSql {
 
     val V11_STATEMENTS = listOf(ADD_EXERCISE_NOTES)
 
+    // ---- v12: saved meals ---------------------------------------------------
+
+    const val CREATE_SAVED_MEAL =
+        "CREATE TABLE IF NOT EXISTS `saved_meal` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`name` TEXT NOT NULL, " +
+            "`createdAt` INTEGER NOT NULL)"
+
+    const val CREATE_SAVED_MEAL_ITEM =
+        "CREATE TABLE IF NOT EXISTS `saved_meal_item` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`mealId` INTEGER NOT NULL, " +
+            "`foodId` INTEGER NOT NULL, " +
+            "`quantity` REAL NOT NULL)"
+
+    const val INDEX_SAVED_MEAL_ITEM_MEAL =
+        "CREATE INDEX IF NOT EXISTS `index_saved_meal_item_mealId` ON `saved_meal_item` (`mealId`)"
+
+    val V12_STATEMENTS = listOf(CREATE_SAVED_MEAL, CREATE_SAVED_MEAL_ITEM, INDEX_SAVED_MEAL_ITEM_MEAL)
+
     /** Every statement the v5 migration runs, in order. */
     val V5_STATEMENTS = listOf(
         CREATE_PROGRESS_PHOTO,
