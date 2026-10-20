@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import dev.avles.gym.core.Dates
 import dev.avles.gym.data.DayKinds
 import dev.avles.gym.data.Meals
+import dev.avles.gym.domain.Burn
 import dev.avles.gym.domain.Energy
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Training
@@ -203,6 +204,15 @@ fun TodayScreen(
                     caption = if (open) "one still open" else "done for the day",
                     accent = Brass
                 )
+                val minutes = day.sessions.sumOf { s -> s.endedAt?.let { ((it - s.startedAt) / 60_000).toInt() } ?: 0 }
+                val burned = Burn.kcal(minutes, latestWeightKg ?: 0.0)
+                if (burned > 0) {
+                    Text(
+                        "$minutes min, about $burned kcal burned",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Mute
+                    )
+                }
             } else {
                 Text(
                     "The bar hasn't moved yet.",

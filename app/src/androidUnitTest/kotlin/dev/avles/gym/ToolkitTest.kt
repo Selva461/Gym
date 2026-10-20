@@ -7,6 +7,7 @@ import dev.avles.gym.data.SavedMealRow
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.Achievements
 import dev.avles.gym.domain.Alternatives
+import dev.avles.gym.domain.Burn
 import dev.avles.gym.data.SeedData
 import dev.avles.gym.domain.Energy
 import dev.avles.gym.domain.Export
@@ -406,5 +407,13 @@ class ToolkitTest {
         assertNull(Plates.barFor(dev.avles.gym.domain.Equipment.MACHINE))
         assertNull(Plates.barFor(dev.avles.gym.domain.Equipment.DUMBBELL))
         assertNull(Plates.barFor(dev.avles.gym.domain.Equipment.CABLE))
+    }
+
+    @Test
+    fun `an hour of lifting at 75 kg is about 394 kcal`() {
+        // 5 × 3.5 × 75 / 200 × 60 = 393.75
+        assertEquals(394, Burn.kcal(60, 75.0))
+        assertEquals(0, Burn.kcal(60, 0.0))
+        assertEquals(0, Burn.kcal(0, 75.0))
     }
 }

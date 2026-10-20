@@ -263,6 +263,14 @@ fun WorkoutReportDialog(report: LiftHistory.Report, onDismiss: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(12.dp))
+                if (report.kcalBurned > 0) {
+                    Text(
+                        "About ${report.kcalBurned} kcal burned, from the time and your last weigh-in.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Mute
+                    )
+                    Spacer(Modifier.height(6.dp))
+                }
                 Text(
                     report.lifts.joinToString(" · "),
                     style = MaterialTheme.typography.labelSmall,

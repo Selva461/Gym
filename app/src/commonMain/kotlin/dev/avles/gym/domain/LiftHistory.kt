@@ -93,7 +93,9 @@ object LiftHistory {
         val workingSets: Int,
         val volumeKg: Double,
         val lifts: List<String>,
-        val records: List<SetRow>
+        val records: List<SetRow>,
+        /** Estimated from the time and the latest body weight; zero without a weight. */
+        val kcalBurned: Int = 0
     )
 
     fun report(startedAt: Long, endedAt: Long, sets: List<SetRow>, before: List<SetRow>): Report {

@@ -23,6 +23,7 @@ import dev.avles.gym.domain.Assistance
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.data.DayKinds
 import dev.avles.gym.data.DayMarker
+import dev.avles.gym.domain.Burn
 import dev.avles.gym.domain.Coach
 import dev.avles.gym.domain.Patterns
 import dev.avles.gym.domain.Physique
@@ -402,7 +403,9 @@ class GymViewModel(
         repo.finishSession(session)
         cancelRest()
         if (sets.isNotEmpty()) {
-            _workoutReport.value = LiftHistory.report(session.startedAt, Dates.nowMillis(), sets, before)
+            val report = LiftHistory.report(session.startedAt, Dates.nowMillis(), sets, before)
+            val bodyKg = repo.weights.first().maxByOrNull { it.dateEpochDay }?.weightKg ?: 0.0
+            _workoutReport.value = report.copy(kcalBurned = Burn.kcal(report.minutes, bodyKg))
         }
     }
 
