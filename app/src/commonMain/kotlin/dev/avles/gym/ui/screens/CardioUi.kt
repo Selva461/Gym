@@ -27,6 +27,7 @@ import dev.avles.gym.domain.Plates
 import dev.avles.gym.ui.components.ChipRow
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.SectionHeading
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
@@ -45,7 +46,7 @@ fun CardioSection(
     var logging by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf<CardioEntry?>(null) }
     Column(Modifier.fillMaxWidth()) {
-        SectionHeading("Cardio", trailing = if (entries.isEmpty()) null else "${entries.sumOf { it.minutes }} min today")
+        SectionHeading(tr("Cardio"), trailing = if (entries.isEmpty()) null else "${entries.sumOf { it.minutes }} min today")
         Spacer(Modifier.height(10.dp))
         entries.forEach { e ->
             val kcal = Cardio.kcal(e.activity, e.minutes, bodyKg)

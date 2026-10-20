@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.domain.Numbers
 import dev.avles.gym.domain.Weekly
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
@@ -27,7 +28,7 @@ fun WeekCard(week: Weekly.Comparison, proteinTargetG: Double, modifier: Modifier
     val now = week.thisWeek
     val before = week.lastWeek
     Column(modifier.fillMaxWidth()) {
-        SectionHeading("This week", trailing = "last 7 days vs the 7 before")
+        SectionHeading(tr("This week"), trailing = "last 7 days vs the 7 before")
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Stat(

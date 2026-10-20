@@ -53,6 +53,7 @@ import dev.avles.gym.ui.components.Motion.fadeThrough
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.TrendChart
 import dev.avles.gym.ui.components.pressable
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
@@ -187,7 +188,7 @@ fun LiftHistoryDialog(exercise: Exercise, history: List<SetRow>, onDismiss: () -
                 }
 
                 Spacer(Modifier.height(16.dp))
-                SectionHeading("Recent sessions")
+                SectionHeading(tr("Recent sessions"))
                 Spacer(Modifier.height(6.dp))
                 trend.takeLast(8).reversed().forEach { point ->
                     RecordLine(

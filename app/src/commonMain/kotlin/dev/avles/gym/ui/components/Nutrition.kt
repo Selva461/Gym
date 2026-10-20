@@ -33,6 +33,7 @@ import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Plates
 import dev.avles.gym.domain.Totals
 import dev.avles.gym.ui.components.Motion.rollNumber
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
@@ -83,7 +84,7 @@ private fun MacroColumn(label: String, value: Double, target: Double, accent: Co
             height = 4
         )
         Spacer(Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Mute)
+        Text(tr(label), style = MaterialTheme.typography.labelSmall, color = Mute)
     }
 }
 
@@ -165,7 +166,7 @@ fun FastingCard(
 
     Column(modifier.fillMaxWidth()) {
         SectionHeading(
-            "Fasting",
+            tr("Fasting"),
             trailing = if (state == null) "not fasting" else "$hours h fast",
             accent = Water
         )

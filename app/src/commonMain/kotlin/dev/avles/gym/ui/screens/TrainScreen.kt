@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -74,6 +74,7 @@ import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.pressScale
 import dev.avles.gym.ui.components.pressable
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
@@ -228,14 +229,14 @@ private fun StartSessionPane(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp)
     ) {
         item {
-            Text("Train", style = MaterialTheme.typography.headlineMedium, color = Bone)
+            Text(tr("Train"), style = MaterialTheme.typography.headlineMedium, color = Bone)
             Text(
                 "Start a split and its lifts come with it.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Mute
             )
             Spacer(Modifier.height(20.dp))
-            SectionHeading("Your splits", trailing = "${splits.size}")
+            SectionHeading(tr("Your splits"), trailing = "${splits.size}")
             Spacer(Modifier.height(10.dp))
         }
 
@@ -296,7 +297,7 @@ private fun StartSessionPane(
             Hairline()
             Spacer(Modifier.height(22.dp))
             SectionHeading(
-                "Recent sessions",
+                tr("Recent sessions"),
                 trailing = if (state.recent.isEmpty()) null else "tap to edit"
             )
             Spacer(Modifier.height(10.dp))
@@ -457,7 +458,7 @@ private fun ActiveSessionPane(
                         SessionClock(session.startedAt)
                     }
                 }
-                TextButton(onClick = onFinish) { Text("Finish", color = Brass) }
+                TextButton(onClick = onFinish) { Text(tr("Finish"), color = Brass) }
             }
 
             Spacer(Modifier.height(20.dp))
@@ -691,7 +692,7 @@ private fun ActiveSessionPane(
                     disabledContentColor = Faint
                 ),
                 modifier = Modifier.fillMaxWidth().height(52.dp).pressScale(logPress)
-            ) { Text("Log set", style = MaterialTheme.typography.labelLarge) }
+            ) { Text(tr("Log set"), style = MaterialTheme.typography.labelLarge) }
 
             Spacer(Modifier.height(26.dp))
             Hairline()

@@ -426,4 +426,11 @@ class ToolkitTest {
         assertNull(Cardio.pace(30, 0.0))
         assertEquals(5.0, Cardio.activity("Something else").met, 0.0)
     }
+
+    @Test
+    fun `Tamil labels fall back to English when there is no translation`() {
+        assertEquals("இன்று", dev.avles.gym.ui.i18n.Strings.of("ta", "Today"))
+        assertEquals("Today", dev.avles.gym.ui.i18n.Strings.of("en", "Today"))
+        assertEquals("Plate calculator", dev.avles.gym.ui.i18n.Strings.of("ta", "Plate calculator"))
+    }
 }

@@ -54,6 +54,7 @@ import dev.avles.gym.ui.components.WaterCard
 import dev.avles.gym.ui.components.WeekCard
 import dev.avles.gym.ui.components.WeekStrip
 import dev.avles.gym.ui.components.pressScale
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
@@ -152,7 +153,7 @@ fun TodayScreen(
                         color = Faint,
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = { weighing = true }) { Text("Weigh in", color = Sage) }
+                    TextButton(onClick = { weighing = true }) { Text(tr("Weigh in"), color = Sage) }
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -161,7 +162,7 @@ fun TodayScreen(
         // --- Fuel -----------------------------------------------------
         item {
             SectionHeading(
-                title = "Fuel",
+                title = tr("Fuel"),
                 trailing = "${kcal.roundToInt()} of ${kcalTarget.roundToInt()} kcal",
                 accent = Mute
             )
@@ -198,7 +199,7 @@ fun TodayScreen(
                     contentColor = Sage
                 ),
                 modifier = Modifier.fillMaxWidth().pressScale(fuelPress)
-            ) { Text("Log food") }
+            ) { Text(tr("Log food")) }
             Spacer(Modifier.height(26.dp))
             Hairline()
             Spacer(Modifier.height(22.dp))
@@ -207,7 +208,7 @@ fun TodayScreen(
         // --- Training -------------------------------------------------
         item {
             SectionHeading(
-                title = "Training",
+                title = tr("Training"),
                 trailing = if (trainedToday) day.sessions.first().label else "nothing logged",
                 accent = if (trainedToday) Brass else Faint
             )

@@ -38,7 +38,9 @@ data class GymSettings(
     val goalWeightKg: Double = 0.0,
     /** The first-run welcome has been answered or dismissed. */
     val welcomed: Boolean = false,
-    val waterReminders: Boolean = false
+    val waterReminders: Boolean = false,
+    /** "en" or "ta"; see [dev.avles.gym.ui.i18n.Strings]. */
+    val language: String = "en"
 )
 
 class SettingsStore(private val store: DataStore<Preferences>) {
@@ -60,6 +62,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val goalWeight = doublePreferencesKey("goal_weight_kg")
         val welcomed = intPreferencesKey("welcomed")
         val waterReminders = intPreferencesKey("water_reminders")
+        val language = stringPreferencesKey("language")
     }
 
     val settings: Flow<GymSettings> = store.data.map { p ->
@@ -79,7 +82,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             restByLift = (p[Keys.restByLift] ?: 1) == 1,
             goalWeightKg = p[Keys.goalWeight] ?: 0.0,
             welcomed = (p[Keys.welcomed] ?: 0) == 1,
-            waterReminders = (p[Keys.waterReminders] ?: 0) == 1
+            waterReminders = (p[Keys.waterReminders] ?: 0) == 1,
+            language = p[Keys.language] ?: "en"
         )
     }
 
@@ -101,6 +105,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             p[Keys.goalWeight] = s.goalWeightKg
             p[Keys.welcomed] = if (s.welcomed) 1 else 0
             p[Keys.waterReminders] = if (s.waterReminders) 1 else 0
+            p[Keys.language] = s.language
         }
     }
 }

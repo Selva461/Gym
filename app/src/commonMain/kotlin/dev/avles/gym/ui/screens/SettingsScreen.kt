@@ -35,6 +35,9 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.GymSettings
+import dev.avles.gym.ui.i18n.tr
+import dev.avles.gym.ui.i18n.Strings
+import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.GymViewModel
 import dev.avles.gym.ui.components.rememberTextSharer
@@ -69,6 +72,7 @@ fun SettingsScreen(
     var remindersOn by remember(settings) { mutableStateOf(settings.remindersOn) }
     var restByLift by remember(settings) { mutableStateOf(settings.restByLift) }
     var waterReminders by remember(settings) { mutableStateOf(settings.waterReminders) }
+    var language by remember(settings) { mutableStateOf(settings.language) }
     var goalWeight by remember(settings) {
         mutableStateOf(if (settings.goalWeightKg > 0) Training.formatWeight(settings.goalWeightKg) else "")
     }
@@ -81,10 +85,24 @@ fun SettingsScreen(
             .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
-        Text("Settings", style = MaterialTheme.typography.headlineMedium, color = Bone)
+        Text(tr("Settings"), style = MaterialTheme.typography.headlineMedium, color = Bone)
+        Spacer(Modifier.height(16.dp))
+        SectionHeading(tr("Language"), accent = Sage)
+        Spacer(Modifier.height(8.dp))
+        PillRow(
+            options = listOf("English", "தமிழ்"),
+            selected = if (language == Strings.TAMIL) "தமிழ்" else "English",
+            accent = Sage,
+            onSelect = { language = if (it == "தமிழ்") Strings.TAMIL else Strings.ENGLISH }
+        )
+        Text(
+            "Tabs, headings and main buttons. Saved with the button at the bottom.",
+            style = MaterialTheme.typography.labelSmall,
+            color = Faint
+        )
         Spacer(Modifier.height(24.dp))
 
-        SectionHeading("Daily targets", accent = Sage)
+        SectionHeading(tr("Daily targets"), accent = Sage)
         Spacer(Modifier.height(6.dp))
         Text(
             "Your numbers, not a formula's. Change them whenever the goal changes. " +
@@ -118,7 +136,7 @@ fun SettingsScreen(
         Hairline()
         Spacer(Modifier.height(20.dp))
 
-        SectionHeading("Rest timer", accent = Brass)
+        SectionHeading(tr("Rest timer"), accent = Brass)
         Spacer(Modifier.height(12.dp))
         NumField(rest, { rest = it }, "seconds between working sets", Modifier.fillMaxWidth())
         Spacer(Modifier.height(10.dp))
@@ -150,7 +168,7 @@ fun SettingsScreen(
         Hairline()
         Spacer(Modifier.height(20.dp))
 
-        SectionHeading("Nightly reminder", accent = Brass)
+        SectionHeading(tr("Nightly reminder"), accent = Brass)
         Spacer(Modifier.height(6.dp))
         Text(
             "One notification to close out the day's log. It arrives near this time, not exactly on it.",
@@ -224,6 +242,7 @@ fun SettingsScreen(
                         remindersOn = remindersOn,
                         restByLift = restByLift,
                         waterReminders = waterReminders,
+                        language = language,
                         goalWeightKg = goalWeight.toDoubleOrNull()?.takeIf { it in 30.0..300.0 } ?: 0.0,
                         waterGlasses = (water.toIntOrNull() ?: settings.waterGlasses).coerceIn(1, 30)
                     )
@@ -241,7 +260,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(28.dp))
         Hairline()
         Spacer(Modifier.height(20.dp))
-        SectionHeading("Your data", accent = Sage)
+        SectionHeading(tr("Your data"), accent = Sage)
         Spacer(Modifier.height(6.dp))
         Text(
             "As spreadsheets (CSV), through the share sheet: save them to Files or Drive, " +

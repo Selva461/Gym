@@ -51,8 +51,8 @@ import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.DayState
 import dev.avles.gym.ui.components.Chip
 import dev.avles.gym.ui.components.EmptyNote
-import dev.avles.gym.ui.components.FastingCard
 import dev.avles.gym.ui.components.EntryRow
+import dev.avles.gym.ui.components.FastingCard
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.MacroBars
 import dev.avles.gym.ui.components.Motion
@@ -61,6 +61,7 @@ import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.WaterCard
 import dev.avles.gym.ui.components.pressable
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
@@ -126,7 +127,7 @@ fun FuelScreen(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp)
     ) {
         item {
-            Text("Fuel", style = MaterialTheme.typography.headlineMedium, color = Bone)
+            Text(tr("Fuel"), style = MaterialTheme.typography.headlineMedium, color = Bone)
             Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
                 Text(
                     "${day.totals.proteinG.roundToInt()} g protein",
@@ -162,7 +163,7 @@ fun FuelScreen(
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                label = { Text("Search food") },
+                label = { Text(tr("Search food")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -199,7 +200,7 @@ fun FuelScreen(
         } else if (query.isBlank() && category == null) {
             item {
                 SectionHeading(
-                    "Usual suspects",
+                    tr("Usual suspects"),
                     trailing = if (quickPicks.isEmpty()) "builds as you log" else null
                 )
                 Spacer(Modifier.height(10.dp))
@@ -214,7 +215,7 @@ fun FuelScreen(
                 val recent = recentFoods.filter { r -> quickPicks.none { it.id == r.id } }
                 if (recent.isNotEmpty()) {
                     Spacer(Modifier.height(16.dp))
-                    SectionHeading("Recent")
+                    SectionHeading(tr("Recent"))
                     Spacer(Modifier.height(10.dp))
                     FoodChipRow(recent, "recent") { pending = it }
                 }

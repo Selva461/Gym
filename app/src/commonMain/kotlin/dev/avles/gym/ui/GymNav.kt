@@ -36,7 +36,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.CompositionLocalProvider
 import dev.avles.gym.core.Dates
+import dev.avles.gym.ui.i18n.LocalLanguage
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.core.epochDay
 import dev.avles.gym.data.DayKinds
 import dev.avles.gym.domain.Weekly
@@ -128,6 +131,7 @@ fun GymNav(vm: GymViewModel) {
         }
     }
 
+    CompositionLocalProvider(LocalLanguage provides settings.language) {
     Scaffold(
         containerColor = Ink,
         bottomBar = {
@@ -158,7 +162,7 @@ fun GymNav(vm: GymViewModel) {
                         },
                         label = {
                             Text(
-                                destination.label,
+                                tr(destination.label),
                                 style = MaterialTheme.typography.labelSmall
                             )
                         },
@@ -355,5 +359,6 @@ fun GymNav(vm: GymViewModel) {
                 )
             }
         }
+    }
     }
 }

@@ -39,6 +39,7 @@ import dev.avles.gym.ui.components.MonthCalendar
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.TrendChart
 import dev.avles.gym.ui.components.pressScale
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
@@ -84,7 +85,7 @@ fun ProgressScreen(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp)
     ) {
         item {
-            Text("Progress", style = MaterialTheme.typography.headlineMedium, color = Bone)
+            Text(tr("Progress"), style = MaterialTheme.typography.headlineMedium, color = Bone)
             Text(
                 "The slow numbers. Read these monthly, not daily.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -141,7 +142,7 @@ fun ProgressScreen(
             Spacer(Modifier.height(16.dp))
 
             SectionHeading(
-                "Body weight",
+                tr("Body weight"),
                 trailing = latest?.let { "last ${Training.formatWeight(it.weightKg)} kg" }
             )
             Spacer(Modifier.height(14.dp))
@@ -217,7 +218,7 @@ fun ProgressScreen(
             Hairline()
             Spacer(Modifier.height(22.dp))
 
-            SectionHeading("Consistency")
+            SectionHeading(tr("Consistency"))
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 BigNumber(

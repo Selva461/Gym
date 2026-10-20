@@ -27,6 +27,7 @@ import dev.avles.gym.domain.Plates
 import dev.avles.gym.domain.SavedMeals
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.pressable
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Coral
 import dev.avles.gym.ui.theme.Faint
@@ -43,7 +44,7 @@ fun SavedMealsRow(meals: List<SavedMeals.Meal>, slot: String, onLog: (SavedMeals
     var open by remember { mutableStateOf<SavedMeals.Meal?>(null) }
     Column {
         Spacer(Modifier.height(16.dp))
-        SectionHeading("Saved meals", trailing = "logs into ${slot.lowercase()}")
+        SectionHeading(tr("Saved meals"), trailing = "logs into ${slot.lowercase()}")
         Spacer(Modifier.height(10.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(meals, key = { "saved-${it.id}" }) { meal ->

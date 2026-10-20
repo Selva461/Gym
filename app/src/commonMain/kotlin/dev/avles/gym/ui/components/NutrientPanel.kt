@@ -27,6 +27,7 @@ import dev.avles.gym.domain.Direction
 import dev.avles.gym.domain.Numbers
 import dev.avles.gym.domain.NutrientRef
 import dev.avles.gym.domain.Nutrients
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Coral
 import dev.avles.gym.ui.theme.Faint
@@ -56,7 +57,7 @@ fun NutrientPanel(
 
     Column(modifier.fillMaxWidth()) {
         SectionHeading(
-            title = "Nutrients",
+            title = tr("Nutrients"),
             trailing = if (expanded) "hide" else "show all",
             accent = Sage,
             modifier = Modifier.pressable(RoundedCornerShape(8.dp), pressedScale = 0.99f, onClick = onToggle)

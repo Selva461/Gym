@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.domain.Achievements
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
@@ -30,7 +31,7 @@ fun AchievementsCard(totals: Achievements.Totals, modifier: Modifier = Modifier)
     val earned = all.filter { it.earned }
     val next = Achievements.next(totals)
     Column(modifier.fillMaxWidth()) {
-        SectionHeading("Achievements", trailing = "${earned.size} of ${all.size}", accent = Brass)
+        SectionHeading(tr("Achievements"), trailing = "${earned.size} of ${all.size}", accent = Brass)
         Spacer(Modifier.height(10.dp))
         if (earned.isEmpty()) {
             Text("Your first session earns the first one.", style = MaterialTheme.typography.bodyMedium, color = Faint)
