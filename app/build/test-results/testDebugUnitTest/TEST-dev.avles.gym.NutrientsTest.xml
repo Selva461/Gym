@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.avles.gym.NutrientsTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:25:17.641Z" hostname="vm" time="0.006">
+  <properties/>
+  <testcase name="an empty day is zero across every nutrient, not a crash" classname="dev.avles.gym.NutrientsTest" time="0.004"/>
+  <testcase name="a ceiling that is passed is flagged and a floor that is not is never flagged" classname="dev.avles.gym.NutrientsTest" time="0.0"/>
+  <testcase name="a nutrient at zero is the shortest of all" classname="dev.avles.gym.NutrientsTest" time="0.001"/>
+  <testcase name="micronutrients add up across entries" classname="dev.avles.gym.NutrientsTest" time="0.0"/>
+  <testcase name="supplements can be totalled apart from food" classname="dev.avles.gym.NutrientsTest" time="0.0"/>
+  <testcase name="every reference is positive and every row reads a distinct nutrient" classname="dev.avles.gym.NutrientsTest" time="0.0"/>
+  <testcase name="a met floor is not reported short" classname="dev.avles.gym.NutrientsTest" time="0.001"/>
+  <testcase name="shortfalls name the floors furthest from being met, worst first" classname="dev.avles.gym.NutrientsTest" time="0.0"/>
+  <testcase name="progress clamps but the raw reading does not" classname="dev.avles.gym.NutrientsTest" time="0.0"/>
+  <testcase name="micronutrients scale with quantity like macros do" classname="dev.avles.gym.NutrientsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

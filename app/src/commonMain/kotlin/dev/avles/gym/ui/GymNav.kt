@@ -9,8 +9,8 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -35,7 +36,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import dev.avles.gym.core.Dates
 import dev.avles.gym.core.epochDay
+import dev.avles.gym.data.DayKinds
+import dev.avles.gym.domain.Weekly
 import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.screens.CoachScreen
 import dev.avles.gym.ui.screens.FuelScreen
@@ -187,7 +191,17 @@ fun GymNav(vm: GymViewModel) {
             }
         ) {
             composable("today") {
+                val week = remember(progress, patterns) {
+                    Weekly.compare(
+                        today = Dates.todayEpochDay(),
+                        trained = progress.trained,
+                        volumeByDay = progress.volume.associate { it.dateEpochDay to it.volume },
+                        protein = patterns.protein,
+                        kcal = patterns.kcal
+                    )
+                }
                 TodayScreen(
+                    week = week,
                     day = day,
                     dots = dots,
                     onSelectDate = vm::selectDate,
@@ -258,7 +272,8 @@ fun GymNav(vm: GymViewModel) {
                     onRecordWeight = vm::recordWeight,
                     onOpenPhotos = { go("photos") },
                     onOpenGoal = { go("goal") },
-                    onOpenPatterns = { go("patterns") }
+                    onOpenPatterns = { go("patterns") },
+                    restDays = markers.filter { it.kind == DayKinds.REST }.map { it.dateEpochDay }.toSet()
                 )
             }
             // Not a sixth tab. Photos are about your body over time, which is what

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.avles.gym.PatternsTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:25:17.649Z" hostname="vm" time="0.004">
+  <properties/>
+  <testcase name="adherence is measured over days you logged" classname="dev.avles.gym.PatternsTest" time="0.001"/>
+  <testcase name="a weekday never trained still appears, at zero" classname="dev.avles.gym.PatternsTest" time="0.0"/>
+  <testcase name="the rolling mean ignores gaps rather than averaging them as zero" classname="dev.avles.gym.PatternsTest" time="0.001"/>
+  <testcase name="weekday index is monday-first" classname="dev.avles.gym.PatternsTest" time="0.0"/>
+  <testcase name="an unlogged day is a gap in the series, not a zero" classname="dev.avles.gym.PatternsTest" time="0.001"/>
+  <testcase name="a weekday with too few samples is not read as a pattern" classname="dev.avles.gym.PatternsTest" time="0.0"/>
+  <testcase name="mean macros average only the days with food logged" classname="dev.avles.gym.PatternsTest" time="0.0"/>
+  <testcase name="the weakest weekday is named only when it actually stands out" classname="dev.avles.gym.PatternsTest" time="0.001"/>
+  <testcase name="a rolling mean over nothing is null rather than zero" classname="dev.avles.gym.PatternsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

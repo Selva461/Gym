@@ -37,6 +37,7 @@ import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Numbers
 import dev.avles.gym.domain.Training
+import dev.avles.gym.domain.Warmups
 import dev.avles.gym.ui.LiftGuidance
 import dev.avles.gym.ui.components.BigNumber
 import dev.avles.gym.ui.components.Chip
@@ -351,6 +352,19 @@ internal fun TargetCard(guidance: LiftGuidance, onUseTarget: (Double, Int) -> Un
             style = MaterialTheme.typography.labelSmall,
             color = Mute
         )
+
+        // The ramp up to the target, for a loaded lift heavy enough to need one.
+        val warmups = if (guidance.exercise.isAssisted) emptyList() else Warmups.plan(rec.weightKg)
+        if (warmups.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Warm up  " + warmups.joinToString("  ·  ") {
+                    "${Training.formatWeight(it.weightKg)} × ${it.reps}"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = Faint
+            )
+        }
 
         val leastHelp = guidance.leastHelp
         if (guidance.bestE1rm > 0 || leastHelp != null) {

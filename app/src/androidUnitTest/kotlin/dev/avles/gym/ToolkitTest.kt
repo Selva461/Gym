@@ -3,11 +3,15 @@ package dev.avles.gym
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.Energy
 import dev.avles.gym.domain.LiftHistory
+import dev.avles.gym.domain.MonthGrid
 import dev.avles.gym.domain.Plates
+import dev.avles.gym.domain.Warmups
+import dev.avles.gym.domain.Weekly
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import kotlinx.datetime.LocalDate
 import org.junit.Test
 
 /**
@@ -157,5 +161,63 @@ class ToolkitTest {
         assertEquals(11, Energy.waterGlasses(80.0)) // 2800 ml
         assertEquals(8, Energy.waterGlasses(50.0))
         assertEquals(8, Energy.waterGlasses(0.0))
+    }
+
+    // ---- Warm-ups -------------------------------------------------------------
+
+    @Test
+    fun `a heavy set gets the full ramp, rounded down to plates`() {
+        val plan = Warmups.plan(100.0)
+        assertEquals(listOf(20.0, 40.0, 60.0, 80.0), plan.map { it.weightKg })
+        assertEquals(listOf(10, 5, 3, 2), plan.map { it.reps })
+        assertEquals(listOf(20.0, 37.5, 55.0, 75.0), Warmups.plan(94.0).map { it.weightKg })
+    }
+
+    @Test
+    fun `a light set gets a short ramp, and the bar alone needs none`() {
+        // 40% of 40 is 16, under the bar, so that step is dropped.
+        assertEquals(listOf(20.0, 22.5, 30.0), Warmups.plan(40.0).map { it.weightKg })
+        assertTrue(Warmups.plan(20.0).isEmpty())
+    }
+
+    // ---- Month calendar -------------------------------------------------------
+
+    @Test
+    fun `a month starts on its weekday and is padded to whole weeks`() {
+        // 1 October 2026 is a Thursday: three blanks, then the 1st.
+        val weeks = MonthGrid.weeks(LocalDate(2026, 10, 20))
+        assertEquals(listOf(null, null, null), weeks.first().take(3))
+        assertEquals(LocalDate(2026, 10, 1).toEpochDays().toLong(), weeks.first()[3])
+        assertTrue(weeks.all { it.size == 7 })
+        assertEquals(31, weeks.flatten().count { it != null })
+        assertEquals(29, MonthGrid.weeks(LocalDate(2028, 2, 1)).flatten().count { it != null })
+    }
+
+    @Test
+    fun `months shift across the year end`() {
+        assertEquals(LocalDate(2027, 1, 1), MonthGrid.shift(LocalDate(2026, 12, 15), 1))
+        assertEquals(LocalDate(2025, 12, 1), MonthGrid.shift(LocalDate(2026, 1, 31), -1))
+        assertEquals("October 2026", MonthGrid.title(LocalDate(2026, 10, 3)))
+    }
+
+    // ---- This week ------------------------------------------------------------
+
+    @Test
+    fun `a rolling week against the one before, skipping unlogged days`() {
+        val today = 100L
+        val trained = setOf(100L, 98L, 95L, 90L, 88L)
+        val volume = mapOf(100L to 5000.0, 98L to 4000.0, 90L to 3000.0)
+        val protein = List<Double?>(14) { null }.toMutableList().apply { this[13] = 150.0; this[12] = 130.0; this[2] = 100.0 }
+        val kcal = protein.map { it?.let { p -> p * 15 } }
+        val w = Weekly.compare(today, trained, volume, protein, kcal)
+        assertEquals(3, w.thisWeek.daysTrained) // 100, 98, 95
+        assertEquals(2, w.lastWeek.daysTrained) // 90, 88
+        assertEquals(9000.0, w.thisWeek.volumeKg, 0.0)
+        assertEquals(140.0, w.thisWeek.avgProteinG!!, 1e-9)
+        assertEquals(100.0, w.lastWeek.avgProteinG!!, 1e-9)
+        assertEquals(2, w.thisWeek.daysLogged)
+        assertEquals("+200%", Weekly.change(9000.0, 3000.0))
+        assertEquals("−50%", Weekly.change(50.0, 100.0))
+        assertNull(Weekly.change(10.0, 0.0))
     }
 }

@@ -32,6 +32,7 @@ import dev.avles.gym.ui.ProgressState
 import dev.avles.gym.ui.components.BarStrip
 import dev.avles.gym.ui.components.BigNumber
 import dev.avles.gym.ui.components.Hairline
+import dev.avles.gym.ui.components.MonthCalendar
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.TrendChart
 import dev.avles.gym.ui.components.pressScale
@@ -50,7 +51,8 @@ fun ProgressScreen(
     onOpenPhotos: () -> Unit,
     onOpenGoal: () -> Unit,
     onOpenPatterns: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    restDays: Set<Long> = emptySet()
 ) {
     var logging by remember { mutableStateOf(false) }
     val today = Dates.todayEpochDay()
@@ -206,6 +208,14 @@ fun ProgressScreen(
             Spacer(Modifier.height(8.dp))
             Text(
                 "A missed day does not undo a month. The run restarts, the training does not.",
+                style = MaterialTheme.typography.labelSmall,
+                color = Faint
+            )
+            Spacer(Modifier.height(20.dp))
+            MonthCalendar(trained = state.trained, fuelled = state.fuelled, restDays = restDays)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Brass is a training day, grey a planned rest, the green mark food logged.",
                 style = MaterialTheme.typography.labelSmall,
                 color = Faint
             )

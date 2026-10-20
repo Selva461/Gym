@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.avles.gym.ProgressionTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:25:17.661Z" hostname="vm" time="0.006">
+  <properties/>
+  <testcase name="three sessions at one weight without progress reads as a stall" classname="dev.avles.gym.ProgressionTest" time="0.003"/>
+  <testcase name="the heaviest set of the session is the one progressed from" classname="dev.avles.gym.ProgressionTest" time="0.0"/>
+  <testcase name="hitting the top of the range steps the weight up and resets the reps" classname="dev.avles.gym.ProgressionTest" time="0.001"/>
+  <testcase name="no history means no recommendation, not a guessed starting weight" classname="dev.avles.gym.ProgressionTest" time="0.0"/>
+  <testcase name="warm-ups alone are not history" classname="dev.avles.gym.ProgressionTest" time="0.0"/>
+  <testcase name="recommended weights land on something loadable" classname="dev.avles.gym.ProgressionTest" time="0.001"/>
+  <testcase name="milestone progress runs from one round number to the next" classname="dev.avles.gym.ProgressionTest" time="0.0"/>
+  <testcase name="sets from other lifts are ignored" classname="dev.avles.gym.ProgressionTest" time="0.0"/>
+  <testcase name="only the most recent session decides the target" classname="dev.avles.gym.ProgressionTest" time="0.0"/>
+  <testcase name="short of the top of the range, add a rep at the same weight" classname="dev.avles.gym.ProgressionTest" time="0.0"/>
+  <testcase name="the increment is the lift's own, not a global one" classname="dev.avles.gym.ProgressionTest" time="0.0"/>
+  <testcase name="the next milestone is the round number above your estimated max" classname="dev.avles.gym.ProgressionTest" time="0.0"/>
+  <testcase name="reps creeping up across sessions is progress, not a stall" classname="dev.avles.gym.ProgressionTest" time="0.0"/>
+  <testcase name="beating the top of the range still only steps up once" classname="dev.avles.gym.ProgressionTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

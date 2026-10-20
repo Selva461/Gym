@@ -27,6 +27,7 @@ import dev.avles.gym.data.DayKinds
 import dev.avles.gym.data.Meals
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Training
+import dev.avles.gym.domain.Weekly
 import dev.avles.gym.ui.CalendarDots
 import dev.avles.gym.ui.DayState
 import dev.avles.gym.ui.components.BigNumber
@@ -41,6 +42,7 @@ import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.StripLegend
 import dev.avles.gym.ui.components.WaterCard
+import dev.avles.gym.ui.components.WeekCard
 import dev.avles.gym.ui.components.WeekStrip
 import dev.avles.gym.ui.components.pressScale
 import dev.avles.gym.ui.theme.Bone
@@ -63,7 +65,8 @@ fun TodayScreen(
     onMarkDay: (String) -> Unit,
     modifier: Modifier = Modifier,
     onAddWater: () -> Unit = {},
-    onRemoveWater: () -> Unit = {}
+    onRemoveWater: () -> Unit = {},
+    week: Weekly.Comparison? = null
 ) {
     val today = Dates.today()
     val protein = day.totals.proteinG
@@ -237,6 +240,12 @@ fun TodayScreen(
             Spacer(Modifier.height(26.dp))
             Hairline()
             Spacer(Modifier.height(22.dp))
+            if (week != null && day.date == today) {
+                WeekCard(week, proteinTarget)
+                Spacer(Modifier.height(26.dp))
+                Hairline()
+                Spacer(Modifier.height(22.dp))
+            }
             SectionHeading(
                 // The strip lets you walk back through the week, so this heading has to
                 // say which day it is listing rather than always claiming to be today.
