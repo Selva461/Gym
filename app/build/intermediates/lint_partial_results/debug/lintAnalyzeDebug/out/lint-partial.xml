@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.10.1" type="partial_results">
+    <map id="NotificationPermission">
+        <entry
+            name="source"
+            boolean="true"/>
+    </map>
+    <map id="UnsafeIntentLaunch">
+            <map id="unprotected">
+                <entry
+                    name="dev.avles.gym.MainActivity"
+                    boolean="true"/>
+                <entry
+                    name="dev.avles.gym.notify.BootReceiver"
+                    boolean="true"/>
+            </map>
+    </map>
+    <map id="UnusedResources">
+        <location id="R.color.brass"
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*1}/values/colors.xml"
+            line="3"
+            column="12"
+            startOffset="63"
+            endLine="3"
+            endColumn="24"
+            endOffset="75"/>
+        <entry
+            name="model"
+            string="color[ink(U),brass(D)],drawable[ic_launcher_foreground(U),ic_stat_gym(U)],mipmap[ic_launcher(U),ic_launcher_round(U)],string[app_name(U)],style[Theme_Gym(U)],xml[data_extraction_rules(U),backup_rules(U)];4^0^2,5^0^2,7^0;;;"/>
+    </map>
+
+</incidents>

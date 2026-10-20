@@ -35,6 +35,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.GymSettings
+import dev.avles.gym.ui.GymViewModel
+import dev.avles.gym.ui.components.rememberTextSharer
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.Motion.fadeThrough
 import dev.avles.gym.ui.components.SectionHeading
@@ -54,8 +56,10 @@ fun SettingsScreen(
     settings: GymSettings,
     onSave: (GymSettings) -> Unit,
     modifier: Modifier = Modifier,
-    latestWeightKg: Double? = null
+    latestWeightKg: Double? = null,
+    onExport: (GymViewModel.ExportKind, (String, String) -> Unit) -> Unit = { _, _ -> }
 ) {
+    val share = rememberTextSharer()
     var protein by remember(settings) { mutableStateOf(settings.proteinTargetG.roundToInt().toString()) }
     var kcal by remember(settings) { mutableStateOf(settings.kcalTarget.roundToInt().toString()) }
     var rest by remember(settings) { mutableStateOf(settings.restSeconds.toString()) }
@@ -173,6 +177,23 @@ fun SettingsScreen(
             AnimatedContent(targetState = savedTick > 0, transitionSpec = { fadeThrough() }, label = "saved") { saved ->
                 Text(if (saved) "Saved" else "Save settings", style = MaterialTheme.typography.labelLarge)
             }
+        }
+
+        Spacer(Modifier.height(28.dp))
+        Hairline()
+        Spacer(Modifier.height(20.dp))
+        SectionHeading("Your data", accent = Sage)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "As spreadsheets (CSV), through the share sheet: save them to Files or Drive, " +
+                "or send them to yourself. Nothing leaves the phone unless you pick where it goes.",
+            style = MaterialTheme.typography.labelSmall,
+            color = Faint
+        )
+        Row {
+            TextButton(onClick = { onExport(GymViewModel.ExportKind.SETS, share) }) { Text("Sets", color = Sage) }
+            TextButton(onClick = { onExport(GymViewModel.ExportKind.FOOD, share) }) { Text("Food log", color = Sage) }
+            TextButton(onClick = { onExport(GymViewModel.ExportKind.WEIGHTS, share) }) { Text("Weight", color = Sage) }
         }
 
         Spacer(Modifier.height(28.dp))

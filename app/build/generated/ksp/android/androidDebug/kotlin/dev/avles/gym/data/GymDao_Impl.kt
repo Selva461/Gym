@@ -1490,6 +1490,130 @@ public class GymDao_Impl(
     }
   }
 
+  public override suspend fun allFoodLog(): List<FoodLogRow> {
+    val _sql: String = """
+        |
+        |        SELECT l.id AS logId, l.dateEpochDay AS dateEpochDay, l.meal AS meal,
+        |               l.quantity AS quantity, l.loggedAt AS loggedAt,
+        |               f.id AS foodId, f.name AS name, f.unitLabel AS unitLabel,
+        |               f.kcal AS kcal, f.proteinG AS proteinG, f.carbsG AS carbsG, f.fatG AS fatG,
+        |               f.isSupplement AS isSupplement,
+        |               f.fiberG AS fiberG, f.sugarG AS sugarG, f.satFatG AS satFatG,
+        |               f.sodiumMg AS sodiumMg, f.potassiumMg AS potassiumMg, f.calciumMg AS calciumMg,
+        |               f.ironMg AS ironMg, f.magnesiumMg AS magnesiumMg, f.zincMg AS zincMg,
+        |               f.vitAMcg AS vitAMcg, f.vitCMg AS vitCMg, f.vitDMcg AS vitDMcg,
+        |               f.vitB12Mcg AS vitB12Mcg, f.folateMcg AS folateMcg, f.omega3G AS omega3G
+        |        FROM food_log l
+        |        JOIN food_item f ON f.id = l.foodId
+        |        ORDER BY l.dateEpochDay ASC, l.loggedAt ASC
+        |        
+        """.trimMargin()
+    return performSuspending(__db, true, false) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        val _columnIndexOfLogId: Int = 0
+        val _columnIndexOfDateEpochDay: Int = 1
+        val _columnIndexOfMeal: Int = 2
+        val _columnIndexOfQuantity: Int = 3
+        val _columnIndexOfLoggedAt: Int = 4
+        val _columnIndexOfFoodId: Int = 5
+        val _columnIndexOfName: Int = 6
+        val _columnIndexOfUnitLabel: Int = 7
+        val _columnIndexOfKcal: Int = 8
+        val _columnIndexOfProteinG: Int = 9
+        val _columnIndexOfCarbsG: Int = 10
+        val _columnIndexOfFatG: Int = 11
+        val _columnIndexOfIsSupplement: Int = 12
+        val _columnIndexOfFiberG: Int = 13
+        val _columnIndexOfSugarG: Int = 14
+        val _columnIndexOfSatFatG: Int = 15
+        val _columnIndexOfSodiumMg: Int = 16
+        val _columnIndexOfPotassiumMg: Int = 17
+        val _columnIndexOfCalciumMg: Int = 18
+        val _columnIndexOfIronMg: Int = 19
+        val _columnIndexOfMagnesiumMg: Int = 20
+        val _columnIndexOfZincMg: Int = 21
+        val _columnIndexOfVitAMcg: Int = 22
+        val _columnIndexOfVitCMg: Int = 23
+        val _columnIndexOfVitDMcg: Int = 24
+        val _columnIndexOfVitB12Mcg: Int = 25
+        val _columnIndexOfFolateMcg: Int = 26
+        val _columnIndexOfOmega3G: Int = 27
+        val _result: MutableList<FoodLogRow> = mutableListOf()
+        while (_stmt.step()) {
+          val _item: FoodLogRow
+          val _tmpLogId: Long
+          _tmpLogId = _stmt.getLong(_columnIndexOfLogId)
+          val _tmpDateEpochDay: Long
+          _tmpDateEpochDay = _stmt.getLong(_columnIndexOfDateEpochDay)
+          val _tmpMeal: String
+          _tmpMeal = _stmt.getText(_columnIndexOfMeal)
+          val _tmpQuantity: Double
+          _tmpQuantity = _stmt.getDouble(_columnIndexOfQuantity)
+          val _tmpLoggedAt: Long
+          _tmpLoggedAt = _stmt.getLong(_columnIndexOfLoggedAt)
+          val _tmpFoodId: Long
+          _tmpFoodId = _stmt.getLong(_columnIndexOfFoodId)
+          val _tmpName: String
+          _tmpName = _stmt.getText(_columnIndexOfName)
+          val _tmpUnitLabel: String
+          _tmpUnitLabel = _stmt.getText(_columnIndexOfUnitLabel)
+          val _tmpKcal: Double
+          _tmpKcal = _stmt.getDouble(_columnIndexOfKcal)
+          val _tmpProteinG: Double
+          _tmpProteinG = _stmt.getDouble(_columnIndexOfProteinG)
+          val _tmpCarbsG: Double
+          _tmpCarbsG = _stmt.getDouble(_columnIndexOfCarbsG)
+          val _tmpFatG: Double
+          _tmpFatG = _stmt.getDouble(_columnIndexOfFatG)
+          val _tmpIsSupplement: Boolean
+          val _tmp: Int
+          _tmp = _stmt.getLong(_columnIndexOfIsSupplement).toInt()
+          _tmpIsSupplement = _tmp != 0
+          val _tmpMicros: Micros
+          val _tmpFiberG: Double
+          _tmpFiberG = _stmt.getDouble(_columnIndexOfFiberG)
+          val _tmpSugarG: Double
+          _tmpSugarG = _stmt.getDouble(_columnIndexOfSugarG)
+          val _tmpSatFatG: Double
+          _tmpSatFatG = _stmt.getDouble(_columnIndexOfSatFatG)
+          val _tmpSodiumMg: Double
+          _tmpSodiumMg = _stmt.getDouble(_columnIndexOfSodiumMg)
+          val _tmpPotassiumMg: Double
+          _tmpPotassiumMg = _stmt.getDouble(_columnIndexOfPotassiumMg)
+          val _tmpCalciumMg: Double
+          _tmpCalciumMg = _stmt.getDouble(_columnIndexOfCalciumMg)
+          val _tmpIronMg: Double
+          _tmpIronMg = _stmt.getDouble(_columnIndexOfIronMg)
+          val _tmpMagnesiumMg: Double
+          _tmpMagnesiumMg = _stmt.getDouble(_columnIndexOfMagnesiumMg)
+          val _tmpZincMg: Double
+          _tmpZincMg = _stmt.getDouble(_columnIndexOfZincMg)
+          val _tmpVitAMcg: Double
+          _tmpVitAMcg = _stmt.getDouble(_columnIndexOfVitAMcg)
+          val _tmpVitCMg: Double
+          _tmpVitCMg = _stmt.getDouble(_columnIndexOfVitCMg)
+          val _tmpVitDMcg: Double
+          _tmpVitDMcg = _stmt.getDouble(_columnIndexOfVitDMcg)
+          val _tmpVitB12Mcg: Double
+          _tmpVitB12Mcg = _stmt.getDouble(_columnIndexOfVitB12Mcg)
+          val _tmpFolateMcg: Double
+          _tmpFolateMcg = _stmt.getDouble(_columnIndexOfFolateMcg)
+          val _tmpOmega3G: Double
+          _tmpOmega3G = _stmt.getDouble(_columnIndexOfOmega3G)
+          _tmpMicros =
+              Micros(_tmpFiberG,_tmpSugarG,_tmpSatFatG,_tmpSodiumMg,_tmpPotassiumMg,_tmpCalciumMg,_tmpIronMg,_tmpMagnesiumMg,_tmpZincMg,_tmpVitAMcg,_tmpVitCMg,_tmpVitDMcg,_tmpVitB12Mcg,_tmpFolateMcg,_tmpOmega3G)
+          _item =
+              FoodLogRow(_tmpLogId,_tmpDateEpochDay,_tmpMeal,_tmpQuantity,_tmpLoggedAt,_tmpFoodId,_tmpName,_tmpUnitLabel,_tmpKcal,_tmpProteinG,_tmpCarbsG,_tmpFatG,_tmpIsSupplement,_tmpMicros)
+          _result.add(_item)
+        }
+        _result
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
   public override fun mostLoggedFoods(limit: Int): Flow<List<FoodItem>> {
     val _sql: String = """
         |

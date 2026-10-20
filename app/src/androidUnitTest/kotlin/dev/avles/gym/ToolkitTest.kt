@@ -1,7 +1,9 @@
 package dev.avles.gym
 
+import dev.avles.gym.data.BodyWeight
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.Energy
+import dev.avles.gym.domain.Export
 import dev.avles.gym.domain.Fasting
 import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.MonthGrid
@@ -248,5 +250,21 @@ class ToolkitTest {
         assertNull(Fasting.state(0L, 16, start))
         assertEquals(0L, Fasting.state(start, 16, start - 5_000)!!.elapsedSeconds)
         assertEquals("26:05", Fasting.hoursMinutes(26 * 3600L + 5 * 60))
+    }
+
+    // ---- Export ---------------------------------------------------------------
+
+    @Test
+    fun `CSV fields are quoted only when they must be`() {
+        assertEquals("plain", Export.field("plain"))
+        assertEquals("\"Curd rice, with pickle\"", Export.field("Curd rice, with pickle"))
+        assertEquals("\"6\"\" plate\"", Export.field("6\" plate"))
+    }
+
+    @Test
+    fun `weights export as ISO dates, oldest first, with plate precision`() {
+        val day = LocalDate(2026, 10, 20).toEpochDays().toLong()
+        val csv = Export.weights(listOf(BodyWeight(dateEpochDay = day, weightKg = 72.25), BodyWeight(dateEpochDay = day - 1, weightKg = 72.5, note = "after, travel")))
+        assertEquals("date,kg,note\n2026-10-19,72.5,\"after, travel\"\n2026-10-20,72.25,\n", csv)
     }
 }

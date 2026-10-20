@@ -27,6 +27,7 @@ import dev.avles.gym.domain.Patterns
 import dev.avles.gym.domain.Physique
 import dev.avles.gym.domain.Physiques
 import dev.avles.gym.domain.ExerciseGuide
+import dev.avles.gym.domain.Export
 import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Photos
 import dev.avles.gym.domain.Progression
@@ -729,6 +730,22 @@ class GymViewModel(
 
     fun recordWeight(kg: Double) = viewModelScope.launch {
         if (kg > 0) repo.recordWeight(_selectedDate.value, kg)
+    }
+
+    // ---------- Export ----------
+
+    enum class ExportKind(val subject: String) {
+        SETS("Gym: every set"), FOOD("Gym: food log"), WEIGHTS("Gym: body weight")
+    }
+
+    /** Builds the CSV off the database and hands it to [share] on the main thread. */
+    fun export(kind: ExportKind, share: (String, String) -> Unit) = viewModelScope.launch {
+        val text = when (kind) {
+            ExportKind.SETS -> Export.sets(repo.allSets.first())
+            ExportKind.FOOD -> Export.food(repo.allFoodLog())
+            ExportKind.WEIGHTS -> Export.weights(repo.weights.first())
+        }
+        share(kind.subject, text)
     }
 
     // ---------- Fasting ----------

@@ -248,6 +248,7 @@ class GymRepository(
     fun quickPicks(limit: Int = 8): Flow<List<FoodItem>> = dao.mostLoggedFoods(limit)
     fun recentFoods(limit: Int = 10): Flow<List<FoodItem>> = dao.recentFoods(limit, Meals.WATER)
     fun foodLogFor(day: LocalDate): Flow<List<FoodLogRow>> = dao.foodLogFor(day.epochDay)
+    suspend fun allFoodLog(): List<FoodLogRow> = dao.allFoodLog()
 
     suspend fun logFood(day: LocalDate, foodId: Long, meal: String, quantity: Double) =
         dao.insertFoodLog(

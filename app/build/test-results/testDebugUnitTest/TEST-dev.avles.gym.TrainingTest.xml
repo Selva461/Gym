@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.TrainingTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:25:17.771Z" hostname="vm" time="0.003">
+<testsuite name="dev.avles.gym.TrainingTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:37:52.148Z" hostname="vm" time="0.006">
   <properties/>
   <testcase name="nonsense input returns zero rather than throwing" classname="dev.avles.gym.TrainingTest" time="0.001"/>
   <testcase name="records are judged per exercise" classname="dev.avles.gym.TrainingTest" time="0.0"/>
   <testcase name="a heavier estimated max is a record" classname="dev.avles.gym.TrainingTest" time="0.0"/>
   <testcase name="volume ignores warm-up sets" classname="dev.avles.gym.TrainingTest" time="0.001"/>
   <testcase name="first ever working set on a lift is a record" classname="dev.avles.gym.TrainingTest" time="0.0"/>
-  <testcase name="a warm-up can never be a record" classname="dev.avles.gym.TrainingTest" time="0.0"/>
+  <testcase name="a warm-up can never be a record" classname="dev.avles.gym.TrainingTest" time="0.001"/>
   <testcase name="one rep max of a single is the weight itself" classname="dev.avles.gym.TrainingTest" time="0.0"/>
   <testcase name="weights drop a pointless decimal" classname="dev.avles.gym.TrainingTest" time="0.0"/>
   <testcase name="set numbering counts only the same lift" classname="dev.avles.gym.TrainingTest" time="0.0"/>
-  <testcase name="weights use a dot whatever the phone's locale is" classname="dev.avles.gym.TrainingTest" time="0.0"/>
-  <testcase name="one rep max grows with reps" classname="dev.avles.gym.TrainingTest" time="0.0"/>
-  <testcase name="matching a previous best is not a record" classname="dev.avles.gym.TrainingTest" time="0.001"/>
+  <testcase name="weights use a dot whatever the phone's locale is" classname="dev.avles.gym.TrainingTest" time="0.001"/>
+  <testcase name="one rep max grows with reps" classname="dev.avles.gym.TrainingTest" time="0.001"/>
+  <testcase name="matching a previous best is not a record" classname="dev.avles.gym.TrainingTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

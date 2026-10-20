@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.ExerciseGuideTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:25:16.591Z" hostname="vm" time="0.026">
+<testsuite name="dev.avles.gym.ExerciseGuideTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:37:50.415Z" hostname="vm" time="0.036">
   <properties/>
-  <testcase name="no muscle is both primary and secondary" classname="dev.avles.gym.ExerciseGuideTest" time="0.004"/>
+  <testcase name="no muscle is both primary and secondary" classname="dev.avles.gym.ExerciseGuideTest" time="0.006"/>
   <testcase name="equipment is read off the name, most specific word winning" classname="dev.avles.gym.ExerciseGuideTest" time="0.001"/>
-  <testcase name="almost every lift resolves its equipment" classname="dev.avles.gym.ExerciseGuideTest" time="0.002"/>
-  <testcase name="every seeded lift resolves to a complete guide" classname="dev.avles.gym.ExerciseGuideTest" time="0.003"/>
+  <testcase name="almost every lift resolves its equipment" classname="dev.avles.gym.ExerciseGuideTest" time="0.005"/>
+  <testcase name="every seeded lift resolves to a complete guide" classname="dev.avles.gym.ExerciseGuideTest" time="0.004"/>
   <testcase name="a lift the user invents gets a reference too" classname="dev.avles.gym.ExerciseGuideTest" time="0.001"/>
   <testcase name="the adduction machine does not claim to be a glute exercise" classname="dev.avles.gym.ExerciseGuideTest" time="0.001"/>
   <testcase name="the one-line summary names the equipment and what it works" classname="dev.avles.gym.ExerciseGuideTest" time="0.001"/>
-  <testcase name="bench angle in the name changes which part of the chest is shaded" classname="dev.avles.gym.ExerciseGuideTest" time="0.0"/>
-  <testcase name="variation axes are offered only where they mean something" classname="dev.avles.gym.ExerciseGuideTest" time="0.007"/>
+  <testcase name="bench angle in the name changes which part of the chest is shaded" classname="dev.avles.gym.ExerciseGuideTest" time="0.001"/>
+  <testcase name="variation axes are offered only where they mean something" classname="dev.avles.gym.ExerciseGuideTest" time="0.008"/>
   <testcase name="no seeded lift falls through to a generic movement pattern" classname="dev.avles.gym.ExerciseGuideTest" time="0.003"/>
-  <testcase name="a press filed under triceps is still described as a press" classname="dev.avles.gym.ExerciseGuideTest" time="0.0"/>
+  <testcase name="a press filed under triceps is still described as a press" classname="dev.avles.gym.ExerciseGuideTest" time="0.001"/>
   <testcase name="a press filed under triceps still shows the chest on the map" classname="dev.avles.gym.ExerciseGuideTest" time="0.001"/>
   <testcase name="lifts that share a word are told apart" classname="dev.avles.gym.ExerciseGuideTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>

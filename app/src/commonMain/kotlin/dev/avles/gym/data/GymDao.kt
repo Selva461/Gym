@@ -218,6 +218,26 @@ interface GymDao {
     )
     fun foodLogFor(day: Long): Flow<List<FoodLogRow>>
 
+    /** The whole food log, oldest first, for export. Read once, not observed. */
+    @Query(
+        """
+        SELECT l.id AS logId, l.dateEpochDay AS dateEpochDay, l.meal AS meal,
+               l.quantity AS quantity, l.loggedAt AS loggedAt,
+               f.id AS foodId, f.name AS name, f.unitLabel AS unitLabel,
+               f.kcal AS kcal, f.proteinG AS proteinG, f.carbsG AS carbsG, f.fatG AS fatG,
+               f.isSupplement AS isSupplement,
+               f.fiberG AS fiberG, f.sugarG AS sugarG, f.satFatG AS satFatG,
+               f.sodiumMg AS sodiumMg, f.potassiumMg AS potassiumMg, f.calciumMg AS calciumMg,
+               f.ironMg AS ironMg, f.magnesiumMg AS magnesiumMg, f.zincMg AS zincMg,
+               f.vitAMcg AS vitAMcg, f.vitCMg AS vitCMg, f.vitDMcg AS vitDMcg,
+               f.vitB12Mcg AS vitB12Mcg, f.folateMcg AS folateMcg, f.omega3G AS omega3G
+        FROM food_log l
+        JOIN food_item f ON f.id = l.foodId
+        ORDER BY l.dateEpochDay ASC, l.loggedAt ASC
+        """
+    )
+    suspend fun allFoodLog(): List<FoodLogRow>
+
     // f.* rather than a hand-written column list: FoodItem now carries fifteen embedded
     // micronutrient columns, and spelling them out here would mean this query silently
     // going stale every time one is added.
