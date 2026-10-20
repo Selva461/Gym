@@ -66,6 +66,7 @@ fun SettingsScreen(
     var hour by remember(settings) { mutableStateOf(settings.reminderHour.toString()) }
     var minute by remember(settings) { mutableStateOf(settings.reminderMinute.toString()) }
     var remindersOn by remember(settings) { mutableStateOf(settings.remindersOn) }
+    var restByLift by remember(settings) { mutableStateOf(settings.restByLift) }
     var water by remember(settings) { mutableStateOf(settings.waterGlasses.toString()) }
     var calculating by remember { mutableStateOf(false) }
 
@@ -105,6 +106,30 @@ fun SettingsScreen(
         SectionHeading("Rest timer", accent = Brass)
         Spacer(Modifier.height(12.dp))
         NumField(rest, { rest = it }, "seconds between working sets", Modifier.fillMaxWidth())
+        Spacer(Modifier.height(10.dp))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("Fit the rest to the lift", style = MaterialTheme.typography.bodyLarge, color = Bone)
+                Text(
+                    "3 min after heavy compounds, 90 s after isolation work, yours for the rest.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint
+                )
+            }
+            Switch(
+                checked = restByLift,
+                onCheckedChange = { restByLift = it },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Slate,
+                    checkedTrackColor = Brass,
+                    uncheckedTrackColor = Raised
+                )
+            )
+        }
 
         Spacer(Modifier.height(26.dp))
         Hairline()
@@ -166,6 +191,7 @@ fun SettingsScreen(
                         reminderHour = (hour.toIntOrNull() ?: settings.reminderHour).coerceIn(0, 23),
                         reminderMinute = (minute.toIntOrNull() ?: settings.reminderMinute).coerceIn(0, 59),
                         remindersOn = remindersOn,
+                        restByLift = restByLift,
                         waterGlasses = (water.toIntOrNull() ?: settings.waterGlasses).coerceIn(1, 30)
                     )
                 )

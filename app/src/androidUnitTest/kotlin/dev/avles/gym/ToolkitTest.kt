@@ -2,6 +2,7 @@ package dev.avles.gym
 
 import dev.avles.gym.data.BodyMeasurement
 import dev.avles.gym.data.BodyWeight
+import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.Achievements
 import dev.avles.gym.domain.Energy
@@ -11,6 +12,7 @@ import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Measurements
 import dev.avles.gym.domain.MonthGrid
 import dev.avles.gym.domain.Plates
+import dev.avles.gym.domain.RestTimes
 import dev.avles.gym.domain.SetKinds
 import dev.avles.gym.domain.Warmups
 import dev.avles.gym.domain.Weekly
@@ -316,5 +318,20 @@ class ToolkitTest {
         assertEquals("50 training days", next["Training days"])
         assertEquals("Records on 5 lifts", next["Lifts with a record"])
         assertEquals(0.8f, Achievements.next(t).first { it.family == "Lifts with a record" }.progress, 1e-6f)
+    }
+
+    // ---- Rest by lift ---------------------------------------------------------
+
+    @Test
+    fun `heavy lifts rest longer, isolation shorter, never against a longer setting`() {
+        val squat = Exercise(name = "Squat", muscleGroup = "Quads", repLow = 3, repHigh = 6)
+        val curl = Exercise(name = "Cable curl", muscleGroup = "Biceps", repLow = 12, repHigh = 15)
+        val row = Exercise(name = "Row", muscleGroup = "Back", repLow = 8, repHigh = 12)
+        assertEquals(180, RestTimes.forLift(squat, 120))
+        assertEquals(240, RestTimes.forLift(squat, 240))
+        assertEquals(90, RestTimes.forLift(curl, 120))
+        assertEquals(60, RestTimes.forLift(curl, 60))
+        assertEquals(120, RestTimes.forLift(row, 120))
+        assertEquals(120, RestTimes.forLift(null, 120))
     }
 }

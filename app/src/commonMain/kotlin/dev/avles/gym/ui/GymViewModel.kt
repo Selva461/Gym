@@ -33,6 +33,7 @@ import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Photos
 import dev.avles.gym.domain.Progression
 import dev.avles.gym.domain.Recommendation
+import dev.avles.gym.domain.RestTimes
 import dev.avles.gym.domain.Totals
 import dev.avles.gym.domain.Training
 import dev.avles.gym.notify.Notifier
@@ -433,9 +434,11 @@ class GymViewModel(
                 if (logged != null && Training.isPersonalRecord(logged, history)) {
                     _lastPrSetId.value = newId
                 }
+                val exercise = trainState.value.exercises.firstOrNull { it.id == exerciseId }
+                val stored = settingsStore.settings.first()
                 startRest(
-                    exerciseName = logged?.exerciseName
-                        ?: trainState.value.exercises.firstOrNull { it.id == exerciseId }?.name
+                    seconds = if (stored.restByLift) RestTimes.forLift(exercise, stored.restSeconds) else stored.restSeconds,
+                    exerciseName = logged?.exerciseName ?: exercise?.name
                 )
             }
         }

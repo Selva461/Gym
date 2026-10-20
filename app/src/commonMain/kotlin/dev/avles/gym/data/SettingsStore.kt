@@ -31,7 +31,9 @@ data class GymSettings(
     val fastHours: Int = 16,
     /** For the body-fat estimate; zero until entered. */
     val heightCm: Double = 0.0,
-    val isFemale: Boolean = false
+    val isFemale: Boolean = false,
+    /** Rest longer after heavy compounds and shorter after isolation lifts. */
+    val restByLift: Boolean = true
 )
 
 class SettingsStore(private val store: DataStore<Preferences>) {
@@ -49,6 +51,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val fastHours = intPreferencesKey("fast_hours")
         val height = doublePreferencesKey("height_cm")
         val female = intPreferencesKey("is_female")
+        val restByLift = intPreferencesKey("rest_by_lift")
     }
 
     val settings: Flow<GymSettings> = store.data.map { p ->
@@ -64,7 +67,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             fastStartedAt = p[Keys.fastStart] ?: 0L,
             fastHours = p[Keys.fastHours] ?: 16,
             heightCm = p[Keys.height] ?: 0.0,
-            isFemale = (p[Keys.female] ?: 0) == 1
+            isFemale = (p[Keys.female] ?: 0) == 1,
+            restByLift = (p[Keys.restByLift] ?: 1) == 1
         )
     }
 
@@ -82,6 +86,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             p[Keys.fastHours] = s.fastHours
             p[Keys.height] = s.heightCm
             p[Keys.female] = if (s.isFemale) 1 else 0
+            p[Keys.restByLift] = if (s.restByLift) 1 else 0
         }
     }
 }
