@@ -225,3 +225,14 @@ before pushing. Strike an item when it lands.
 
 Left out on purpose, because they need the network or another app's permission:
 barcode lookup, step counts, Health Connect / HealthKit sync, social feeds.
+
+### Backlog, second wave
+
+11. **Achievements** on Progress: workouts logged (1/10/50/100/250), training
+    runs (7/30 days), total kilos moved (10k/100k/1M), records set, food logged
+    days. Computed from data already stored; no schema.
+12. **Smart rest defaults**: a heavy compound (top of range ≤ 6) rests 3 min, an
+    isolation lift (≥ 12) 90 s, the rest the Settings value. No schema.
+13. **1RM calculator** on Progress: weight × reps → estimated max and table.
+14. **Weight goal** in Settings with the trend's weekly rate and a projected date.
+15. **Saved meals**: name a meal and log all of it in one tap. Room v12 table.
