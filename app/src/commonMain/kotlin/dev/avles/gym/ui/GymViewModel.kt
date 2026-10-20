@@ -517,6 +517,11 @@ class GymViewModel(
         }
     }
 
+    /** Each lift's best set, newest record first. */
+    val records: StateFlow<List<SetRow>> = repo.allSets
+        .map { LiftHistory.bestPerLift(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     fun dismissWorkoutReport() {
         _workoutReport.value = null
     }

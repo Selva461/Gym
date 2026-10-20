@@ -119,6 +119,26 @@ object LiftHistory {
         )
     }
 
+    /**
+     * Each lift's best set, newest record first: the "personal records" list every
+     * logging app keeps. Best is the highest estimated max, or on an assisted lift
+     * the least help, most reps breaking ties.
+     */
+    fun bestPerLift(sets: List<SetRow>): List<SetRow> =
+        sets.filter { !it.isWarmup && it.reps > 0 }
+            .groupBy { it.exerciseId }
+            .mapNotNull { (_, onLift) ->
+                if (onLift.first().isAssisted) {
+                    onLift.minWithOrNull(compareBy<SetRow>({ it.weightKg }, { -it.reps }, { it.loggedAt }))
+                } else {
+                    onLift.filter { it.weightKg > 0 }
+                        .maxWithOrNull(
+                            compareBy<SetRow>({ Training.estimatedOneRepMax(it.weightKg, it.reps) }, { -it.loggedAt })
+                        )
+                }
+            }
+            .sortedByDescending { it.loggedAt }
+
     private fun floorTo(v: Double, step: Double): Double {
         val n = kotlin.math.floor(v / step + 1e-9)
         return n * step

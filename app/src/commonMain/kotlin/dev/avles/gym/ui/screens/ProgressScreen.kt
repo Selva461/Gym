@@ -52,6 +52,7 @@ fun ProgressScreen(
     onOpenGoal: () -> Unit,
     onOpenPatterns: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenRecords: () -> Unit = {},
     restDays: Set<Long> = emptySet()
 ) {
     var logging by remember { mutableStateOf(false) }
@@ -101,6 +102,12 @@ fun ProgressScreen(
                     color = Brass,
                     style = MaterialTheme.typography.bodyMedium
                 )
+            }
+            androidx.compose.material3.TextButton(
+                onClick = onOpenRecords,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) {
+                Text("Personal records", color = Brass, style = MaterialTheme.typography.bodyMedium)
             }
             androidx.compose.material3.TextButton(
                 onClick = onOpenPatterns,

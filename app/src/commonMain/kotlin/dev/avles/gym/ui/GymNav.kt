@@ -46,6 +46,7 @@ import dev.avles.gym.ui.screens.FuelScreen
 import dev.avles.gym.ui.screens.PatternsScreen
 import dev.avles.gym.ui.screens.PhotosScreen
 import dev.avles.gym.ui.screens.ProgressScreen
+import dev.avles.gym.ui.screens.RecordsScreen
 import dev.avles.gym.ui.screens.SettingsScreen
 import dev.avles.gym.ui.screens.TodayScreen
 import dev.avles.gym.ui.screens.TrainScreen
@@ -273,12 +274,17 @@ fun GymNav(vm: GymViewModel) {
                     onOpenPhotos = { go("photos") },
                     onOpenGoal = { go("goal") },
                     onOpenPatterns = { go("patterns") },
+                    onOpenRecords = { go("records") },
                     restDays = markers.filter { it.kind == DayKinds.REST }.map { it.dateEpochDay }.toSet()
                 )
             }
             // Not a sixth tab. Photos are about your body over time, which is what
             // Progress already is, and a five-item bar is already at the point where
             // the labels start truncating.
+            composable("records") {
+                val records by vm.records.collectAsStateWithLifecycle()
+                RecordsScreen(records = records, exercises = train.exercises, liftHistory = vm::liftHistory)
+            }
             composable("patterns") {
                 PatternsScreen(state = patterns)
             }

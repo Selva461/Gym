@@ -220,4 +220,17 @@ class ToolkitTest {
         assertEquals("−50%", Weekly.change(50.0, 100.0))
         assertNull(Weekly.change(10.0, 0.0))
     }
+
+    @Test
+    fun `the records list keeps each lift's first best set, newest record first`() {
+        val sets = listOf(
+            set(1, 1, 100.0, 5, at = 10),
+            set(2, 2, 100.0, 5, at = 20), // equals the record; the first one keeps it
+            set(3, 2, 40.0, 10, at = 30, lift = 2, name = "Curl"),
+            set(4, 3, 30.0, 8, at = 40, lift = 3, assisted = true, name = "Assisted dip"),
+            set(5, 4, 25.0, 6, at = 50, lift = 3, assisted = true, name = "Assisted dip"),
+            set(6, 4, 60.0, 10, at = 60, warmup = true)
+        )
+        assertEquals(listOf(5L, 3L, 1L), LiftHistory.bestPerLift(sets).map { it.setId })
+    }
 }

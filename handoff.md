@@ -28,7 +28,7 @@ Standing constraints, all deliberate and all enforced by tests:
 | Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | 706 built in (76 Tamil curries in `SeedFoodsTamil.kt`, 92 staples in `SeedFoodsStaples.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
 | Database | v8 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`), migrations 1→…→8, Room 2.7 KMP |
-| Tests | 212, none needing a device |
+| Tests | 213, none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 |
 
 This phase, in order:
@@ -208,7 +208,7 @@ before pushing. Strike an item when it lands.
 1. ~~**Warm-up sets**~~ (done) from the working weight (bar × 10, 40% × 5, 60% × 3, 80% × 2),
    rounded to plates, offered under the target card. Pure; no schema.
 2. ~~**Month calendar**~~ (done) on Progress with trained/fuelled marks and rest days. No schema.
-3. **All records** page on Progress: each lift's best set, newest records first.
+3. ~~**All records** page~~ (done) on Progress: each lift's best set, newest records first.
    Needs one DAO query over all working sets (read-only, no schema change).
 4. ~~**This week** card~~ (done) on Today: sessions, volume, average protein and calories
    against target, versus last week. No schema.
