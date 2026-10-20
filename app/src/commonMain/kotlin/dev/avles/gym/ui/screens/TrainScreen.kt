@@ -2,7 +2,6 @@ package dev.avles.gym.ui.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -23,7 +22,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -43,15 +41,15 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.avles.gym.core.Dates
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.PickedImage
-import dev.avles.gym.data.SeedData
 import dev.avles.gym.data.SessionSummary
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
-import dev.avles.gym.domain.Numbers
+import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Training
 import dev.avles.gym.domain.Variations
 import dev.avles.gym.ui.LiftGuidance
@@ -62,22 +60,21 @@ import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.Haptic
-import dev.avles.gym.ui.components.Meter
 import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.components.Motion.fadeThrough
-import dev.avles.gym.ui.components.pressScale
-import dev.avles.gym.ui.components.pressable
-import dev.avles.gym.ui.components.ChipRow
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
+import dev.avles.gym.ui.components.pressScale
+import dev.avles.gym.ui.components.pressable
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
-import dev.avles.gym.ui.theme.Coral
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
 import dev.avles.gym.ui.theme.Slate
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 private val AD_HOC_LABELS = listOf("Push", "Pull", "Legs", "Full")
 
@@ -110,7 +107,11 @@ fun TrainScreen(
     onDeleteSet: (Long) -> Unit,
     onSkipRest: () -> Unit,
     onAddExercise: (String, String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAdjustRest: (Int) -> Unit = {},
+    workoutReport: LiftHistory.Report? = null,
+    onDismissReport: () -> Unit = {},
+    liftHistory: (Long) -> Flow<List<SetRow>> = { flowOf(emptyList()) }
 ) {
     // Hoisted here because a set can be opened from the live session or from a past
     // one inside the session dialog, and both should land on the same editor.
@@ -147,11 +148,15 @@ fun TrainScreen(
                 onLogSet = onLogSet,
                 onEditSetRow = { editingSet = it },
                 onSkipRest = onSkipRest,
+                onAdjustRest = onAdjustRest,
                 onAddExercise = onAddExercise,
+                liftHistory = liftHistory,
                 modifier = modifier
             )
         }
     }
+
+    workoutReport?.let { WorkoutReportDialog(it, onDismissReport) }
 
     openSession?.let { detail ->
         SessionDetailDialog(
@@ -363,7 +368,9 @@ private fun ActiveSessionPane(
     onLogSet: (Long, Double, Int, Boolean) -> Unit,
     onEditSetRow: (SetRow) -> Unit,
     onSkipRest: () -> Unit,
+    onAdjustRest: (Int) -> Unit,
     onAddExercise: (String, String) -> Unit,
+    liftHistory: (Long) -> Flow<List<SetRow>>,
     modifier: Modifier
 ) {
     val session = state.active ?: return
@@ -374,6 +381,8 @@ private fun ActiveSessionPane(
     var showPicker by remember { mutableStateOf(false) }
     var showNewExercise by remember { mutableStateOf(false) }
     var showingReference by remember { mutableStateOf<Exercise?>(null) }
+    var showingHistory by remember { mutableStateOf<Exercise?>(null) }
+    var showPlates by remember { mutableStateOf(false) }
 
     val volume = Training.volume(state.sets)
     val working = state.sets.count { !it.isWarmup }
@@ -403,11 +412,14 @@ private fun ActiveSessionPane(
                         style = MaterialTheme.typography.headlineMedium,
                         color = Bone
                     )
-                    Text(
-                        "$working working sets",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Mute
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "$working working sets  ·  ",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Mute
+                        )
+                        SessionClock(session.startedAt)
+                    }
                 }
                 TextButton(onClick = onFinish) { Text("Finish", color = Brass) }
             }
@@ -431,7 +443,7 @@ private fun ActiveSessionPane(
                 if (restRemaining != null) last[0] = restRemaining
                 Column {
                     Spacer(Modifier.height(16.dp))
-                    RestBanner(restRemaining ?: last[0], onSkipRest)
+                    RestBanner(restRemaining ?: last[0], onSkipRest, onAdjustRest)
                 }
             }
 
@@ -470,6 +482,9 @@ private fun ActiveSessionPane(
                     TextButton(onClick = { showingReference = selectedExercise }) {
                         Text("How to do it", color = Brass, style = MaterialTheme.typography.labelSmall)
                     }
+                    TextButton(onClick = { showingHistory = selectedExercise }) {
+                        Text("History", color = Brass, style = MaterialTheme.typography.labelSmall)
+                    }
                     guidance.guide?.let {
                         Text(
                             it.summary,
@@ -498,6 +513,14 @@ private fun ActiveSessionPane(
                         reps = r.toString()
                     }
                 )
+                LastTimeRow(
+                    sets = guidance.lastTime,
+                    onUse = { set ->
+                        weight = Training.formatWeight(set.weightKg)
+                        reps = set.reps.toString()
+                    },
+                    modifier = Modifier.padding(top = 12.dp)
+                )
             }
 
             Spacer(Modifier.height(12.dp))
@@ -518,6 +541,12 @@ private fun ActiveSessionPane(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f)
                 )
+            }
+
+            if (selectedExercise != null && !selectedExercise.isAssisted) {
+                TextButton(onClick = { showPlates = true }) {
+                    Text("What plates?", color = Brass, style = MaterialTheme.typography.labelSmall)
+                }
             }
 
             if (selectedExercise?.isAssisted == true) {
@@ -620,6 +649,16 @@ private fun ActiveSessionPane(
         )
     }
 
+    showingHistory?.let { exercise ->
+        val history by remember(exercise.id) { liftHistory(exercise.id) }
+            .collectAsStateWithLifecycle(emptyList())
+        LiftHistoryDialog(exercise, history, onDismiss = { showingHistory = null })
+    }
+
+    if (showPlates) {
+        PlateCalculatorDialog(initialKg = weight.toDoubleOrNull(), onDismiss = { showPlates = false })
+    }
+
     showingReference?.let { exercise ->
         ExerciseReferenceDialog(
             exercise = exercise,
@@ -628,130 +667,5 @@ private fun ActiveSessionPane(
             onAttachPhoto = { uri -> onAttachExercisePhoto(exercise.id, uri) },
             onRemovePhoto = { onDetachExercisePhoto(exercise.id) }
         )
-    }
-}
-
-/**
- * The target for this lift, read off your own history.
- *
- * Tapping it fills the weight and reps fields, because the whole point is to remove
- * a decision from the thirty seconds between two sets — if it takes typing, it is
- * no faster than remembering.
- */
-@Composable
-private fun TargetCard(guidance: LiftGuidance, onUseTarget: (Double, Int) -> Unit) {
-    val rec = guidance.recommendation
-
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(Brass.copy(alpha = 0.10f))
-            .animateContentSize(Motion.standard())
-            .padding(16.dp)
-    ) {
-        if (rec == null) {
-            Text(
-                "No history on this lift yet",
-                style = MaterialTheme.typography.labelMedium,
-                color = Mute
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "Log one working set and a target appears here from the next session on. " +
-                    "The app will not guess a starting weight for you.",
-                style = MaterialTheme.typography.labelSmall,
-                color = Faint
-            )
-            return@Column
-        }
-
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                if (rec.isStepUp) "Step up" else "Next target",
-                style = MaterialTheme.typography.labelMedium,
-                color = if (rec.isStepUp) Brass else Mute
-            )
-            if (rec.isStalled) {
-                Text("stalling", style = MaterialTheme.typography.labelSmall, color = Coral)
-            }
-        }
-
-        Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            AnimatedContent(targetState = rec.headline, transitionSpec = { fadeThrough() }, label = "target") {
-                Text(it, style = MaterialTheme.typography.displaySmall, color = Brass)
-            }
-            Spacer(Modifier.weight(1f))
-            val haptics = LocalHapticFeedback.current
-            TextButton(onClick = {
-                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                onUseTarget(rec.weightKg, rec.reps)
-            }) {
-                Text("Use", color = Brass, style = MaterialTheme.typography.labelLarge)
-            }
-        }
-
-        Text(
-            rec.rationale,
-            style = MaterialTheme.typography.labelSmall,
-            color = Mute
-        )
-
-        val leastHelp = guidance.leastHelp
-        if (guidance.bestE1rm > 0 || leastHelp != null) {
-            Spacer(Modifier.height(14.dp))
-            Hairline()
-            Spacer(Modifier.height(12.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    if (leastHelp != null) "least help ${Training.formatWeight(leastHelp)} kg"
-                    else "estimated max ${Training.formatWeight(guidance.bestE1rm)} kg",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Mute
-                )
-                Text(
-                    when {
-                        leastHelp == null -> "next ${Training.formatWeight(guidance.nextMilestone)} kg"
-                        leastHelp <= 0.0 -> "next: the unassisted lift"
-                        else -> "next ${Training.formatWeight(guidance.nextMilestone)} kg help"
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Brass
-                )
-            }
-            Spacer(Modifier.height(6.dp))
-            Meter(progress = guidance.milestoneProgress, accent = Brass, height = 4)
-        }
-    }
-}
-
-@Composable
-private fun RestBanner(secondsLeft: Int, onSkip: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Brass.copy(alpha = 0.12f))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                Numbers.clock(secondsLeft),
-                style = MaterialTheme.typography.displaySmall,
-                color = Brass
-            )
-            Text("resting", style = MaterialTheme.typography.labelSmall, color = Mute)
-        }
-        TextButton(onClick = onSkip) { Text("Skip rest", color = Brass) }
     }
 }

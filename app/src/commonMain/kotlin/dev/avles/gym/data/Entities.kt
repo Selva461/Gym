@@ -315,6 +315,13 @@ object Meals {
      */
     const val SUPPLEMENT = "Supplements"
 
+    /**
+     * Water, logged a glass at a time as the seeded "Water" food. Its own slot, kept
+     * out of [ALL] and [PICKABLE], so glasses are counted on the water card and never
+     * listed among the meals.
+     */
+    const val WATER = "Water"
+
     /** Every slot a day's log can be grouped under. */
     val ALL = listOf(BREAKFAST, LUNCH, SNACK, DINNER, SUPPLEMENT)
 

@@ -1,6 +1,7 @@
 package dev.avles.gym.core
 
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -26,6 +27,10 @@ object Dates {
     fun hourNow(): Int = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
 
     fun ofEpochDay(day: Long): LocalDate = LocalDate.fromEpochDays(day.toInt())
+
+    /** The local calendar day a timestamp fell on. */
+    fun epochDayOf(millis: Long): Long =
+        Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.currentSystemDefault()).date.epochDay
 
     /** "Thursday". English on purpose: every other word in the app is. */
     fun dayName(date: LocalDate): String = titleCase(date.dayOfWeek.name)

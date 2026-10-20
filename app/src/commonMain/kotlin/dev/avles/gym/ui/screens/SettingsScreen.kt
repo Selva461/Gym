@@ -20,6 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,7 +53,8 @@ import kotlinx.coroutines.delay
 fun SettingsScreen(
     settings: GymSettings,
     onSave: (GymSettings) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    latestWeightKg: Double? = null
 ) {
     var protein by remember(settings) { mutableStateOf(settings.proteinTargetG.roundToInt().toString()) }
     var kcal by remember(settings) { mutableStateOf(settings.kcalTarget.roundToInt().toString()) }
@@ -60,6 +62,8 @@ fun SettingsScreen(
     var hour by remember(settings) { mutableStateOf(settings.reminderHour.toString()) }
     var minute by remember(settings) { mutableStateOf(settings.reminderMinute.toString()) }
     var remindersOn by remember(settings) { mutableStateOf(settings.remindersOn) }
+    var water by remember(settings) { mutableStateOf(settings.waterGlasses.toString()) }
+    var calculating by remember { mutableStateOf(false) }
 
     Column(
         modifier
@@ -73,7 +77,9 @@ fun SettingsScreen(
         SectionHeading("Daily targets", accent = Sage)
         Spacer(Modifier.height(6.dp))
         Text(
-            "Your numbers, not a formula's. Change them whenever the goal changes.",
+            "Your numbers, not a formula's. Change them whenever the goal changes. " +
+                "Carbohydrate and fat follow from these: fat a quarter of the calories, " +
+                "carbohydrate the rest.",
             style = MaterialTheme.typography.labelSmall,
             color = Faint
         )
@@ -81,6 +87,11 @@ fun SettingsScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             NumField(protein, { protein = it }, "protein, g", Modifier.weight(1f))
             NumField(kcal, { kcal = it }, "calories", Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(12.dp))
+        NumField(water, { water = it }, "water, glasses of 250 ml", Modifier.fillMaxWidth())
+        TextButton(onClick = { calculating = true }) {
+            Text("Work these out from my body", color = Sage)
         }
 
         Spacer(Modifier.height(26.dp))
@@ -141,14 +152,17 @@ fun SettingsScreen(
             onClick = {
                 haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                 savedTick += 1
+                // copy, not a new GymSettings: a fresh one silently reset every field
+                // this form does not show, the coach's goal among them.
                 onSave(
-                    GymSettings(
+                    settings.copy(
                         proteinTargetG = protein.toDoubleOrNull() ?: settings.proteinTargetG,
                         kcalTarget = kcal.toDoubleOrNull() ?: settings.kcalTarget,
                         restSeconds = (rest.toIntOrNull() ?: settings.restSeconds).coerceIn(15, 900),
                         reminderHour = (hour.toIntOrNull() ?: settings.reminderHour).coerceIn(0, 23),
                         reminderMinute = (minute.toIntOrNull() ?: settings.reminderMinute).coerceIn(0, 59),
-                        remindersOn = remindersOn
+                        remindersOn = remindersOn,
+                        waterGlasses = (water.toIntOrNull() ?: settings.waterGlasses).coerceIn(1, 30)
                     )
                 )
             },
@@ -189,6 +203,19 @@ fun SettingsScreen(
             color = Faint
         )
         Spacer(Modifier.height(40.dp))
+    }
+
+    if (calculating) {
+        TargetCalculatorDialog(
+            initialWeightKg = latestWeightKg,
+            onUse = { t ->
+                kcal = t.kcal.roundToInt().toString()
+                protein = t.proteinG.roundToInt().toString()
+                water = t.waterGlasses.toString()
+                calculating = false
+            },
+            onDismiss = { calculating = false }
+        )
     }
 }
 

@@ -25,7 +25,7 @@ IllegalArgumentException Comparable Iterable Sequence Result Regex Volatile Sync
 JvmStatic JvmField Deprecated Suppress OptIn Target AnnotationTarget Retention
 ArrayDeque LinkedHashMap HashMap HashSet MutableList MutableMap MutableSet
 Math System Thread Runnable Comparator Number Enum Companion Class UUID File
-StringBuilder CharSequence ByteArray IntArray LongArray FloatArray DoubleArray CharArray
+StringBuilder CharSequence ByteArray IntArray LongArray FloatArray DoubleArray CharArray IntRange LongRange
 BooleanArray ShortArray UByte UShort UInt ULong'''.split())
 
 # Modifier extensions this project uses, and where each one lives. Every one is a

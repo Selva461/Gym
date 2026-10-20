@@ -147,6 +147,7 @@ internal object SeedFoodsStaples {
     )
 
     private fun dairyAndDrinks() = listOf(
+        f("Water", "1 glass (250 ml)", 0.0, 0.0, 0.0, 0.0, "Drinks", aka = "Thanni, Drinking water"),
         f("Turmeric milk", "1 glass", 140.0, 6.2, 15.0, 6.0, "Drinks", aka = "Manjal paal, Haldi doodh", sug = 15.0, sat = 3.7, na = 90.0, k = 300.0, ca = 240.0, fe = 0.3, mg = 22.0, zn = 0.8, va = 60.0, b12 = 0.8),
         f("Protein milk, bottled", "1 bottle (200 ml)", 130.0, 15.0, 12.0, 2.5, "Dairy", aka = "High protein milkshake", sug = 8.0, sat = 1.6, na = 150.0, k = 380.0, ca = 400.0, fe = 0.2, mg = 30.0, zn = 1.0, b12 = 0.8),
         f("Fresh cream", "1 tbsp", 35.0, 0.3, 0.5, 3.7, "Dairy", aka = "Malai", sug = 0.5, sat = 2.3, na = 4.0, k = 10.0, ca = 10.0, va = 35.0),

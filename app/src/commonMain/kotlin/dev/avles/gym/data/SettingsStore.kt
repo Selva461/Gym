@@ -21,7 +21,9 @@ data class GymSettings(
      * its id rather than its index, so reordering the list later cannot silently
      * change somebody's goal.
      */
-    val goalId: String = "balanced"
+    val goalId: String = "balanced",
+    /** Daily water target in 250 ml glasses. */
+    val waterGlasses: Int = 8
 )
 
 class SettingsStore(private val store: DataStore<Preferences>) {
@@ -34,6 +36,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val minute = intPreferencesKey("reminder_minute")
         val on = intPreferencesKey("reminders_on")
         val goal = stringPreferencesKey("goal_id")
+        val water = intPreferencesKey("water_glasses")
     }
 
     val settings: Flow<GymSettings> = store.data.map { p ->
@@ -44,7 +47,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             reminderHour = p[Keys.hour] ?: 21,
             reminderMinute = p[Keys.minute] ?: 45,
             remindersOn = (p[Keys.on] ?: 1) == 1,
-            goalId = p[Keys.goal] ?: "balanced"
+            goalId = p[Keys.goal] ?: "balanced",
+            waterGlasses = p[Keys.water] ?: 8
         )
     }
 
@@ -57,6 +61,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             p[Keys.minute] = s.reminderMinute
             p[Keys.on] = if (s.remindersOn) 1 else 0
             p[Keys.goal] = s.goalId
+            p[Keys.water] = s.waterGlasses
         }
     }
 }

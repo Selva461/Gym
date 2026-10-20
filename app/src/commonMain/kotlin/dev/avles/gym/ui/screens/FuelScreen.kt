@@ -52,11 +52,12 @@ import dev.avles.gym.ui.components.Chip
 import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
-import dev.avles.gym.ui.components.Meter
+import dev.avles.gym.ui.components.MacroBars
 import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.components.NutrientPanel
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
+import dev.avles.gym.ui.components.WaterCard
 import dev.avles.gym.ui.components.pressable
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
@@ -77,7 +78,10 @@ fun FuelScreen(
     onRemove: (Long) -> Unit,
     onEditEntry: (Long, Double, String) -> Unit,
     onSaveFood: (FoodItem) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAddWater: () -> Unit = {},
+    onRemoveWater: () -> Unit = {},
+    onCopyMeal: (String, (Int) -> Unit) -> Unit = { _, _ -> }
 ) {
     var meal by remember { mutableStateOf(defaultMealForNow()) }
     var query by remember { mutableStateOf("") }
@@ -87,6 +91,9 @@ fun FuelScreen(
     var creating by remember { mutableStateOf(false) }
     var nutrientsOpen by remember { mutableStateOf(false) }
     var editingEntry by remember { mutableStateOf<FoodLogRow?>(null) }
+    var copyNote by remember { mutableStateOf<String?>(null) }
+    val foodRows = day.rows.filter { it.meal != Meals.WATER }
+    val glasses = day.rows.filter { it.meal == Meals.WATER }.sumOf { it.quantity }.roundToInt()
 
     val categories = remember(catalogue) {
         catalogue.map { it.category }.distinct().sorted()
@@ -123,12 +130,23 @@ fun FuelScreen(
                 )
             }
             Spacer(Modifier.height(12.dp))
-            Meter(
-                progress = MacroMath.ratio(day.totals.proteinG, day.settings.proteinTargetG),
-                accent = Sage
-            )
+            MacroBars(day.totals, day.settings.kcalTarget, day.settings.proteinTargetG)
+            Spacer(Modifier.height(18.dp))
+            WaterCard(glasses, day.settings.waterGlasses, onAddWater, onRemoveWater)
             Spacer(Modifier.height(20.dp))
-            PillRow(Meals.PICKABLE, meal, Sage, { meal = it })
+            PillRow(Meals.PICKABLE, meal, Sage, { meal = it; copyNote = null })
+            // The same breakfast most mornings is the commonest food diary there is.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = {
+                    onCopyMeal(meal) { n ->
+                        copyNote = if (n == 0) "Nothing was logged for ${meal.lowercase()} the day before."
+                        else "Copied $n ${if (n == 1) "entry" else "entries"}. Tap one below to change it."
+                    }
+                }) {
+                    Text("Same ${meal.lowercase()} as the day before", color = Sage, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+            copyNote?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = Faint) }
             Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
@@ -253,7 +271,7 @@ fun FuelScreen(
             }
         }
 
-        if (day.rows.isEmpty()) {
+        if (foodRows.isEmpty()) {
             item { EmptyNote("Nothing logged for this day yet.") }
         } else {
             item {

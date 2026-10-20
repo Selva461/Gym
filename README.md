@@ -89,13 +89,29 @@ excluded from iCloud backup, as they are left out of Android's cloud backup.
 ## What's in it
 
 ```
-Today      protein first, calories second, a week strip with a dot per logged day
-Train      split → lift → kg × reps, a target for every lift, rest timer, records
-           tap "How to do it" for a muscle map and how the movement works
-Fuel       search or browse 766 foods by name or local name, macros and 15 micronutrients
+Today      protein first, then calories, carbs and fat against targets, water, a week strip
+Train      split → lift → kg × reps, a target for every lift, last time's sets one tap away,
+           plate calculator, rest timer you can stretch, a live session clock, records,
+           a per-lift history with a rep-max table, and a summary card when you finish
+Fuel       search or browse 767 foods by name or local name, macros and 15 micronutrients,
+           water, and "same breakfast as yesterday" in one tap
 Progress   weight trend, 14-day volume, streaks, and progress photos
-Settings   your targets, rest length, nightly reminder
+Settings   your targets (or work them out from your body), water goal, rest, reminder
 ```
+
+**What the big apps do, offline.** The habits Strong, Hevy, MyFitnessPal and
+HealthifyMe have taught people are here: the previous session's sets as tappable
+chips under the lift; what plates go on each side of a 20, 15, 10 or 7.5 kg bar; a
+rest timer with −15 and +15; a ticking session clock; a lift's page with its
+best set, estimated-max chart, heaviest set, most reps, best session and what you
+should manage for one to ten reps; and a "workout done" card with time, sets,
+volume and the records beaten. On the food side: carbohydrate and fat targets
+that follow from your calorie and protein ones (fat a quarter of calories,
+carbohydrate the rest), a water tracker, copying a meal from the day before, and a
+Mifflin-St Jeor calculator that fills in your targets from weight, height, age and
+how much you train. What they do that needs the internet or another app's
+permission, barcode lookup and step counts, is left out on purpose: this app has
+no network permission at all.
 
 **486 lifts**, each with its own rep range and increment, filed under thirteen
 real muscle groups rather than three buckets:
@@ -160,7 +176,7 @@ screen, in order, one tap each. That is the whole point: not picking from a list
 of 486 between two sets. Splits are editable, reorderable and deletable, and
 deleting one leaves every session already run from it untouched.
 
-**705 built-in foods in 25 categories.** South Indian cooking gets the detail it deserves —
+**706 built-in foods in 25 categories.** South Indian cooking gets the detail it deserves —
 twenty-four dosa varieties (masala, Mysore masala, ghee roast, paper, rava, set,
 neer, kal, karam, ragi, kambu, thinai, oats, pesarattu, adai and the rest), seven
 kinds of idli, forty-three tiffin items (pongal, upma, uttapam, kuzhi paniyaram,

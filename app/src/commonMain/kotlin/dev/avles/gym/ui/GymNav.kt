@@ -104,6 +104,7 @@ fun GymNav(vm: GymViewModel) {
     val markers by vm.dayMarkers.collectAsStateWithLifecycle()
     val coach by vm.coachState.collectAsStateWithLifecycle()
     val patterns by vm.patternState.collectAsStateWithLifecycle()
+    val workoutReport by vm.workoutReport.collectAsStateWithLifecycle()
 
     val haptics = LocalHapticFeedback.current
 
@@ -193,7 +194,9 @@ fun GymNav(vm: GymViewModel) {
                     onGoTrain = { go("train") },
                     onGoFuel = { go("fuel") },
                     dayKind = markers.firstOrNull { it.dateEpochDay == day.date.epochDay }?.kind,
-                    onMarkDay = { kind -> vm.markDay(day.date.epochDay, kind) }
+                    onMarkDay = { kind -> vm.markDay(day.date.epochDay, kind) },
+                    onAddWater = vm::addWater,
+                    onRemoveWater = { vm.removeWater() }
                 )
             }
             composable("train") {
@@ -228,7 +231,11 @@ fun GymNav(vm: GymViewModel) {
                     },
                     onDeleteSet = vm::deleteSet,
                     onSkipRest = vm::cancelRest,
-                    onAddExercise = vm::addExercise
+                    onAddExercise = vm::addExercise,
+                    onAdjustRest = vm::adjustRest,
+                    workoutReport = workoutReport,
+                    onDismissReport = vm::dismissWorkoutReport,
+                    liftHistory = vm::liftHistory
                 )
             }
             composable("fuel") {
@@ -239,7 +246,10 @@ fun GymNav(vm: GymViewModel) {
                     onLog = { foodId, meal, qty -> vm.logFood(foodId, meal, qty) },
                     onRemove = vm::removeFoodLog,
                     onEditEntry = { logId, qty, slot -> vm.editFoodLog(logId, qty, slot) },
-                    onSaveFood = vm::saveFood
+                    onSaveFood = vm::saveFood,
+                    onAddWater = vm::addWater,
+                    onRemoveWater = { vm.removeWater() },
+                    onCopyMeal = { meal, done -> vm.copyMealFromDayBefore(meal, done) }
                 )
             }
             composable("progress") {
@@ -277,7 +287,11 @@ fun GymNav(vm: GymViewModel) {
             }
 
             composable("settings") {
-                SettingsScreen(settings = settings, onSave = vm::saveSettings)
+                SettingsScreen(
+                    settings = settings,
+                    onSave = { vm.saveSettings(it) },
+                    latestWeightKg = progress.weights.maxByOrNull { it.dateEpochDay }?.weightKg
+                )
             }
         }
     }

@@ -22,31 +22,34 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.core.Dates
+import dev.avles.gym.data.DayKinds
+import dev.avles.gym.data.Meals
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Training
-import dev.avles.gym.data.DayKinds
 import dev.avles.gym.ui.CalendarDots
 import dev.avles.gym.ui.DayState
 import dev.avles.gym.ui.components.BigNumber
 import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
+import dev.avles.gym.ui.components.MacroBars
 import dev.avles.gym.ui.components.Meter
 import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.components.Motion.fadeThrough
-import dev.avles.gym.ui.components.pressScale
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.StripLegend
+import dev.avles.gym.ui.components.WaterCard
 import dev.avles.gym.ui.components.WeekStrip
+import dev.avles.gym.ui.components.pressScale
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Sage
-import dev.avles.gym.core.Dates
-import kotlinx.datetime.LocalDate
 import kotlin.math.roundToInt
+import kotlinx.datetime.LocalDate
 
 
 @Composable
@@ -58,7 +61,9 @@ fun TodayScreen(
     onGoFuel: () -> Unit,
     dayKind: String?,
     onMarkDay: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAddWater: () -> Unit = {},
+    onRemoveWater: () -> Unit = {}
 ) {
     val today = Dates.today()
     val protein = day.totals.proteinG
@@ -66,6 +71,9 @@ fun TodayScreen(
     val proteinTarget = day.settings.proteinTargetG
     val kcalTarget = day.settings.kcalTarget
     val trainedToday = day.sessions.isNotEmpty()
+    val water = day.rows.filter { it.meal == Meals.WATER }
+    val glasses = water.sumOf { it.quantity }.roundToInt()
+    val foodRows = day.rows.filter { it.meal != Meals.WATER }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -138,7 +146,11 @@ fun TodayScreen(
                 overflow = MacroMath.rawRatio(kcal, kcalTarget) > 1.05,
                 height = 3
             )
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(16.dp))
+            MacroBars(day.totals, kcalTarget, proteinTarget)
+            Spacer(Modifier.height(18.dp))
+            WaterCard(glasses, day.settings.waterGlasses, onAddWater, onRemoveWater)
+            Spacer(Modifier.height(16.dp))
             val fuelPress = remember { MutableInteractionSource() }
             Button(
                 onClick = onGoFuel,
@@ -229,12 +241,12 @@ fun TodayScreen(
                 // The strip lets you walk back through the week, so this heading has to
                 // say which day it is listing rather than always claiming to be today.
                 title = if (day.date == today) "Logged today" else "Logged on ${Dates.dayAndMonth(day.date)}",
-                trailing = if (day.rows.isEmpty()) null else "${day.rows.size} entries"
+                trailing = if (foodRows.isEmpty()) null else "${foodRows.size} entries"
             )
             Spacer(Modifier.height(10.dp))
         }
 
-        if (day.rows.isEmpty()) {
+        if (foodRows.isEmpty()) {
             item {
                 EmptyNote(
                     if (day.date == today) "Nothing yet. Log the first thing you ate today."
@@ -242,7 +254,7 @@ fun TodayScreen(
                 )
             }
         } else {
-            items(day.rows.reversed(), key = { "entry-${it.logId}" }) { row ->
+            items(foodRows.reversed(), key = { "entry-${it.logId}" }) { row ->
                 EntryRow(
                     title = row.name,
                     detail = "${Training.formatWeight(row.quantity)} x ${row.unitLabel}   ${row.meal}",

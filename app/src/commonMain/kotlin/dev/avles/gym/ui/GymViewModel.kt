@@ -27,6 +27,7 @@ import dev.avles.gym.domain.Patterns
 import dev.avles.gym.domain.Physique
 import dev.avles.gym.domain.Physiques
 import dev.avles.gym.domain.ExerciseGuide
+import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Photos
 import dev.avles.gym.domain.Progression
 import dev.avles.gym.domain.Recommendation
@@ -36,6 +37,7 @@ import dev.avles.gym.notify.Notifier
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -48,6 +50,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import dev.avles.gym.core.Dates
+import dev.avles.gym.core.epochDay
 import kotlinx.datetime.LocalDate
 
 data class DayState(
@@ -88,6 +91,12 @@ data class LiftGuidance(
     val nextMilestone: Double = 0.0,
     val milestoneProgress: Float = 0f,
     val recentSets: List<SetRow> = emptyList(),
+    /**
+     * The working sets from the last session this lift was done in, oldest first:
+     * the "previous" column of every logging app, and the first thing anyone checks
+     * before loading the bar.
+     */
+    val lastTime: List<SetRow> = emptyList(),
     /** How the next set will be performed. Empty means unspecified. */
     val variation: String = "",
     /**
@@ -226,7 +235,9 @@ class GymViewModel(
             CalendarDots(trained.toSet(), fuelled.toSet())
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarDots())
 
-    val quickPicks: StateFlow<List<FoodItem>> = repo.quickPicks()
+    // Water is logged from its own card; as a "usual suspect" it would crowd out food.
+    val quickPicks: StateFlow<List<FoodItem>> = repo.quickPicks(9)
+        .map { picks -> picks.filter { it.name != WATER_FOOD }.take(8) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val foods: StateFlow<List<FoodItem>> = repo.foods
@@ -486,10 +497,32 @@ class GymViewModel(
         _openSessionId.value = null
     }
 
+    private val _workoutReport = MutableStateFlow<LiftHistory.Report?>(null)
+
+    /** The card shown after Finish, as every logging app does. Null once dismissed. */
+    val workoutReport: StateFlow<LiftHistory.Report?> = _workoutReport.asStateFlow()
+
     fun finishSession() = viewModelScope.launch {
-        trainState.value.active?.let { repo.finishSession(it) }
+        val session = trainState.value.active ?: return@launch
+        val sets = trainState.value.sets
+        // Everything earlier on the same lifts, so a record means better than any
+        // previous session. Read before closing, while the sets are still current.
+        val before = sets.map { it.exerciseId }.distinct().flatMap { id ->
+            repo.historyForExercise(id, HISTORY_LIMIT).first()
+        }
+        repo.finishSession(session)
         cancelRest()
+        if (sets.isNotEmpty()) {
+            _workoutReport.value = LiftHistory.report(session.startedAt, Dates.nowMillis(), sets, before)
+        }
     }
+
+    fun dismissWorkoutReport() {
+        _workoutReport.value = null
+    }
+
+    /** A lift's whole logged history, newest first, for its history page. */
+    fun liftHistory(exerciseId: Long): Flow<List<SetRow>> = repo.historyForExercise(exerciseId, HISTORY_LIMIT)
 
     fun logSet(
         exerciseId: Long,
@@ -583,6 +616,7 @@ class GymViewModel(
                         milestoneProgress = leastHelp?.let { Assistance.milestoneProgress(it) }
                             ?: Progression.milestoneProgress(best),
                         recentSets = history.take(5),
+                        lastTime = lastSessionOf(history, trainState.value.active?.id),
                         variation = variation,
                         guide = ExerciseGuide.of(exercise)
                     )
@@ -598,23 +632,35 @@ class GymViewModel(
      * re-emitted yet, so reading the list here names the *previous* lift — or nothing
      * at all on the first set of a session.
      */
+    private var restLeft = 0
+    private var restLift = ""
+
     fun startRest(seconds: Int? = null, exerciseName: String? = null) {
         restJob?.cancel()
         val total = seconds ?: settings.value.restSeconds
         val lift = exerciseName
             ?: trainState.value.sets.lastOrNull()?.exerciseName
             ?: "the next lift"
+        restLeft = total
+        restLift = lift
         notifier.restStarted(total, lift)
         restJob = viewModelScope.launch {
-            var left = total
-            while (left > 0) {
-                _restRemaining.value = left
+            while (restLeft > 0) {
+                _restRemaining.value = restLeft
                 delay(1_000)
-                left--
+                restLeft--
             }
             _restRemaining.value = null
             notifier.restFinished(lift)
         }
+    }
+
+    /** The −15 / +15 under a running timer. The notification is re-armed to match. */
+    fun adjustRest(deltaSeconds: Int) {
+        if (_restRemaining.value == null) return
+        restLeft = (restLeft + deltaSeconds).coerceIn(1, 900)
+        _restRemaining.value = restLeft
+        notifier.restStarted(restLeft, restLift)
     }
 
     fun cancelRest() {
@@ -635,6 +681,33 @@ class GymViewModel(
         }
 
     fun removeFoodLog(logId: Long) = viewModelScope.launch { repo.removeFoodLog(logId) }
+
+    // ---------- Water ----------
+
+    private fun waterFood(): FoodItem? = foods.value.firstOrNull { it.name == WATER_FOOD }
+
+    fun addWater() {
+        val water = waterFood() ?: return
+        logFood(water.id, Meals.WATER, 1.0)
+    }
+
+    /** Takes back the most recent glass, which is the one a mis-tap just added. */
+    fun removeWater() = viewModelScope.launch {
+        dayState.value.rows.filter { it.meal == Meals.WATER }.maxByOrNull { it.loggedAt }
+            ?.let { repo.removeFoodLog(it.logId) }
+    }
+
+    /**
+     * Logs yesterday's [meal] again on the selected day: the same breakfast every
+     * morning is the commonest diary there is, and the reason every food app has a
+     * copy button. Returns how many entries were copied, zero if there was nothing.
+     */
+    fun copyMealFromDayBefore(meal: String, onDone: (Int) -> Unit = {}) = viewModelScope.launch {
+        val day = _selectedDate.value
+        val source = repo.foodLogFor(Dates.ofEpochDay(day.epochDay - 1)).first().filter { it.meal == meal }
+        source.forEach { repo.logFood(day, it.foodId, meal, it.quantity) }
+        onDone(source.size)
+    }
 
     fun editFoodLog(logId: Long, quantity: Double, meal: String) = viewModelScope.launch {
         repo.editFoodLog(logId, quantity, meal)
@@ -657,5 +730,19 @@ class GymViewModel(
         } else {
             notifier.cancelDailyReminder()
         }
+    }
+
+    private fun lastSessionOf(history: List<SetRow>, activeSessionId: Long?): List<SetRow> {
+        val earlier = history.filter { it.sessionId != activeSessionId && !it.isWarmup }
+        val last = earlier.firstOrNull()?.sessionId ?: return emptyList()
+        return earlier.filter { it.sessionId == last }.sortedBy { it.loggedAt }
+    }
+
+    private companion object {
+        /** The seeded food the water card logs. */
+        const val WATER_FOOD = "Water"
+
+        /** Enough sets for years of one lift at a few sessions a week. */
+        const val HISTORY_LIMIT = 2_000
     }
 }
