@@ -253,3 +253,10 @@ barcode lookup, step counts, Health Connect / HealthKit sync, social feeds.
 21. ~~**Cardio**~~ (done): log minutes and distance for cardio work (Room v13).
 22. ~~**Quick weigh-in**~~ (done) from Today.
 23. ~~**Water reminders**~~ (done) through the existing notifier, during waking hours.
+
+### Backlog, fifth wave
+
+24. ~~**Quick add**~~ (done): calories and macros without a food.
+25. **Backup and restore**: the whole database to a file and back (share sheet
+    out; a document picker in, which needs a new platform seam).
+26. **Tamil labels** for the main screens, as the Indian diet apps offer.

@@ -291,7 +291,8 @@ fun GymNav(vm: GymViewModel) {
                     savedMeals = savedMeals,
                     onLogSavedMeal = { m, slot -> vm.logSavedMeal(m, slot) },
                     onDeleteSavedMeal = { vm.deleteSavedMeal(it) },
-                    onSaveMeal = { name, slot -> vm.saveMeal(name, slot) }
+                    onSaveMeal = { name, slot -> vm.saveMeal(name, slot) },
+                    onQuickAdd = { k, p, c, f, slot -> vm.quickAdd(k, p, c, f, slot) }
                 )
             }
             composable("progress") {

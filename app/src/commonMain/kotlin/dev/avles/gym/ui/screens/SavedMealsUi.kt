@@ -131,3 +131,49 @@ fun SaveMealButton(slot: String, onSave: (String) -> Unit) {
     }
 }
 
+/** Calories and macros with no food behind them: a meal out nobody can look up. */
+@Composable
+fun QuickAddButton(slot: String, onAdd: (Double, Double, Double, Double) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    TextButton(onClick = { open = true }) { Text("Quick add calories", color = Sage) }
+    if (!open) return
+    val fields = remember { androidx.compose.runtime.mutableStateListOf("", "", "", "") }
+    val labels = listOf("kcal", "protein, g", "carbs, g", "fat, g")
+    val kcal = fields[0].toDoubleOrNull() ?: 0.0
+    val protein = fields[1].toDoubleOrNull() ?: 0.0
+    AlertDialog(
+        onDismissRequest = { open = false },
+        containerColor = Slate,
+        title = { Text("Quick add to ${slot.lowercase()}", color = Bone) },
+        text = {
+            Column {
+                Text(
+                    "For a meal you cannot look up. Calories and protein are enough; carbs and fat if you know them.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint
+                )
+                Spacer(Modifier.height(8.dp))
+                labels.forEachIndexed { i, label ->
+                    OutlinedTextField(
+                        value = fields[i],
+                        onValueChange = { v -> fields[i] = v.filter { c -> c.isDigit() || c == '.' }.take(6) },
+                        label = { Text(label) },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                        ),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            val ok = kcal > 0 || protein > 0
+            TextButton(enabled = ok, onClick = {
+                onAdd(kcal, protein, fields[2].toDoubleOrNull() ?: 0.0, fields[3].toDoubleOrNull() ?: 0.0)
+                open = false
+            }) { Text("Add", color = if (ok) Sage else Faint) }
+        },
+        dismissButton = { TextButton(onClick = { open = false }) { Text("Cancel", color = Mute) } }
+    )
+}

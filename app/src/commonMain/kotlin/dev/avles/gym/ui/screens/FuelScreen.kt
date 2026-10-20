@@ -90,7 +90,8 @@ fun FuelScreen(
     savedMeals: List<SavedMeals.Meal> = emptyList(),
     onLogSavedMeal: (SavedMeals.Meal, String) -> Unit = { _, _ -> },
     onDeleteSavedMeal: (Long) -> Unit = {},
-    onSaveMeal: (String, String) -> Unit = { _, _ -> }
+    onSaveMeal: (String, String) -> Unit = { _, _ -> },
+    onQuickAdd: (Double, Double, Double, Double, String) -> Unit = { _, _, _, _, _ -> }
 ) {
     var meal by remember { mutableStateOf(defaultMealForNow()) }
     var query by remember { mutableStateOf("") }
@@ -225,8 +226,11 @@ fun FuelScreen(
         }
 
         item {
-            TextButton(onClick = { creating = true }) {
-                Text("Add a food to the catalogue", color = Sage)
+            Row {
+                TextButton(onClick = { creating = true }) {
+                    Text("Add a food to the catalogue", color = Sage)
+                }
+                QuickAddButton(meal) { k, p, c, f -> onQuickAdd(k, p, c, f, meal) }
             }
             Spacer(Modifier.height(10.dp))
             Hairline()

@@ -60,6 +60,7 @@ import kotlinx.coroutines.launch
 import dev.avles.gym.core.Dates
 import dev.avles.gym.core.epochDay
 import kotlinx.datetime.LocalDate
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GymViewModel(
@@ -131,6 +132,7 @@ class GymViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val foods: StateFlow<List<FoodItem>> = repo.foods
+        .map { all -> all.filter { it.category != QUICK_ADD } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun selectDate(date: LocalDate) {
@@ -672,6 +674,24 @@ class GymViewModel(
         repo.editFoodLog(logId, quantity, meal)
     }
 
+    /**
+     * Logs bare numbers without a food, the "quick add" of the diary apps, for the
+     * meal out nobody can look up. Stored as a custom food in a category the
+     * catalogue hides, named by its numbers so the same entry is reused.
+     */
+    fun quickAdd(kcal: Double, proteinG: Double, carbsG: Double, fatG: Double, meal: String) = viewModelScope.launch {
+        if (kcal <= 0 && proteinG <= 0) return@launch
+        val name = "Quick add · ${kcal.roundToInt()} kcal · ${proteinG.roundToInt()} g protein"
+        val id = repo.foods.first().firstOrNull { it.name == name }?.id
+            ?: repo.saveFood(
+                FoodItem(
+                    name = name, unitLabel = "1 entry", kcal = kcal, proteinG = proteinG, carbsG = carbsG,
+                    fatG = fatG, category = QUICK_ADD, isCustom = true
+                )
+            )
+        if (id > 0) repo.logFood(_selectedDate.value, id, meal, 1.0)
+    }
+
     fun saveFood(item: FoodItem) = viewModelScope.launch {
         if (item.id == 0L) repo.saveFood(item) else repo.updateFood(item)
     }
@@ -768,6 +788,9 @@ class GymViewModel(
     }
 
     private companion object {
+        /** Category of quick-add entries, which the catalogue does not list. */
+        const val QUICK_ADD = "Quick add"
+
         /** The seeded food the water card logs. */
         const val WATER_FOOD = "Water"
 
