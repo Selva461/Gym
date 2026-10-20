@@ -60,6 +60,7 @@ fun ProgressScreen(
     restDays: Set<Long> = emptySet()
 ) {
     var logging by remember { mutableStateOf(false) }
+    var oneRepMax by remember { mutableStateOf(false) }
     val today = Dates.todayEpochDay()
 
     val weights = state.weights
@@ -112,6 +113,12 @@ fun ProgressScreen(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
             ) {
                 Text("Measurements and body fat", color = Brass, style = MaterialTheme.typography.bodyMedium)
+            }
+            androidx.compose.material3.TextButton(
+                onClick = { oneRepMax = true },
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) {
+                Text("One-rep max calculator", color = Brass, style = MaterialTheme.typography.bodyMedium)
             }
             androidx.compose.material3.TextButton(
                 onClick = onOpenRecords,
@@ -252,6 +259,8 @@ fun ProgressScreen(
             )
         }
     }
+
+    if (oneRepMax) OneRepMaxDialog(onDismiss = { oneRepMax = false })
 
     if (logging) {
         WeightDialog(

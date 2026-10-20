@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.domain.Energy
+import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Plates
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.components.ChipRow
@@ -249,5 +250,55 @@ private fun SmallNumber(
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number),
         modifier = modifier
+    )
+}
+
+/**
+ * Weight and reps in, estimated one-rep max out, with what that predicts for other
+ * rep counts and the percentages used to plan warm-ups and back-off sets.
+ */
+@Composable
+fun OneRepMaxDialog(onDismiss: () -> Unit) {
+    var weight by remember { mutableStateOf("") }
+    var reps by remember { mutableStateOf("") }
+    val e1rm = Training.estimatedOneRepMax(weight.toDoubleOrNull() ?: 0.0, reps.toIntOrNull() ?: 0)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Slate,
+        title = { Text("One-rep max", color = Bone) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmallNumber(weight, { weight = it }, "kg", Modifier.weight(1f), decimal = true)
+                    SmallNumber(reps, { reps = it }, "reps", Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(16.dp))
+                if (e1rm <= 0) {
+                    Text("A weight and reps you have done.", style = MaterialTheme.typography.bodyMedium, color = Faint)
+                } else {
+                    Text(
+                        "${Training.formatWeight(e1rm)} kg",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Brass
+                    )
+                    Text("estimated max (Epley)", style = MaterialTheme.typography.labelSmall, color = Mute)
+                    Spacer(Modifier.height(12.dp))
+                    LiftHistory.repMaxTable(e1rm, 1..10).forEach { (r, kg) ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("$r reps", style = MaterialTheme.typography.bodyMedium, color = Mute)
+                            Text("${Training.formatWeight(kg)} kg", style = MaterialTheme.typography.bodyMedium, color = Bone)
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        LiftHistory.percentTable(e1rm).joinToString("   ") { (pct, kg) -> "$pct% ${Training.formatWeight(kg)}" },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Faint
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done", color = Brass) } }
     )
 }

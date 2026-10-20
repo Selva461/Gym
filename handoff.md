@@ -233,6 +233,6 @@ barcode lookup, step counts, Health Connect / HealthKit sync, social feeds.
     days. Computed from data already stored; no schema.
 12. ~~**Smart rest defaults**~~ (done): a heavy compound (top of range ≤ 6) rests 3 min, an
     isolation lift (≥ 12) 90 s, the rest the Settings value. No schema.
-13. **1RM calculator** on Progress: weight × reps → estimated max and table.
+13. ~~**1RM calculator**~~ (done) on Progress: weight × reps → estimated max and table.
 14. **Weight goal** in Settings with the trend's weekly rate and a projected date.
 15. **Saved meals**: name a meal and log all of it in one tap. Room v12 table.
