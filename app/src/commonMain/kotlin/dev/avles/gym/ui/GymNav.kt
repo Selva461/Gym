@@ -115,6 +115,7 @@ fun GymNav(vm: GymViewModel) {
     val workoutReport by vm.workoutReport.collectAsStateWithLifecycle()
     val records by vm.records.collectAsStateWithLifecycle()
     val superset by vm.superset.collectAsStateWithLifecycle()
+    val needsWelcome by vm.needsWelcome.collectAsStateWithLifecycle()
 
     val haptics = LocalHapticFeedback.current
 
@@ -211,6 +212,7 @@ fun GymNav(vm: GymViewModel) {
                     latestWeightKg = progress.weights.maxByOrNull { it.dateEpochDay }?.weightKg,
                     onWelcomeTargets = { vm.applyWelcomeTargets(it) },
                     onDismissWelcome = { vm.dismissWelcome() },
+                    showWelcome = needsWelcome,
                     day = day,
                     dots = dots,
                     onSelectDate = vm::selectDate,

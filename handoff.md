@@ -28,7 +28,7 @@ Standing constraints, all deliberate and all enforced by tests:
 | Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | 706 built in (76 Tamil curries in `SeedFoodsTamil.kt`, 92 staples in `SeedFoodsStaples.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
 | Database | v12 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`), migrations 1→…→12, Room 2.7 KMP |
-| Tests | 229, none needing a device |
+| Tests | 231, none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 |
 
 This phase, in order:

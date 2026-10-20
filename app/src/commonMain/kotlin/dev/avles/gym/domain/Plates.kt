@@ -25,6 +25,17 @@ object Plates {
     val BARS_KG = listOf(20.0, 15.0, 10.0, 7.5)
 
     /**
+     * The bar a lift is loaded on, or null when it is not loaded with plates at all:
+     * a stack machine, a cable, dumbbells. Plate arithmetic and a warm-up ramp from
+     * an empty bar mean nothing for those.
+     */
+    fun barFor(equipment: Equipment): Double? = when (equipment) {
+        Equipment.BARBELL, Equipment.TRAP_BAR, Equipment.SMITH -> OLYMPIC_BAR_KG
+        Equipment.EZ_BAR -> 10.0
+        else -> null
+    }
+
+    /**
      * [perSide] is largest first. [loadedKg] is what the bar will really weigh, which
      * differs from what was asked when the plates cannot make it exactly; the
      * [shortKg] is that difference, never negative.

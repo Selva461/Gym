@@ -389,4 +389,22 @@ class ToolkitTest {
         assertNull(Supersets.after(pair, 3))
         assertNull(Supersets.after(null, 1))
     }
+
+    @Test
+    fun `a stored set shows as its pill and the pill stores its kind`() {
+        assertEquals("Warm-up", SetKinds.pickerLabel(isWarmup = true, kind = SetKinds.DROP))
+        assertEquals("Drop", SetKinds.pickerLabel(isWarmup = false, kind = SetKinds.DROP))
+        assertEquals("Working", SetKinds.pickerLabel(isWarmup = false, kind = ""))
+        assertEquals(SetKinds.FAILURE, SetKinds.kindFor("Failure"))
+        assertEquals("", SetKinds.kindFor("Warm-up"))
+    }
+
+    @Test
+    fun `only plate-loaded bars get plates and a warm-up ramp`() {
+        assertEquals(20.0, Plates.barFor(dev.avles.gym.domain.Equipment.BARBELL))
+        assertEquals(10.0, Plates.barFor(dev.avles.gym.domain.Equipment.EZ_BAR))
+        assertNull(Plates.barFor(dev.avles.gym.domain.Equipment.MACHINE))
+        assertNull(Plates.barFor(dev.avles.gym.domain.Equipment.DUMBBELL))
+        assertNull(Plates.barFor(dev.avles.gym.domain.Equipment.CABLE))
+    }
 }

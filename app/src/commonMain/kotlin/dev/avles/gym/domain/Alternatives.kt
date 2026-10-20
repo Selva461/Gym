@@ -18,18 +18,22 @@ object Alternatives {
         // of the muscle's lifts. Within a rank, one per piece of equipment before any
         // repeats, so the list offers a dumbbell, a cable and a machine rather than
         // five cable variations.
-        val ranked = candidates.sortedWith(
-            compareByDescending<Pair<Exercise, ExerciseGuide>> { (_, g) ->
-                when {
-                    g.pattern == guide.pattern && g.equipment != guide.equipment -> 3
-                    g.pattern == guide.pattern -> 2
-                    else -> 1
-                }
-            }.thenBy { it.first.name }
-        )
-        val seenKit = mutableSetOf<Equipment>()
-        val first = ranked.filter { seenKit.add(it.second.equipment) }
-        val rest = ranked - first.toSet()
-        return (first + rest).map { it.first }.take(limit)
+        fun rank(g: ExerciseGuide) = when {
+            g.pattern == guide.pattern && g.equipment != guide.equipment -> 3
+            g.pattern == guide.pattern -> 2
+            else -> 1
+        }
+        return candidates
+            .groupBy { rank(it.second) }
+            .toList()
+            .sortedByDescending { it.first }
+            .flatMap { (_, inRank) ->
+                val sorted = inRank.sortedBy { it.first.name }
+                val seenKit = mutableSetOf<Equipment>()
+                val varied = sorted.filter { seenKit.add(it.second.equipment) }
+                varied + (sorted - varied.toSet())
+            }
+            .map { it.first }
+            .take(limit)
     }
 }

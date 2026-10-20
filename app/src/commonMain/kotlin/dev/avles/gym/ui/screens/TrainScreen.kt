@@ -53,6 +53,7 @@ import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
 import dev.avles.gym.domain.LiftHistory
+import dev.avles.gym.domain.Plates
 import dev.avles.gym.domain.SetKinds
 import dev.avles.gym.domain.Supersets
 import dev.avles.gym.domain.Training
@@ -83,9 +84,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 private val AD_HOC_LABELS = listOf("Push", "Pull", "Legs", "Full")
-
-/** The set-type pills, short enough to share a row, and the kind each one stores. */
-private val SET_TYPES = listOf("Working" to "", "Warm-up" to "", "Drop" to SetKinds.DROP, "Failure" to SetKinds.FAILURE)
 
 @Composable
 fun TrainScreen(
@@ -191,8 +189,8 @@ fun TrainScreen(
     editingSet?.let { row ->
         SetEditorDialog(
             row = row,
-            onSave = { w, r, warm ->
-                onEditSet(row.setId, w, r, warm, row.variation, row.kind, row.rpe)
+            onSave = { w, r, warm, kind, rpe ->
+                onEditSet(row.setId, w, r, warm, row.variation, kind, rpe)
                 editingSet = null
             },
             onDelete = { onDeleteSet(row.setId); editingSet = null },
@@ -399,9 +397,9 @@ private fun ActiveSessionPane(
     val selectedExercise = guidance?.exercise
     var weight by remember { mutableStateOf("") }
     var reps by remember { mutableStateOf("") }
-    var setType by remember { mutableStateOf("Working") }
+    var setType by remember { mutableStateOf(SetKinds.WORKING_LABEL) }
     var rpe by remember { mutableDoubleStateOf(0.0) }
-    val warmup = setType == "Warm-up"
+    val warmup = setType == SetKinds.WARMUP_LABEL
     var showPicker by remember { mutableStateOf(false) }
     var showNewExercise by remember { mutableStateOf(false) }
     var showingReference by remember { mutableStateOf<Exercise?>(null) }
@@ -617,7 +615,8 @@ private fun ActiveSessionPane(
                 )
             }
 
-            if (selectedExercise != null && !selectedExercise.isAssisted) {
+            val bar = guidance?.guide?.equipment?.let(Plates::barFor)
+            if (selectedExercise != null && !selectedExercise.isAssisted && bar != null) {
                 TextButton(onClick = { showPlates = true }) {
                     Text("What plates?", color = Brass, style = MaterialTheme.typography.labelSmall)
                 }
@@ -635,7 +634,7 @@ private fun ActiveSessionPane(
 
             Spacer(Modifier.height(12.dp))
             PillRow(
-                options = SET_TYPES.map { it.first },
+                options = SetKinds.PICKER.map { it.first },
                 selected = setType,
                 accent = Brass,
                 onSelect = { setType = it }
@@ -667,7 +666,7 @@ private fun ActiveSessionPane(
                         weight.toDoubleOrNull() ?: 0.0,
                         reps.toIntOrNull() ?: 0,
                         warmup,
-                        SET_TYPES.first { it.first == setType }.second,
+                        SetKinds.kindFor(setType),
                         if (warmup) 0.0 else rpe
                     )
                     reps = ""
@@ -769,7 +768,11 @@ private fun ActiveSessionPane(
     }
 
     if (showPlates) {
-        PlateCalculatorDialog(initialKg = weight.toDoubleOrNull(), onDismiss = { showPlates = false })
+        PlateCalculatorDialog(
+            initialKg = weight.toDoubleOrNull(),
+            initialBarKg = guidance?.guide?.equipment?.let(Plates::barFor) ?: Plates.OLYMPIC_BAR_KG,
+            onDismiss = { showPlates = false }
+        )
     }
 
     showingReference?.let { exercise ->

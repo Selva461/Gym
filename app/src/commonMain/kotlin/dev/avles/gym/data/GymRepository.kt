@@ -299,9 +299,10 @@ class GymRepository(
 
     val measurements: Flow<List<BodyMeasurement>> = dao.measurements()
 
-    /** One day's tape figures; an empty map clears the day. Parts left out are not kept. */
+    /** One day's tape figures. Parts left out keep whatever that day already had. */
     suspend fun saveMeasurements(day: Long, cmByPart: Map<String, Double>) {
-        dao.deleteMeasurementsOn(day)
+        // Only the parts entered are written; REPLACE on the (day, part) index
+        // overwrites a part measured earlier the same day and leaves the others.
         dao.upsertMeasurements(cmByPart.filterValues { it > 0 }.map { (part, cm) -> BodyMeasurement(dateEpochDay = day, part = part, cm = cm) })
     }
     val latestWeight: Flow<BodyWeight?> = dao.latestWeight()
@@ -382,6 +383,9 @@ class GymRepository(
     // ---------- Rest and missed days ----------
 
     val allSets: Flow<List<SetRow>> = dao.allWorkingSets()
+
+    /** Every set including warm-ups, for the CSV export. */
+    suspend fun everySet(): List<SetRow> = dao.everySet()
     val dailyMacros: Flow<List<DayMacroRow>> = dao.dailyMacros()
     val dayMarkers: Flow<List<DayMarker>> = dao.dayMarkers()
     val sessionDays: Flow<List<SessionDay>> = dao.sessionDays()

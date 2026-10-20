@@ -269,7 +269,13 @@ interface GymDao {
     )
     fun recentFoods(limit: Int, exceptMeal: String): Flow<List<FoodItem>>
 
-    @Query("SELECT DISTINCT dateEpochDay FROM food_log ORDER BY dateEpochDay DESC")
+    // Water is logged as food_log rows in its own slot, but a day with only water
+    // on it is not a day of food logged: it would add a "fuelled" dot, a zero-calorie
+    // day to every average and a day to the food achievements.
+    @Query(
+        "SELECT DISTINCT dateEpochDay FROM food_log WHERE meal != '" + Meals.WATER + "' " +
+            "ORDER BY dateEpochDay DESC"
+    )
     fun allLoggedFoodDays(): Flow<List<Long>>
 
     // ---------- Splits ----------
@@ -399,6 +405,7 @@ interface GymDao {
                SUM(f.proteinG * l.quantity) AS proteinG
         FROM food_log l
         JOIN food_item f ON f.id = l.foodId
+        WHERE l.meal != '""" + Meals.WATER + """'
         GROUP BY l.dateEpochDay
         """
     )
@@ -417,8 +424,6 @@ interface GymDao {
     @Query("SELECT * FROM body_measurement ORDER BY dateEpochDay ASC")
     fun measurements(): Flow<List<BodyMeasurement>>
 
-    @Query("DELETE FROM body_measurement WHERE dateEpochDay = :day")
-    suspend fun deleteMeasurementsOn(day: Long)
 
     @Query("UPDATE exercise SET notes = :notes WHERE id = :id")
     suspend fun setExerciseNotes(id: Long, notes: String)
@@ -448,4 +453,19 @@ interface GymDao {
 
     @Query("DELETE FROM saved_meal WHERE id = :mealId")
     suspend fun deleteSavedMeal(mealId: Long)
+
+    /** Every set, warm-ups included, oldest first: the export is the whole log. */
+    @Query(
+        """
+        SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
+               e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
+               s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
+               s.variation AS variation, e.isAssisted AS isAssisted,
+               s.kind AS kind, s.rpe AS rpe
+        FROM set_entry s
+        JOIN exercise e ON e.id = s.exerciseId
+        ORDER BY s.loggedAt ASC
+        """
+    )
+    suspend fun everySet(): List<SetRow>
 }

@@ -672,7 +672,9 @@ class GymViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun saveMeasurements(cmByPart: Map<String, Double>) = viewModelScope.launch {
-        repo.saveMeasurements(_selectedDate.value.epochDay, cmByPart)
+        // Always today: the dialog says so, and the week strip's selected day is
+        // about the food and training log, not the tape.
+        repo.saveMeasurements(Dates.todayEpochDay(), cmByPart)
     }
 
     /** Height and sex for the body-fat estimate, saved without touching anything else. */
@@ -689,7 +691,7 @@ class GymViewModel(
     /** Builds the CSV off the database and hands it to [share] on the main thread. */
     fun export(kind: ExportKind, share: (String, String) -> Unit) = viewModelScope.launch {
         val text = when (kind) {
-            ExportKind.SETS -> Export.sets(repo.allSets.first())
+            ExportKind.SETS -> Export.sets(repo.everySet())
             ExportKind.FOOD -> Export.food(repo.allFoodLog())
             ExportKind.WEIGHTS -> Export.weights(repo.weights.first())
         }
@@ -697,6 +699,16 @@ class GymViewModel(
     }
 
     // ---------- First run ----------
+
+    /**
+     * Whether to show the welcome card. Starts false and only turns true once the
+     * stored settings and both logs have actually loaded, so the card cannot flash
+     * up on a cold start for someone who has been using the app for months.
+     */
+    val needsWelcome: StateFlow<Boolean> =
+        combine(settingsStore.settings, repo.trainedDays, repo.loggedFoodDays) { s, trained, fuelled ->
+            !s.welcomed && trained.isEmpty() && fuelled.isEmpty()
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     /** Takes the calculator's targets from the welcome card and closes it for good. */
     fun applyWelcomeTargets(t: Energy.Targets) = viewModelScope.launch {

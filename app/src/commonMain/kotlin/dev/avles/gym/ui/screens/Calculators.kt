@@ -158,9 +158,9 @@ fun TargetCalculatorDialog(
  * total from different plates.
  */
 @Composable
-fun PlateCalculatorDialog(initialKg: Double?, onDismiss: () -> Unit) {
+fun PlateCalculatorDialog(initialKg: Double?, onDismiss: () -> Unit, initialBarKg: Double = Plates.OLYMPIC_BAR_KG) {
     var total by remember { mutableStateOf(initialKg?.let { Training.formatWeight(it) } ?: "") }
-    var bar by remember { mutableStateOf(Plates.OLYMPIC_BAR_KG) }
+    var bar by remember { mutableStateOf(initialBarKg) }
     val kg = total.toDoubleOrNull()
     val loading = kg?.let { Plates.load(it, bar) }
 

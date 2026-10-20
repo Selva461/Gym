@@ -40,6 +40,7 @@ import dev.avles.gym.domain.Alternatives
 import dev.avles.gym.domain.ExerciseGuide
 import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Numbers
+import dev.avles.gym.domain.Plates
 import dev.avles.gym.domain.Training
 import dev.avles.gym.domain.Warmups
 import dev.avles.gym.ui.LiftGuidance
@@ -359,7 +360,8 @@ internal fun TargetCard(guidance: LiftGuidance, onUseTarget: (Double, Int) -> Un
         )
 
         // The ramp up to the target, for a loaded lift heavy enough to need one.
-        val warmups = if (guidance.exercise.isAssisted) emptyList() else Warmups.plan(rec.weightKg)
+        val bar = guidance.guide?.equipment?.let(Plates::barFor)
+        val warmups = if (guidance.exercise.isAssisted || bar == null) emptyList() else Warmups.plan(rec.weightKg, bar)
         if (warmups.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             Text(

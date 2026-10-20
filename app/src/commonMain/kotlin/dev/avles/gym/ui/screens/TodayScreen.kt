@@ -78,12 +78,10 @@ fun TodayScreen(
     week: Weekly.Comparison? = null,
     latestWeightKg: Double? = null,
     onWelcomeTargets: (Energy.Targets) -> Unit = {},
-    onDismissWelcome: () -> Unit = {}
+    onDismissWelcome: () -> Unit = {},
+    showWelcome: Boolean = false
 ) {
     var calculating by remember { mutableStateOf(false) }
-    // Shown until answered, and only to someone who has not started: a person who
-    // has been logging for a month does not need to be welcomed.
-    val showWelcome = !day.settings.welcomed && dots.trained.isEmpty() && dots.fuelled.isEmpty()
     val today = Dates.today()
     val protein = day.totals.proteinG
     val kcal = day.totals.kcal

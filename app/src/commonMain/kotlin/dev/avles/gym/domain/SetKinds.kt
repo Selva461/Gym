@@ -12,8 +12,20 @@ object SetKinds {
     const val DROP = "drop"
     const val FAILURE = "failure"
 
-    /** What the set-type picker offers, with what each one stores. Warm-up is its own flag. */
-    val PICKER = listOf("Working" to "", "Warm-up" to "", "Drop set" to DROP, "To failure" to FAILURE)
+    const val WORKING_LABEL = "Working"
+    const val WARMUP_LABEL = "Warm-up"
+
+    /**
+     * The set-type pills, short enough to share a row, with the kind each stores.
+     * Warm-up stores no kind: it is its own flag on the set.
+     */
+    val PICKER = listOf(WORKING_LABEL to "", WARMUP_LABEL to "", "Drop" to DROP, "Failure" to FAILURE)
+
+    /** The pill a stored set shows as. */
+    fun pickerLabel(isWarmup: Boolean, kind: String): String =
+        if (isWarmup) WARMUP_LABEL else PICKER.firstOrNull { it.second == kind && it.second.isNotEmpty() }?.first ?: WORKING_LABEL
+
+    fun kindFor(label: String): String = PICKER.firstOrNull { it.first == label }?.second ?: ""
 
     val RPE_CHOICES = listOf(6.0, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0)
 
