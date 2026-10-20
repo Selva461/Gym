@@ -190,3 +190,36 @@ Then, in order of value:
   provisioning profile as secrets, `xcodebuild archive` + `-exportArchive`).
 - The two security gaps in `SECURITY.md` (biometric lock, SQLCipher) are still
   open questions for the user.
+
+## Backlog: parity with the big fitness apps
+
+The user asked for the app to match Strong, Hevy, MyFitnessPal and HealthifyMe
+"in everything possible", and for the work to keep going across sessions. Done
+so far: motion and haptics, previous-session chips, plate calculator, session
+clock, rest ±15, lift history and rep-max table, workout summary card, macro
+split bars, water tracker, copy a meal from the day before, target calculator.
+
+Take these top to bottom. Each needs domain logic with tests first, then UI;
+verify with the local harness and `gradle :app:compileDebugKotlinAndroid`
+(Android SDK at /opt/android-sdk) before pushing. Strike an item when it lands.
+
+1. **Warm-up sets** from the working weight (bar × 10, 40% × 5, 60% × 3, 80% × 2),
+   rounded to plates, offered under the target card. Pure; no schema.
+2. **Month calendar** on Progress with trained/fuelled marks and rest days. No schema.
+3. **All records** page on Progress: each lift's best set, newest records first.
+   Needs one DAO query over all working sets (read-only, no schema change).
+4. **This week** card on Today: sessions, volume, average protein and calories
+   against target, versus last week. No schema.
+5. **Recent foods** next to the usual suspects: the last distinct foods logged.
+   A DAO query; no schema.
+6. **Fasting timer** (16:8 and the like) on Fuel, start time in DataStore.
+7. **Export to CSV** of sets, food log and weights through the platform share
+   sheet (a new expect/actual seam; no network involved).
+8. **Body measurements** (waist, chest, arms, hips, thighs) with trends, and a
+   US Navy body-fat estimate. Room v9: new table, migration, MigrationSqlTest.
+9. **Set types and RPE** (warm-up exists; add drop set, to failure, RPE 6–10).
+   Room v9/v10 column with a default, migration and test.
+10. **Notes on a lift** that show every time it is picked. Schema column.
+
+Left out on purpose, because they need the network or another app's permission:
+barcode lookup, step counts, Health Connect / HealthKit sync, social feeds.
