@@ -33,7 +33,9 @@ data class GymSettings(
     val heightCm: Double = 0.0,
     val isFemale: Boolean = false,
     /** Rest longer after heavy compounds and shorter after isolation lifts. */
-    val restByLift: Boolean = true
+    val restByLift: Boolean = true,
+    /** Target body weight; zero for none. */
+    val goalWeightKg: Double = 0.0
 )
 
 class SettingsStore(private val store: DataStore<Preferences>) {
@@ -52,6 +54,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val height = doublePreferencesKey("height_cm")
         val female = intPreferencesKey("is_female")
         val restByLift = intPreferencesKey("rest_by_lift")
+        val goalWeight = doublePreferencesKey("goal_weight_kg")
     }
 
     val settings: Flow<GymSettings> = store.data.map { p ->
@@ -68,7 +71,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             fastHours = p[Keys.fastHours] ?: 16,
             heightCm = p[Keys.height] ?: 0.0,
             isFemale = (p[Keys.female] ?: 0) == 1,
-            restByLift = (p[Keys.restByLift] ?: 1) == 1
+            restByLift = (p[Keys.restByLift] ?: 1) == 1,
+            goalWeightKg = p[Keys.goalWeight] ?: 0.0
         )
     }
 
@@ -87,6 +91,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             p[Keys.height] = s.heightCm
             p[Keys.female] = if (s.isFemale) 1 else 0
             p[Keys.restByLift] = if (s.restByLift) 1 else 0
+            p[Keys.goalWeight] = s.goalWeightKg
         }
     }
 }

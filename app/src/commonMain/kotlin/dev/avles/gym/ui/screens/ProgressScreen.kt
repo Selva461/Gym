@@ -29,6 +29,7 @@ import dev.avles.gym.core.Dates
 import dev.avles.gym.domain.Achievements
 import dev.avles.gym.domain.Consistency
 import dev.avles.gym.domain.Training
+import dev.avles.gym.domain.WeightGoal
 import dev.avles.gym.ui.ProgressState
 import dev.avles.gym.ui.components.AchievementsCard
 import dev.avles.gym.ui.components.BarStrip
@@ -57,6 +58,7 @@ fun ProgressScreen(
     onOpenRecords: () -> Unit = {},
     onOpenMeasurements: () -> Unit = {},
     liftsWithRecords: Int = 0,
+    goalWeightKg: Double = 0.0,
     restDays: Set<Long> = emptySet()
 ) {
     var logging by remember { mutableStateOf(false) }
@@ -160,6 +162,23 @@ fun ProgressScreen(
                     "No weight recorded yet.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = Faint
+                )
+            }
+            if (latest != null && goalWeightKg > 0) {
+                val rate = WeightGoal.weeklyRate(weights, today)
+                val days = WeightGoal.daysToGoal(latest.weightKg, goalWeightKg, rate)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Goal ${Training.formatWeight(goalWeightKg)} kg · " + when {
+                        days == 0 -> "reached"
+                        rate == null -> "three weigh-ins this month give a projected date"
+                        days == null -> "the four-week trend is heading the other way " +
+                            "(${if (rate >= 0) "+" else "−"}${Training.formatWeight(abs(rate))} kg a week)"
+                        else -> "${if (rate < 0) "losing" else "gaining"} ${Training.formatWeight(abs(rate))} kg a week, " +
+                            "about ${Dates.dayAndMonth(Dates.ofEpochDay(today + days))}"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Mute
                 )
             }
             Spacer(Modifier.height(14.dp))

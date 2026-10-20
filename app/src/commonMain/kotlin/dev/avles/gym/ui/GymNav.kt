@@ -284,6 +284,7 @@ fun GymNav(vm: GymViewModel) {
                     onOpenRecords = { go("records") },
                     onOpenMeasurements = { go("measurements") },
                     liftsWithRecords = records.size,
+                    goalWeightKg = settings.goalWeightKg,
                     restDays = markers.filter { it.kind == DayKinds.REST }.map { it.dateEpochDay }.toSet()
                 )
             }

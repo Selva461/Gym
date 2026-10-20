@@ -15,6 +15,7 @@ import dev.avles.gym.domain.Plates
 import dev.avles.gym.domain.RestTimes
 import dev.avles.gym.domain.SetKinds
 import dev.avles.gym.domain.Warmups
+import dev.avles.gym.domain.WeightGoal
 import dev.avles.gym.domain.Weekly
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -333,5 +334,19 @@ class ToolkitTest {
         assertEquals(60, RestTimes.forLift(curl, 60))
         assertEquals(120, RestTimes.forLift(row, 120))
         assertEquals(120, RestTimes.forLift(null, 120))
+    }
+
+    // ---- Weight goal ----------------------------------------------------------
+
+    @Test
+    fun `the weekly rate is the trend line, and the date follows only toward the goal`() {
+        // Losing exactly 0.1 kg a day for two weeks: 0.7 kg a week.
+        val weights = (0..13).map { BodyWeight(dateEpochDay = 100L + it, weightKg = 80.0 - it * 0.1) }
+        val rate = WeightGoal.weeklyRate(weights, today = 113)!!
+        assertEquals(-0.7, rate, 1e-9)
+        assertEquals(64, WeightGoal.daysToGoal(78.7, 72.3, rate)) // 6.4 kg at 0.1 a day
+        assertNull(WeightGoal.daysToGoal(78.7, 82.0, rate)) // heading the other way
+        assertEquals(0, WeightGoal.daysToGoal(72.3, 72.3, rate))
+        assertNull(WeightGoal.weeklyRate(weights.take(2), today = 113))
     }
 }

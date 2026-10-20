@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.GymSettings
+import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.GymViewModel
 import dev.avles.gym.ui.components.rememberTextSharer
 import dev.avles.gym.ui.components.Hairline
@@ -67,6 +68,9 @@ fun SettingsScreen(
     var minute by remember(settings) { mutableStateOf(settings.reminderMinute.toString()) }
     var remindersOn by remember(settings) { mutableStateOf(settings.remindersOn) }
     var restByLift by remember(settings) { mutableStateOf(settings.restByLift) }
+    var goalWeight by remember(settings) {
+        mutableStateOf(if (settings.goalWeightKg > 0) Training.formatWeight(settings.goalWeightKg) else "")
+    }
     var water by remember(settings) { mutableStateOf(settings.waterGlasses.toString()) }
     var calculating by remember { mutableStateOf(false) }
 
@@ -94,7 +98,17 @@ fun SettingsScreen(
             NumField(kcal, { kcal = it }, "calories", Modifier.weight(1f))
         }
         Spacer(Modifier.height(12.dp))
-        NumField(water, { water = it }, "water, glasses of 250 ml", Modifier.fillMaxWidth())
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            NumField(water, { water = it }, "water, glasses", Modifier.weight(1f))
+            OutlinedTextField(
+                value = goalWeight,
+                onValueChange = { goalWeight = it.filter { c -> c.isDigit() || c == '.' } },
+                label = { Text("goal weight, kg") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.weight(1f)
+            )
+        }
         TextButton(onClick = { calculating = true }) {
             Text("Work these out from my body", color = Sage)
         }
@@ -192,6 +206,7 @@ fun SettingsScreen(
                         reminderMinute = (minute.toIntOrNull() ?: settings.reminderMinute).coerceIn(0, 59),
                         remindersOn = remindersOn,
                         restByLift = restByLift,
+                        goalWeightKg = goalWeight.toDoubleOrNull()?.takeIf { it in 30.0..300.0 } ?: 0.0,
                         waterGlasses = (water.toIntOrNull() ?: settings.waterGlasses).coerceIn(1, 30)
                     )
                 )
