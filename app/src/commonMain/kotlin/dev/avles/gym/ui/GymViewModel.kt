@@ -464,6 +464,10 @@ class GymViewModel(
             if (_lastPrSetId.value == setId) _lastPrSetId.value = null
         }
 
+    fun setExerciseNotes(exerciseId: Long, notes: String) = viewModelScope.launch {
+        repo.setExerciseNotes(exerciseId, notes)
+    }
+
     fun addExercise(name: String, group: String) = viewModelScope.launch {
         if (name.isNotBlank()) repo.addExercise(name.trim(), group)
     }

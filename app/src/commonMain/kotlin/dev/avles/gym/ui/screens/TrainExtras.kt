@@ -17,12 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -419,4 +421,34 @@ internal fun RestBanner(secondsLeft: Int, onSkip: () -> Unit, onAdjust: (Int) ->
         RestAdjustRow(onAdjust)
         TextButton(onClick = onSkip) { Text("Skip", color = Brass) }
     }
+}
+
+/** Your note on a lift: seat height, pin hole, the grip a shoulder dislikes. */
+@Composable
+fun LiftNoteDialog(exercise: Exercise, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var text by remember(exercise.id) { mutableStateOf(exercise.notes) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Slate,
+        title = { Text(exercise.name, color = Bone) },
+        text = {
+            Column {
+                Text(
+                    "Shown under the lift every time you pick it.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.take(300) },
+                    label = { Text("e.g. seat on 4, pins at hole 3") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = { onSave(text) }) { Text("Save", color = Brass) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Mute) } }
+    )
 }

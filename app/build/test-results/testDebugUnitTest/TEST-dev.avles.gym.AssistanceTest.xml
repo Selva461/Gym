@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.AssistanceTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:45:45.947Z" hostname="vm" time="0.049">
+<testsuite name="dev.avles.gym.AssistanceTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:49:05.877Z" hostname="vm" time="0.037">
   <properties/>
-  <testcase name="the seeded machines are flagged, and nothing else is" classname="dev.avles.gym.AssistanceTest" time="0.015"/>
+  <testcase name="the seeded machines are flagged, and nothing else is" classname="dev.avles.gym.AssistanceTest" time="0.014"/>
   <testcase name="help is never counted as volume, and has no estimated max" classname="dev.avles.gym.AssistanceTest" time="0.001"/>
-  <testcase name="the hardest set of a session is the one with least help" classname="dev.avles.gym.AssistanceTest" time="0.012"/>
-  <testcase name="labels say help, so a number is never read the wrong way round" classname="dev.avles.gym.AssistanceTest" time="0.005"/>
+  <testcase name="the hardest set of a session is the one with least help" classname="dev.avles.gym.AssistanceTest" time="0.01"/>
+  <testcase name="labels say help, so a number is never read the wrong way round" classname="dev.avles.gym.AssistanceTest" time="0.003"/>
   <testcase name="below the top the help stays and one more rep is the target" classname="dev.avles.gym.AssistanceTest" time="0.0"/>
   <testcase name="a stall suggests more help, not a lighter plate" classname="dev.avles.gym.AssistanceTest" time="0.002"/>
   <testcase name="a record is less help for as many reps" classname="dev.avles.gym.AssistanceTest" time="0.0"/>
-  <testcase name="at the top of the range the help comes down, not up" classname="dev.avles.gym.AssistanceTest" time="0.009"/>
-  <testcase name="help never goes below zero, and zero is the lift itself" classname="dev.avles.gym.AssistanceTest" time="0.002"/>
-  <testcase name="milestones count down to the unassisted lift" classname="dev.avles.gym.AssistanceTest" time="0.001"/>
+  <testcase name="at the top of the range the help comes down, not up" classname="dev.avles.gym.AssistanceTest" time="0.004"/>
+  <testcase name="help never goes below zero, and zero is the lift itself" classname="dev.avles.gym.AssistanceTest" time="0.001"/>
+  <testcase name="milestones count down to the unassisted lift" classname="dev.avles.gym.AssistanceTest" time="0.0"/>
   <testcase name="a lift is recognised by its name whatever the case" classname="dev.avles.gym.AssistanceTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

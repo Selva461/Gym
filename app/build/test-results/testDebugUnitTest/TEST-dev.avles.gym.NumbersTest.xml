@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.NumbersTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:45:46.673Z" hostname="vm" time="0.376">
+<testsuite name="dev.avles.gym.NumbersTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:49:06.644Z" hostname="vm" time="0.397">
   <properties/>
-  <testcase name="trimmed drops a zero fraction and keeps a real one" classname="dev.avles.gym.NumbersTest" time="0.0"/>
-  <testcase name="clock pads seconds" classname="dev.avles.gym.NumbersTest" time="0.0"/>
-  <testcase name="fixed agrees with String format across the range the app displays" classname="dev.avles.gym.NumbersTest" time="0.356"/>
-  <testcase name="fixed rounds the way a person reading the digits expects" classname="dev.avles.gym.NumbersTest" time="0.002"/>
-  <testcase name="dates agree with java time" classname="dev.avles.gym.NumbersTest" time="0.017"/>
+  <testcase name="trimmed drops a zero fraction and keeps a real one" classname="dev.avles.gym.NumbersTest" time="0.001"/>
+  <testcase name="clock pads seconds" classname="dev.avles.gym.NumbersTest" time="0.001"/>
+  <testcase name="fixed agrees with String format across the range the app displays" classname="dev.avles.gym.NumbersTest" time="0.38"/>
+  <testcase name="fixed rounds the way a person reading the digits expects" classname="dev.avles.gym.NumbersTest" time="0.0"/>
+  <testcase name="dates agree with java time" classname="dev.avles.gym.NumbersTest" time="0.013"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

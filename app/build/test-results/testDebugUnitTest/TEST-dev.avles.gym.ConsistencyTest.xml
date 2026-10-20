@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.ConsistencyTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:45:46.078Z" hostname="vm" time="0.004">
+<testsuite name="dev.avles.gym.ConsistencyTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:49:05.990Z" hostname="vm" time="0.005">
   <properties/>
-  <testcase name="a rest day with no training either side is not a streak" classname="dev.avles.gym.ConsistencyTest" time="0.001"/>
+  <testcase name="a rest day with no training either side is not a streak" classname="dev.avles.gym.ConsistencyTest" time="0.0"/>
   <testcase name="a planned rest day joins the run rather than ending it" classname="dev.avles.gym.ConsistencyTest" time="0.0"/>
   <testcase name="consecutive days ending today count" classname="dev.avles.gym.ConsistencyTest" time="0.0"/>
-  <testcase name="an empty today does not break a run that ended yesterday" classname="dev.avles.gym.ConsistencyTest" time="0.0"/>
+  <testcase name="an empty today does not break a run that ended yesterday" classname="dev.avles.gym.ConsistencyTest" time="0.001"/>
   <testcase name="resting today does not end the run" classname="dev.avles.gym.ConsistencyTest" time="0.0"/>
   <testcase name="a missed day still breaks the run" classname="dev.avles.gym.ConsistencyTest" time="0.0"/>
   <testcase name="rest days join two runs in the longest streak too" classname="dev.avles.gym.ConsistencyTest" time="0.0"/>
-  <testcase name="no history is a streak of zero" classname="dev.avles.gym.ConsistencyTest" time="0.0"/>
+  <testcase name="no history is a streak of zero" classname="dev.avles.gym.ConsistencyTest" time="0.001"/>
   <testcase name="window count looks back the right distance" classname="dev.avles.gym.ConsistencyTest" time="0.001"/>
   <testcase name="a two day gap ends the run" classname="dev.avles.gym.ConsistencyTest" time="0.0"/>
   <testcase name="longest streak survives gaps" classname="dev.avles.gym.ConsistencyTest" time="0.0"/>

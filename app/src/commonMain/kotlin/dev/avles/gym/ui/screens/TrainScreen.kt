@@ -117,7 +117,8 @@ fun TrainScreen(
     onAdjustRest: (Int) -> Unit = {},
     workoutReport: LiftHistory.Report? = null,
     onDismissReport: () -> Unit = {},
-    liftHistory: (Long) -> Flow<List<SetRow>> = { flowOf(emptyList()) }
+    liftHistory: (Long) -> Flow<List<SetRow>> = { flowOf(emptyList()) },
+    onSetNotes: (Long, String) -> Unit = { _, _ -> }
 ) {
     // Hoisted here because a set can be opened from the live session or from a past
     // one inside the session dialog, and both should land on the same editor.
@@ -157,6 +158,7 @@ fun TrainScreen(
                 onAdjustRest = onAdjustRest,
                 onAddExercise = onAddExercise,
                 liftHistory = liftHistory,
+                onSetNotes = onSetNotes,
                 modifier = modifier
             )
         }
@@ -377,6 +379,7 @@ private fun ActiveSessionPane(
     onAdjustRest: (Int) -> Unit,
     onAddExercise: (String, String) -> Unit,
     liftHistory: (Long) -> Flow<List<SetRow>>,
+    onSetNotes: (Long, String) -> Unit,
     modifier: Modifier
 ) {
     val session = state.active ?: return
@@ -391,6 +394,7 @@ private fun ActiveSessionPane(
     var showingReference by remember { mutableStateOf<Exercise?>(null) }
     var showingHistory by remember { mutableStateOf<Exercise?>(null) }
     var showPlates by remember { mutableStateOf(false) }
+    var editingNote by remember { mutableStateOf<Exercise?>(null) }
 
     val volume = Training.volume(state.sets)
     val working = state.sets.count { !it.isWarmup }
@@ -483,6 +487,14 @@ private fun ActiveSessionPane(
                     color = if (selectedExercise == null) Faint else Bone
                 )
             }
+            selectedExercise?.notes?.takeIf { it.isNotBlank() }?.let { note ->
+                Text(
+                    note,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Mute,
+                    modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                )
+            }
 
             if (guidance != null) {
                 Spacer(Modifier.height(8.dp))
@@ -492,6 +504,9 @@ private fun ActiveSessionPane(
                     }
                     TextButton(onClick = { showingHistory = selectedExercise }) {
                         Text("History", color = Brass, style = MaterialTheme.typography.labelSmall)
+                    }
+                    TextButton(onClick = { editingNote = selectedExercise }) {
+                        Text("Note", color = Brass, style = MaterialTheme.typography.labelSmall)
                     }
                     guidance.guide?.let {
                         Text(
@@ -674,6 +689,14 @@ private fun ActiveSessionPane(
         val history by remember(exercise.id) { liftHistory(exercise.id) }
             .collectAsStateWithLifecycle(emptyList())
         LiftHistoryDialog(exercise, history, onDismiss = { showingHistory = null })
+    }
+
+    editingNote?.let { exercise ->
+        LiftNoteDialog(
+            exercise = exercise,
+            onSave = { onSetNotes(exercise.id, it); editingNote = null },
+            onDismiss = { editingNote = null }
+        )
     }
 
     if (showPlates) {

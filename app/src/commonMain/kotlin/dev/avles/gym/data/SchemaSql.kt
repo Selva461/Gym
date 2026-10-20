@@ -190,6 +190,13 @@ object SchemaSql {
 
     val V10_STATEMENTS = listOf(ADD_SET_KIND, ADD_SET_RPE)
 
+    // ---- v11: your own notes on a lift --------------------------------------
+
+    const val ADD_EXERCISE_NOTES = "ALTER TABLE `exercise` ADD COLUMN `notes` TEXT NOT NULL DEFAULT ''"
+    const val EXPECTED_EXERCISE_NOTES_COLUMN = "`notes` TEXT NOT NULL DEFAULT ''"
+
+    val V11_STATEMENTS = listOf(ADD_EXERCISE_NOTES)
+
     /** Every statement the v5 migration runs, in order. */
     val V5_STATEMENTS = listOf(
         CREATE_PROGRESS_PHOTO,

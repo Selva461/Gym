@@ -419,4 +419,7 @@ interface GymDao {
 
     @Query("DELETE FROM body_measurement WHERE dateEpochDay = :day")
     suspend fun deleteMeasurementsOn(day: Long)
+
+    @Query("UPDATE exercise SET notes = :notes WHERE id = :id")
+    suspend fun setExerciseNotes(id: Long, notes: String)
 }

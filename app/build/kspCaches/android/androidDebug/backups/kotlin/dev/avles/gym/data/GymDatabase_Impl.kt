@@ -32,10 +32,10 @@ public class GymDatabase_Impl : GymDatabase() {
   }
 
   protected override fun createOpenDelegate(): RoomOpenDelegate {
-    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(10,
-        "816dbc3425cb7cd94c8b51c462e12ddf", "6a99d823079c4c7931d7b08dff928735") {
+    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(11,
+        "aeaf3ebf046c642bbe24ec97c316b1a8", "032bfa23c3c0681bcd1b376c418969cd") {
       public override fun createAllTables(connection: SQLiteConnection) {
-        connection.execSQL("CREATE TABLE IF NOT EXISTS `exercise` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `muscleGroup` TEXT NOT NULL, `isBodyweight` INTEGER NOT NULL, `isCustom` INTEGER NOT NULL, `repLow` INTEGER NOT NULL, `repHigh` INTEGER NOT NULL, `incrementKg` REAL NOT NULL, `isAssisted` INTEGER NOT NULL DEFAULT 0)")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `exercise` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `muscleGroup` TEXT NOT NULL, `isBodyweight` INTEGER NOT NULL, `isCustom` INTEGER NOT NULL, `repLow` INTEGER NOT NULL, `repHigh` INTEGER NOT NULL, `incrementKg` REAL NOT NULL, `isAssisted` INTEGER NOT NULL DEFAULT 0, `notes` TEXT NOT NULL DEFAULT '')")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `workout_session` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `label` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER, `notes` TEXT NOT NULL, `splitId` INTEGER)")
         connection.execSQL("CREATE INDEX IF NOT EXISTS `index_workout_session_dateEpochDay` ON `workout_session` (`dateEpochDay`)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `set_entry` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `exerciseId` INTEGER NOT NULL, `setIndex` INTEGER NOT NULL, `weightKg` REAL NOT NULL, `reps` INTEGER NOT NULL, `isWarmup` INTEGER NOT NULL, `loggedAt` INTEGER NOT NULL, `variation` TEXT NOT NULL DEFAULT '', `kind` TEXT NOT NULL DEFAULT '', `rpe` REAL NOT NULL DEFAULT 0)")
@@ -60,7 +60,7 @@ public class GymDatabase_Impl : GymDatabase() {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `body_measurement` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `part` TEXT NOT NULL, `cm` REAL NOT NULL)")
         connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_body_measurement_dateEpochDay_part` ON `body_measurement` (`dateEpochDay`, `part`)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
-        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '816dbc3425cb7cd94c8b51c462e12ddf')")
+        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aeaf3ebf046c642bbe24ec97c316b1a8')")
       }
 
       public override fun dropAllTables(connection: SQLiteConnection) {
@@ -112,6 +112,8 @@ public class GymDatabase_Impl : GymDatabase() {
         _columnsExercise.put("incrementKg", TableInfo.Column("incrementKg", "REAL", true, 0, null,
             TableInfo.CREATED_FROM_ENTITY))
         _columnsExercise.put("isAssisted", TableInfo.Column("isAssisted", "INTEGER", true, 0, "0",
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsExercise.put("notes", TableInfo.Column("notes", "TEXT", true, 0, "''",
             TableInfo.CREATED_FROM_ENTITY))
         val _foreignKeysExercise: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
         val _indicesExercise: MutableSet<TableInfo.Index> = mutableSetOf()

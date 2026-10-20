@@ -69,7 +69,7 @@ public class GymDao_Impl(
     this.__db = __db
     this.__insertAdapterOfExercise = object : EntityInsertAdapter<Exercise>() {
       protected override fun createQuery(): String =
-          "INSERT OR IGNORE INTO `exercise` (`id`,`name`,`muscleGroup`,`isBodyweight`,`isCustom`,`repLow`,`repHigh`,`incrementKg`,`isAssisted`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?)"
+          "INSERT OR IGNORE INTO `exercise` (`id`,`name`,`muscleGroup`,`isBodyweight`,`isCustom`,`repLow`,`repHigh`,`incrementKg`,`isAssisted`,`notes`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?)"
 
       protected override fun bind(statement: SQLiteStatement, entity: Exercise) {
         statement.bindLong(1, entity.id)
@@ -84,6 +84,7 @@ public class GymDao_Impl(
         statement.bindDouble(8, entity.incrementKg)
         val _tmp_2: Int = if (entity.isAssisted) 1 else 0
         statement.bindLong(9, _tmp_2.toLong())
+        statement.bindText(10, entity.notes)
       }
     }
     this.__insertAdapterOfWorkoutSession = object : EntityInsertAdapter<WorkoutSession>() {
@@ -306,7 +307,7 @@ public class GymDao_Impl(
     }
     this.__updateAdapterOfExercise = object : EntityDeleteOrUpdateAdapter<Exercise>() {
       protected override fun createQuery(): String =
-          "UPDATE OR ABORT `exercise` SET `id` = ?,`name` = ?,`muscleGroup` = ?,`isBodyweight` = ?,`isCustom` = ?,`repLow` = ?,`repHigh` = ?,`incrementKg` = ?,`isAssisted` = ? WHERE `id` = ?"
+          "UPDATE OR ABORT `exercise` SET `id` = ?,`name` = ?,`muscleGroup` = ?,`isBodyweight` = ?,`isCustom` = ?,`repLow` = ?,`repHigh` = ?,`incrementKg` = ?,`isAssisted` = ?,`notes` = ? WHERE `id` = ?"
 
       protected override fun bind(statement: SQLiteStatement, entity: Exercise) {
         statement.bindLong(1, entity.id)
@@ -321,7 +322,8 @@ public class GymDao_Impl(
         statement.bindDouble(8, entity.incrementKg)
         val _tmp_2: Int = if (entity.isAssisted) 1 else 0
         statement.bindLong(9, _tmp_2.toLong())
-        statement.bindLong(10, entity.id)
+        statement.bindText(10, entity.notes)
+        statement.bindLong(11, entity.id)
       }
     }
     this.__updateAdapterOfWorkoutSession = object : EntityDeleteOrUpdateAdapter<WorkoutSession>() {
@@ -520,6 +522,7 @@ public class GymDao_Impl(
         val _columnIndexOfRepHigh: Int = getColumnIndexOrThrow(_stmt, "repHigh")
         val _columnIndexOfIncrementKg: Int = getColumnIndexOrThrow(_stmt, "incrementKg")
         val _columnIndexOfIsAssisted: Int = getColumnIndexOrThrow(_stmt, "isAssisted")
+        val _columnIndexOfNotes: Int = getColumnIndexOrThrow(_stmt, "notes")
         val _result: MutableList<Exercise> = mutableListOf()
         while (_stmt.step()) {
           val _item: Exercise
@@ -547,8 +550,10 @@ public class GymDao_Impl(
           val _tmp_2: Int
           _tmp_2 = _stmt.getLong(_columnIndexOfIsAssisted).toInt()
           _tmpIsAssisted = _tmp_2 != 0
+          val _tmpNotes: String
+          _tmpNotes = _stmt.getText(_columnIndexOfNotes)
           _item =
-              Exercise(_tmpId,_tmpName,_tmpMuscleGroup,_tmpIsBodyweight,_tmpIsCustom,_tmpRepLow,_tmpRepHigh,_tmpIncrementKg,_tmpIsAssisted)
+              Exercise(_tmpId,_tmpName,_tmpMuscleGroup,_tmpIsBodyweight,_tmpIsCustom,_tmpRepLow,_tmpRepHigh,_tmpIncrementKg,_tmpIsAssisted,_tmpNotes)
           _result.add(_item)
         }
         _result
@@ -610,6 +615,7 @@ public class GymDao_Impl(
         val _columnIndexOfRepHigh: Int = getColumnIndexOrThrow(_stmt, "repHigh")
         val _columnIndexOfIncrementKg: Int = getColumnIndexOrThrow(_stmt, "incrementKg")
         val _columnIndexOfIsAssisted: Int = getColumnIndexOrThrow(_stmt, "isAssisted")
+        val _columnIndexOfNotes: Int = getColumnIndexOrThrow(_stmt, "notes")
         val _result: MutableList<Exercise> = mutableListOf()
         while (_stmt.step()) {
           val _item: Exercise
@@ -637,8 +643,10 @@ public class GymDao_Impl(
           val _tmp_2: Int
           _tmp_2 = _stmt.getLong(_columnIndexOfIsAssisted).toInt()
           _tmpIsAssisted = _tmp_2 != 0
+          val _tmpNotes: String
+          _tmpNotes = _stmt.getText(_columnIndexOfNotes)
           _item =
-              Exercise(_tmpId,_tmpName,_tmpMuscleGroup,_tmpIsBodyweight,_tmpIsCustom,_tmpRepLow,_tmpRepHigh,_tmpIncrementKg,_tmpIsAssisted)
+              Exercise(_tmpId,_tmpName,_tmpMuscleGroup,_tmpIsBodyweight,_tmpIsCustom,_tmpRepLow,_tmpRepHigh,_tmpIncrementKg,_tmpIsAssisted,_tmpNotes)
           _result.add(_item)
         }
         _result
@@ -692,6 +700,7 @@ public class GymDao_Impl(
         val _columnIndexOfRepHigh: Int = getColumnIndexOrThrow(_stmt, "repHigh")
         val _columnIndexOfIncrementKg: Int = getColumnIndexOrThrow(_stmt, "incrementKg")
         val _columnIndexOfIsAssisted: Int = getColumnIndexOrThrow(_stmt, "isAssisted")
+        val _columnIndexOfNotes: Int = getColumnIndexOrThrow(_stmt, "notes")
         val _result: MutableList<Exercise> = mutableListOf()
         while (_stmt.step()) {
           val _item: Exercise
@@ -719,8 +728,10 @@ public class GymDao_Impl(
           val _tmp_2: Int
           _tmp_2 = _stmt.getLong(_columnIndexOfIsAssisted).toInt()
           _tmpIsAssisted = _tmp_2 != 0
+          val _tmpNotes: String
+          _tmpNotes = _stmt.getText(_columnIndexOfNotes)
           _item =
-              Exercise(_tmpId,_tmpName,_tmpMuscleGroup,_tmpIsBodyweight,_tmpIsCustom,_tmpRepLow,_tmpRepHigh,_tmpIncrementKg,_tmpIsAssisted)
+              Exercise(_tmpId,_tmpName,_tmpMuscleGroup,_tmpIsBodyweight,_tmpIsCustom,_tmpRepLow,_tmpRepHigh,_tmpIncrementKg,_tmpIsAssisted,_tmpNotes)
           _result.add(_item)
         }
         _result
@@ -2651,6 +2662,22 @@ public class GymDao_Impl(
       try {
         var _argIndex: Int = 1
         _stmt.bindLong(_argIndex, day)
+        _stmt.step()
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
+  public override suspend fun setExerciseNotes(id: Long, notes: String) {
+    val _sql: String = "UPDATE exercise SET notes = ? WHERE id = ?"
+    return performSuspending(__db, false, true) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        var _argIndex: Int = 1
+        _stmt.bindText(_argIndex, notes)
+        _argIndex = 2
+        _stmt.bindLong(_argIndex, id)
         _stmt.step()
       } finally {
         _stmt.close()

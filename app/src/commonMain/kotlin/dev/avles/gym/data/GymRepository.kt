@@ -238,6 +238,8 @@ class GymRepository(
         if (weightKg >= 0 && reps > 0) dao.editSet(setId, weightKg, reps, isWarmup, variation.trim(), kind, rpe)
     }
 
+    suspend fun setExerciseNotes(id: Long, notes: String) = dao.setExerciseNotes(id, notes.trim())
+
     suspend fun addExercise(name: String, muscleGroup: String): Long =
         dao.insertExercise(
             Exercise(

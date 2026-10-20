@@ -252,7 +252,8 @@ fun GymNav(vm: GymViewModel) {
                     onAdjustRest = vm::adjustRest,
                     workoutReport = workoutReport,
                     onDismissReport = vm::dismissWorkoutReport,
-                    liftHistory = vm::liftHistory
+                    liftHistory = vm::liftHistory,
+                    onSetNotes = { id, notes -> vm.setExerciseNotes(id, notes) }
                 )
             }
             composable("fuel") {

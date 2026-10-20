@@ -27,8 +27,8 @@ Standing constraints, all deliberate and all enforced by tests:
 | Platforms | Android (APK, every push) and iOS (unsigned IPA, on `main` or on demand) — both green |
 | Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | 706 built in (76 Tamil curries in `SeedFoodsTamil.kt`, 92 staples in `SeedFoodsStaples.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
-| Database | v10 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`), migrations 1→…→10, Room 2.7 KMP |
-| Tests | 221, none needing a device |
+| Database | v11 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`), migrations 1→…→11, Room 2.7 KMP |
+| Tests | 222, none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 |
 
 This phase, in order:
@@ -221,7 +221,7 @@ before pushing. Strike an item when it lands.
    US Navy body-fat estimate. Room v9: new table, migration, MigrationSqlTest.
 9. ~~**Set types and RPE**~~ (done) (warm-up exists; add drop set, to failure, RPE 6–10).
    Room v9/v10 column with a default, migration and test.
-10. **Notes on a lift** that show every time it is picked. Schema column.
+10. ~~**Notes on a lift**~~ (done) that show every time it is picked. Schema column.
 
 Left out on purpose, because they need the network or another app's permission:
 barcode lookup, step counts, Health Connect / HealthKit sync, social feeds.

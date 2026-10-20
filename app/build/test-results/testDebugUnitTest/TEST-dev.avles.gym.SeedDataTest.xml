@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.SeedDataTest" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:45:47.196Z" hostname="vm" time="0.049">
+<testsuite name="dev.avles.gym.SeedDataTest" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:49:07.151Z" hostname="vm" time="0.045">
   <properties/>
-  <testcase name="every lift has a usable progression range" classname="dev.avles.gym.SeedDataTest" time="0.009"/>
-  <testcase name="no food claims more saturated fat than total fat" classname="dev.avles.gym.SeedDataTest" time="0.003"/>
-  <testcase name="every built-in food passes the gate an imported one must pass" classname="dev.avles.gym.SeedDataTest" time="0.012"/>
-  <testcase name="every food is named, has a unit, and carries no negative value" classname="dev.avles.gym.SeedDataTest" time="0.005"/>
+  <testcase name="every lift has a usable progression range" classname="dev.avles.gym.SeedDataTest" time="0.007"/>
+  <testcase name="no food claims more saturated fat than total fat" classname="dev.avles.gym.SeedDataTest" time="0.002"/>
+  <testcase name="every built-in food passes the gate an imported one must pass" classname="dev.avles.gym.SeedDataTest" time="0.002"/>
+  <testcase name="every food is named, has a unit, and carries no negative value" classname="dev.avles.gym.SeedDataTest" time="0.016"/>
   <testcase name="the muscles people neglect still have real choice" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
   <testcase name="no split is empty or nameless, and none is named twice" classname="dev.avles.gym.SeedDataTest" time="0.0"/>
-  <testcase name="every lift falls into a group the app offers" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
+  <testcase name="every lift falls into a group the app offers" classname="dev.avles.gym.SeedDataTest" time="0.0"/>
   <testcase name="no food claims more fibre or sugar than it has carbohydrate" classname="dev.avles.gym.SeedDataTest" time="0.002"/>
-  <testcase name="declared calories agree with the macros that make them up" classname="dev.avles.gym.SeedDataTest" time="0.002"/>
-  <testcase name="the catalogue covers the range it was built for" classname="dev.avles.gym.SeedDataTest" time="0.002"/>
+  <testcase name="declared calories agree with the macros that make them up" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
+  <testcase name="the catalogue covers the range it was built for" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
   <testcase name="the muscles people train on cables have cable work" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
   <testcase name="a supplement files itself under the supplement slot" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
-  <testcase name="the protein foods actually carry protein" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
-  <testcase name="the catalogue is the size the README claims" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
+  <testcase name="the protein foods actually carry protein" classname="dev.avles.gym.SeedDataTest" time="0.002"/>
+  <testcase name="the catalogue is the size the README claims" classname="dev.avles.gym.SeedDataTest" time="0.0"/>
   <testcase name="nothing in the catalogue is named twice" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
   <testcase name="every major muscle has work on free weights and on a machine" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
   <testcase name="every lift named by a split exists in the catalogue" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
-  <testcase name="every food name is a usable length" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
+  <testcase name="every food name is a usable length" classname="dev.avles.gym.SeedDataTest" time="0.0"/>
   <testcase name="supplements are flagged and filed consistently" classname="dev.avles.gym.SeedDataTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

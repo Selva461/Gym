@@ -105,7 +105,12 @@ data class Exercise(
      * for it — see [dev.avles.gym.domain.Assistance]. Set from the name when a lift
      * is created.
      */
-    @ColumnInfo(defaultValue = "0") val isAssisted: Boolean = false
+    @ColumnInfo(defaultValue = "0") val isAssisted: Boolean = false,
+    /**
+     * Your own note on the lift — seat on 4, pins at the third hole, left shoulder
+     * dislikes a wide grip — shown every time it is picked. Empty until written.
+     */
+    @ColumnInfo(defaultValue = "''") val notes: String = ""
 )
 
 @Entity(tableName = "workout_session", indices = [Index("dateEpochDay")])

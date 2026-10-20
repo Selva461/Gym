@@ -34,7 +34,7 @@ class MigrationSqlTest {
          * Kept in step with @Database(version = ...) by hand, and asserted below so
          * the two cannot drift apart silently.
          */
-        const val DB_VERSION = 10
+        const val DB_VERSION = 11
     }
 
     /**
@@ -274,6 +274,13 @@ class MigrationSqlTest {
         assertTrue(SchemaSql.ADD_EXERCISE_ASSISTED.endsWith(SchemaSql.EXPECTED_EXERCISE_ASSISTED_COLUMN))
         assertTrue(SchemaSql.FLAG_ASSISTED_EXERCISES.contains("'%assisted%'"))
         assertEquals(listOf(SchemaSql.ADD_EXERCISE_ASSISTED, SchemaSql.FLAG_ASSISTED_EXERCISES), SchemaSql.V8_STATEMENTS)
+    }
+
+    @Test
+    fun `the lift notes column carries the same default on both sides`() {
+        val create = expectedCreateSql("exercise")
+        assertTrue("exercise lacks ${SchemaSql.EXPECTED_EXERCISE_NOTES_COLUMN}: $create", create.contains(SchemaSql.EXPECTED_EXERCISE_NOTES_COLUMN))
+        assertTrue(SchemaSql.ADD_EXERCISE_NOTES.endsWith(SchemaSql.EXPECTED_EXERCISE_NOTES_COLUMN))
     }
 
     /** Version 10 adds a set's kind and RPE, both with defaults so old sets stay valid. */
