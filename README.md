@@ -90,14 +90,18 @@ excluded from iCloud backup, as they are left out of Android's cloud backup.
 
 ```
 Today      protein first, then calories, carbs and fat against targets, water, a week strip
-Train      split → lift → kg × reps, a target for every lift, last time's sets one tap away,
-           plate calculator, rest timer you can stretch, a live session clock, records,
-           a per-lift history with a rep-max table, and a summary card when you finish
+Train      split → lift → kg × reps, a target for every lift with its warm-up ramp, last
+           time's sets one tap away, plate calculator, drop sets, sets to failure and RPE,
+           a note per lift, rest that fits the lift and can be stretched, a live session
+           clock, a per-lift history with a rep-max table, and a summary card at the end
 Fuel       search or browse 767 foods by name or local name, macros and 15 micronutrients,
-           water, and "same breakfast as yesterday" in one tap
-Progress   weight trend, 14-day volume, streaks, a month calendar, personal records,
-           tape measurements with a body-fat estimate, and progress photos
-Settings   your targets (or work them out from your body), water goal, rest, reminder
+           recent and usual foods, saved meals, water, a fasting timer, and "same
+           breakfast as yesterday" in one tap
+Progress   weight trend and goal date, 14-day volume, streaks, achievements, a month
+           calendar, personal records, a one-rep max calculator, tape measurements with
+           a body-fat estimate, and progress photos
+Settings   your targets (or work them out from your body), water and weight goals, rest,
+           reminder, and your data exported as CSV through the share sheet
 ```
 
 **What the big apps do, offline.** The habits Strong, Hevy, MyFitnessPal and
