@@ -28,7 +28,7 @@ Standing constraints, all deliberate and all enforced by tests:
 | Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | 706 built in (76 Tamil curries in `SeedFoodsTamil.kt`, 92 staples in `SeedFoodsStaples.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
 | Database | v8 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`), migrations 1→…→8, Room 2.7 KMP |
-| Tests | 213, none needing a device |
+| Tests | 214, none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 |
 
 This phase, in order:
@@ -214,7 +214,7 @@ before pushing. Strike an item when it lands.
    against target, versus last week. No schema.
 5. ~~**Recent foods**~~ (done) next to the usual suspects: the last distinct foods logged.
    A DAO query; no schema.
-6. **Fasting timer** (16:8 and the like) on Fuel, start time in DataStore.
+6. ~~**Fasting timer**~~ (done) (16:8 and the like) on Fuel, start time in DataStore.
 7. **Export to CSV** of sets, food log and weights through the platform share
    sheet (a new expect/actual seam; no network involved).
 8. **Body measurements** (waist, chest, arms, hips, thighs) with trends, and a

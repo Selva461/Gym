@@ -2,6 +2,7 @@ package dev.avles.gym
 
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.Energy
+import dev.avles.gym.domain.Fasting
 import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.MonthGrid
 import dev.avles.gym.domain.Plates
@@ -232,5 +233,20 @@ class ToolkitTest {
             set(6, 4, 60.0, 10, at = 60, warmup = true)
         )
         assertEquals(listOf(5L, 3L, 1L), LiftHistory.bestPerLift(sets).map { it.setId })
+    }
+
+    // ---- Fasting --------------------------------------------------------------
+
+    @Test
+    fun `a fast reports how far along it is and when it is done`() {
+        val start = 1_000_000L
+        val half = Fasting.state(start, 16, start + 8 * 3_600_000L)!!
+        assertEquals(0.5f, half.fraction, 1e-6f)
+        assertFalse(half.isDone)
+        assertEquals("8:00", Fasting.hoursMinutes(half.remainingSeconds))
+        assertTrue(Fasting.state(start, 16, start + 17 * 3_600_000L)!!.isDone)
+        assertNull(Fasting.state(0L, 16, start))
+        assertEquals(0L, Fasting.state(start, 16, start - 5_000)!!.elapsedSeconds)
+        assertEquals("26:05", Fasting.hoursMinutes(26 * 3600L + 5 * 60))
     }
 }

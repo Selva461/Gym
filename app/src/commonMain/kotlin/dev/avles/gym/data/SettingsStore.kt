@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -23,7 +24,11 @@ data class GymSettings(
      */
     val goalId: String = "balanced",
     /** Daily water target in 250 ml glasses. */
-    val waterGlasses: Int = 8
+    val waterGlasses: Int = 8,
+    /** When the running fast began, epoch millis; zero when not fasting. */
+    val fastStartedAt: Long = 0L,
+    /** How long a fast is meant to run, in hours. */
+    val fastHours: Int = 16
 )
 
 class SettingsStore(private val store: DataStore<Preferences>) {
@@ -37,6 +42,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val on = intPreferencesKey("reminders_on")
         val goal = stringPreferencesKey("goal_id")
         val water = intPreferencesKey("water_glasses")
+        val fastStart = longPreferencesKey("fast_started_at")
+        val fastHours = intPreferencesKey("fast_hours")
     }
 
     val settings: Flow<GymSettings> = store.data.map { p ->
@@ -48,7 +55,9 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             reminderMinute = p[Keys.minute] ?: 45,
             remindersOn = (p[Keys.on] ?: 1) == 1,
             goalId = p[Keys.goal] ?: "balanced",
-            waterGlasses = p[Keys.water] ?: 8
+            waterGlasses = p[Keys.water] ?: 8,
+            fastStartedAt = p[Keys.fastStart] ?: 0L,
+            fastHours = p[Keys.fastHours] ?: 16
         )
     }
 
@@ -62,6 +71,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             p[Keys.on] = if (s.remindersOn) 1 else 0
             p[Keys.goal] = s.goalId
             p[Keys.water] = s.waterGlasses
+            p[Keys.fastStart] = s.fastStartedAt
+            p[Keys.fastHours] = s.fastHours
         }
     }
 }

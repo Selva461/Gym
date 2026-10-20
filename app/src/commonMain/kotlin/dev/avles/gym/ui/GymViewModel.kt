@@ -731,6 +731,18 @@ class GymViewModel(
         if (kg > 0) repo.recordWeight(_selectedDate.value, kg)
     }
 
+    // ---------- Fasting ----------
+
+    fun startFast(hours: Int) = viewModelScope.launch {
+        // Read from the store, not the StateFlow: before anything collects it, that
+        // holds the defaults, and saving a copy of them would wipe the real targets.
+        settingsStore.save(settingsStore.settings.first().copy(fastStartedAt = Dates.nowMillis(), fastHours = hours))
+    }
+
+    fun endFast() = viewModelScope.launch {
+        settingsStore.save(settingsStore.settings.first().copy(fastStartedAt = 0L))
+    }
+
     fun saveSettings(updated: GymSettings) = viewModelScope.launch {
         settingsStore.save(updated)
         if (updated.remindersOn) {

@@ -266,7 +266,9 @@ fun GymNav(vm: GymViewModel) {
                     onAddWater = vm::addWater,
                     onRemoveWater = { vm.removeWater() },
                     onCopyMeal = { meal, done -> vm.copyMealFromDayBefore(meal, done) },
-                    recentFoods = recentFoods
+                    recentFoods = recentFoods,
+                    onStartFast = { vm.startFast(it) },
+                    onEndFast = { vm.endFast() }
                 )
             }
             composable("progress") {

@@ -50,6 +50,7 @@ import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.DayState
 import dev.avles.gym.ui.components.Chip
 import dev.avles.gym.ui.components.EmptyNote
+import dev.avles.gym.ui.components.FastingCard
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.MacroBars
@@ -82,7 +83,9 @@ fun FuelScreen(
     onAddWater: () -> Unit = {},
     onRemoveWater: () -> Unit = {},
     onCopyMeal: (String, (Int) -> Unit) -> Unit = { _, _ -> },
-    recentFoods: List<FoodItem> = emptyList()
+    recentFoods: List<FoodItem> = emptyList(),
+    onStartFast: (Int) -> Unit = {},
+    onEndFast: () -> Unit = {}
 ) {
     var meal by remember { mutableStateOf(defaultMealForNow()) }
     var query by remember { mutableStateOf("") }
@@ -228,6 +231,10 @@ fun FuelScreen(
                 onToggle = { nutrientsOpen = !nutrientsOpen },
                 anythingLogged = day.rows.isNotEmpty()
             )
+            Spacer(Modifier.height(18.dp))
+            Hairline()
+            Spacer(Modifier.height(18.dp))
+            FastingCard(day.settings.fastStartedAt, day.settings.fastHours, onStartFast, onEndFast)
             Spacer(Modifier.height(18.dp))
             Hairline()
             Spacer(Modifier.height(18.dp))
