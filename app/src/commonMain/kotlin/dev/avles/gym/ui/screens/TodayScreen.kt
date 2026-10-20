@@ -80,9 +80,11 @@ fun TodayScreen(
     latestWeightKg: Double? = null,
     onWelcomeTargets: (Energy.Targets) -> Unit = {},
     onDismissWelcome: () -> Unit = {},
-    showWelcome: Boolean = false
+    showWelcome: Boolean = false,
+    onRecordWeight: (Double) -> Unit = {}
 ) {
     var calculating by remember { mutableStateOf(false) }
+    var weighing by remember { mutableStateOf(false) }
     val today = Dates.today()
     val protein = day.totals.proteinG
     val kcal = day.totals.kcal
@@ -139,6 +141,20 @@ fun TodayScreen(
             if (showWelcome) {
                 WelcomeCard(onSetTargets = { calculating = true }, onDismiss = onDismissWelcome)
                 Spacer(Modifier.height(22.dp))
+            }
+            // The weigh-in belongs first thing in the morning, which is when this
+            // screen is open; going to Progress for it is a detour nobody takes.
+            if (day.date == today) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        latestWeightKg?.let { "Last weigh-in ${Training.formatWeight(it)} kg" } ?: "No weigh-in yet",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Faint,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = { weighing = true }) { Text("Weigh in", color = Sage) }
+                }
+                Spacer(Modifier.height(8.dp))
             }
         }
 
@@ -301,6 +317,14 @@ fun TodayScreen(
                 )
             }
         }
+    }
+
+    if (weighing) {
+        WeightDialog(
+            suggestion = latestWeightKg,
+            onSave = { onRecordWeight(it); weighing = false },
+            onDismiss = { weighing = false }
+        )
     }
 
     if (calculating) {

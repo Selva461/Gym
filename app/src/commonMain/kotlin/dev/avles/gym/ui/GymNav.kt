@@ -213,6 +213,7 @@ fun GymNav(vm: GymViewModel) {
                     onWelcomeTargets = { vm.applyWelcomeTargets(it) },
                     onDismissWelcome = { vm.dismissWelcome() },
                     showWelcome = needsWelcome,
+                    onRecordWeight = vm::recordWeight,
                     day = day,
                     dots = dots,
                     onSelectDate = vm::selectDate,

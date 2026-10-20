@@ -251,5 +251,5 @@ barcode lookup, step counts, Health Connect / HealthKit sync, social feeds.
 20. ~~**Calories burned**~~ (done) for a session (MET, by duration and body weight) on the
     workout card and Today, as the food apps add exercise.
 21. **Cardio**: log minutes and distance for cardio work (Room v13).
-22. **Quick weigh-in** from Today.
+22. ~~**Quick weigh-in**~~ (done) from Today.
 23. **Water reminders** through the existing notifier, during waking hours.

@@ -291,7 +291,7 @@ fun ProgressScreen(
 }
 
 @Composable
-private fun WeightDialog(
+internal fun WeightDialog(
     suggestion: Double?,
     onSave: (Double) -> Unit,
     onDismiss: () -> Unit
