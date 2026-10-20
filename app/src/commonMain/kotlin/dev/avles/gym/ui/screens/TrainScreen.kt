@@ -7,6 +7,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -395,6 +397,7 @@ private fun ActiveSessionPane(
     var showingHistory by remember { mutableStateOf<Exercise?>(null) }
     var showPlates by remember { mutableStateOf(false) }
     var editingNote by remember { mutableStateOf<Exercise?>(null) }
+    var swapping by remember { mutableStateOf<Exercise?>(null) }
 
     val volume = Training.volume(state.sets)
     val working = state.sets.count { !it.isWarmup }
@@ -498,7 +501,10 @@ private fun ActiveSessionPane(
 
             if (guidance != null) {
                 Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     TextButton(onClick = { showingReference = selectedExercise }) {
                         Text("How to do it", color = Brass, style = MaterialTheme.typography.labelSmall)
                     }
@@ -508,13 +514,19 @@ private fun ActiveSessionPane(
                     TextButton(onClick = { editingNote = selectedExercise }) {
                         Text("Note", color = Brass, style = MaterialTheme.typography.labelSmall)
                     }
-                    guidance.guide?.let {
-                        Text(
-                            it.summary,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Faint
-                        )
+                    TextButton(onClick = { swapping = selectedExercise }) {
+                        Text("Swap", color = Brass, style = MaterialTheme.typography.labelSmall)
                     }
+                }
+                // On its own line now that four actions share the row above, which
+                // would otherwise squeeze it to one word per line on a narrow phone.
+                guidance.guide?.let {
+                    Text(
+                        it.summary,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Faint,
+                        modifier = Modifier.padding(start = 12.dp)
+                    )
                 }
 
                 // Grip and stance live directly under the lift because they have to be
@@ -689,6 +701,15 @@ private fun ActiveSessionPane(
         val history by remember(exercise.id) { liftHistory(exercise.id) }
             .collectAsStateWithLifecycle(emptyList())
         LiftHistoryDialog(exercise, history, onDismiss = { showingHistory = null })
+    }
+
+    swapping?.let { exercise ->
+        SwapLiftDialog(
+            target = exercise,
+            catalogue = state.exercises,
+            onPick = { onSelectExercise(it.id); swapping = null },
+            onDismiss = { swapping = null }
+        )
     }
 
     editingNote?.let { exercise ->

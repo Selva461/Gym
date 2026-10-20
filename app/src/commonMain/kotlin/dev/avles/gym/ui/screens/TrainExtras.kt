@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import dev.avles.gym.core.Dates
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.SetRow
+import dev.avles.gym.domain.Alternatives
+import dev.avles.gym.domain.ExerciseGuide
 import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Numbers
 import dev.avles.gym.domain.Training
@@ -49,6 +51,7 @@ import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.components.Motion.fadeThrough
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.TrendChart
+import dev.avles.gym.ui.components.pressable
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
@@ -450,5 +453,42 @@ fun LiftNoteDialog(exercise: Exercise, onSave: (String) -> Unit, onDismiss: () -
         },
         confirmButton = { TextButton(onClick = { onSave(text) }) { Text("Save", color = Brass) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Mute) } }
+    )
+}
+
+/** Lifts for the same muscle on other equipment, for when the machine is taken. */
+@Composable
+fun SwapLiftDialog(target: Exercise, catalogue: List<Exercise>, onPick: (Exercise) -> Unit, onDismiss: () -> Unit) {
+    val swaps = remember(target.id, catalogue) { Alternatives.forLift(target, catalogue) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Slate,
+        title = { Text("Instead of ${target.name}", color = Bone) },
+        text = {
+            Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
+                Text(
+                    "Same muscle, the same movement first, on other equipment first.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint
+                )
+                Spacer(Modifier.height(8.dp))
+                swaps.forEach { lift ->
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .pressable(RoundedCornerShape(8.dp), pressedScale = 0.985f) { onPick(lift) }
+                            .padding(vertical = 10.dp, horizontal = 4.dp)
+                    ) {
+                        Text(lift.name, style = MaterialTheme.typography.bodyLarge, color = Bone)
+                        Text(
+                            ExerciseGuide.of(lift).equipment.label + "  ·  ${lift.repLow}-${lift.repHigh} reps",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Mute
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close", color = Brass) } }
     )
 }

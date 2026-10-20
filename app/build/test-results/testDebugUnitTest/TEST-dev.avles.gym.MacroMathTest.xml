@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.MacroMathTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:59:42.026Z" hostname="vm" time="0.004">
+<testsuite name="dev.avles.gym.MacroMathTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-20T18:04:13.209Z" hostname="vm" time="0.005">
   <properties/>
   <testcase name="meals are grouped independently" classname="dev.avles.gym.MacroMathTest" time="0.002"/>
-  <testcase name="totals scale with quantity" classname="dev.avles.gym.MacroMathTest" time="0.001"/>
+  <testcase name="totals scale with quantity" classname="dev.avles.gym.MacroMathTest" time="0.0"/>
   <testcase name="implied calories use four four nine" classname="dev.avles.gym.MacroMathTest" time="0.0"/>
   <testcase name="ratio clamps and survives a zero target" classname="dev.avles.gym.MacroMathTest" time="0.0"/>
-  <testcase name="totals of an empty day are zero, not a crash" classname="dev.avles.gym.MacroMathTest" time="0.001"/>
-  <testcase name="macro split of an empty day is all zeroes" classname="dev.avles.gym.MacroMathTest" time="0.0"/>
+  <testcase name="totals of an empty day are zero, not a crash" classname="dev.avles.gym.MacroMathTest" time="0.0"/>
+  <testcase name="macro split of an empty day is all zeroes" classname="dev.avles.gym.MacroMathTest" time="0.001"/>
   <testcase name="raw ratio reports going over" classname="dev.avles.gym.MacroMathTest" time="0.0"/>
-  <testcase name="totals accept fractional servings" classname="dev.avles.gym.MacroMathTest" time="0.0"/>
+  <testcase name="totals accept fractional servings" classname="dev.avles.gym.MacroMathTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

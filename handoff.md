@@ -28,7 +28,7 @@ Standing constraints, all deliberate and all enforced by tests:
 | Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | 706 built in (76 Tamil curries in `SeedFoodsTamil.kt`, 92 staples in `SeedFoodsStaples.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
 | Database | v12 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`), migrations 1→…→12, Room 2.7 KMP |
-| Tests | 227, none needing a device |
+| Tests | 228, none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 |
 
 This phase, in order:
@@ -236,3 +236,12 @@ barcode lookup, step counts, Health Connect / HealthKit sync, social feeds.
 13. ~~**1RM calculator**~~ (done) on Progress: weight × reps → estimated max and table.
 14. ~~**Weight goal**~~ (done) in Settings with the trend's weekly rate and a projected date.
 15. ~~**Saved meals**~~ (done): name a meal and log all of it in one tap. Room v12 table.
+
+### Backlog, third wave
+
+16. ~~**Alternatives**~~ (done) for a lift: same muscle, different equipment, for when the
+    machine is taken. From the catalogue; no schema.
+17. **Save a past session as a split** from the session dialog.
+18. **First-run welcome** on Today: set targets (with the calculator) before the
+    first log, instead of silently using the defaults.
+19. **Supersets**: pair two lifts so the rest timer waits for the second.

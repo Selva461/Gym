@@ -6,6 +6,8 @@ import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.SavedMealRow
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.Achievements
+import dev.avles.gym.domain.Alternatives
+import dev.avles.gym.data.SeedData
 import dev.avles.gym.domain.Energy
 import dev.avles.gym.domain.Export
 import dev.avles.gym.domain.Fasting
@@ -363,5 +365,18 @@ class ToolkitTest {
         assertEquals(listOf("Breakfast usual", "Post-workout"), meals.map { it.name })
         assertEquals(247.0, meals.first().kcal, 1e-9)
         assertEquals(12.0, meals.first().proteinG, 1e-9)
+    }
+
+    // ---- Alternatives ---------------------------------------------------------
+
+    @Test
+    fun `a swap stays on the muscle and offers other equipment first`() {
+        val catalogue = SeedData.exercises().mapIndexed { i, e -> e.copy(id = i + 1L) }
+        val target = catalogue.first { it.name.contains("bench press", ignoreCase = true) && it.muscleGroup == "Chest" }
+        val swaps = Alternatives.forLift(target, catalogue)
+        assertEquals(8, swaps.size)
+        assertTrue(swaps.all { it.muscleGroup == target.muscleGroup && it.id != target.id })
+        val kit = swaps.take(4).map { dev.avles.gym.domain.ExerciseGuide.of(it).equipment }
+        assertEquals("the first four should all be different kit: $kit", kit.size, kit.toSet().size)
     }
 }
