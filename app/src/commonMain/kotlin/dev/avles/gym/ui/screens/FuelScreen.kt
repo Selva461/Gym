@@ -81,7 +81,8 @@ fun FuelScreen(
     modifier: Modifier = Modifier,
     onAddWater: () -> Unit = {},
     onRemoveWater: () -> Unit = {},
-    onCopyMeal: (String, (Int) -> Unit) -> Unit = { _, _ -> }
+    onCopyMeal: (String, (Int) -> Unit) -> Unit = { _, _ -> },
+    recentFoods: List<FoodItem> = emptyList()
 ) {
     var meal by remember { mutableStateOf(defaultMealForNow()) }
     var query by remember { mutableStateOf("") }
@@ -196,30 +197,17 @@ fun FuelScreen(
                 if (quickPicks.isEmpty()) {
                     EmptyNote("Search, or pick a category above. What you log most will surface here.")
                 } else {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(quickPicks, key = { "quick-${it.id}" }) { food ->
-                            Box(
-                                Modifier
-                                    .animateItem()
-                                    .pressable(RoundedCornerShape(10.dp)) { pending = food }
-                                    .background(Raised)
-                                    .padding(horizontal = 14.dp, vertical = 10.dp)
-                            ) {
-                                Column {
-                                    Text(
-                                        food.name,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = Bone
-                                    )
-                                    Text(
-                                        "${food.proteinG.roundToInt()} g protein",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Sage
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    FoodChipRow(quickPicks, "quick") { pending = it }
+                }
+                // Recent is what you had this week; usual is what you have most. The
+                // food apps keep both because the answer differs on any day that
+                // is not like the others.
+                val recent = recentFoods.filter { r -> quickPicks.none { it.id == r.id } }
+                if (recent.isNotEmpty()) {
+                    Spacer(Modifier.height(16.dp))
+                    SectionHeading("Recent")
+                    Spacer(Modifier.height(10.dp))
+                    FoodChipRow(recent, "recent") { pending = it }
                 }
                 Spacer(Modifier.height(20.dp))
             }
@@ -723,6 +711,31 @@ private fun PresetRow(current: String, onPick: (String) -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(preset, style = MaterialTheme.typography.labelMedium, color = if (on) Sage else Bone)
+            }
+        }
+    }
+}
+
+/** A scrolling row of foods to log with one tap, each showing its protein. */
+@Composable
+private fun FoodChipRow(foods: List<FoodItem>, keyPrefix: String, onPick: (FoodItem) -> Unit) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(foods, key = { "$keyPrefix-${it.id}" }) { food ->
+            Box(
+                Modifier
+                    .animateItem()
+                    .pressable(RoundedCornerShape(10.dp)) { onPick(food) }
+                    .background(Raised)
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
+            ) {
+                Column {
+                    Text(food.name, style = MaterialTheme.typography.labelMedium, color = Bone)
+                    Text(
+                        "${food.proteinG.roundToInt()} g protein",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Sage
+                    )
+                }
             }
         }
     }

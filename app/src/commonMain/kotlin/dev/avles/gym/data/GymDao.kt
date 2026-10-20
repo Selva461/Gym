@@ -232,6 +232,19 @@ interface GymDao {
     )
     fun mostLoggedFoods(limit: Int): Flow<List<FoodItem>>
 
+    /** The foods logged most recently, each once: the "recent" tab of every food diary. */
+    @Query(
+        """
+        SELECT f.* FROM food_log l
+        JOIN food_item f ON f.id = l.foodId
+        WHERE l.meal != :exceptMeal
+        GROUP BY f.id
+        ORDER BY MAX(l.loggedAt) DESC
+        LIMIT :limit
+        """
+    )
+    fun recentFoods(limit: Int, exceptMeal: String): Flow<List<FoodItem>>
+
     @Query("SELECT DISTINCT dateEpochDay FROM food_log ORDER BY dateEpochDay DESC")
     fun allLoggedFoodDays(): Flow<List<Long>>
 

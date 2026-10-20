@@ -1607,6 +1607,126 @@ public class GymDao_Impl(
     }
   }
 
+  public override fun recentFoods(limit: Int, exceptMeal: String): Flow<List<FoodItem>> {
+    val _sql: String = """
+        |
+        |        SELECT f.* FROM food_log l
+        |        JOIN food_item f ON f.id = l.foodId
+        |        WHERE l.meal != ?
+        |        GROUP BY f.id
+        |        ORDER BY MAX(l.loggedAt) DESC
+        |        LIMIT ?
+        |        
+        """.trimMargin()
+    return createFlow(__db, false, arrayOf("food_log", "food_item")) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        var _argIndex: Int = 1
+        _stmt.bindText(_argIndex, exceptMeal)
+        _argIndex = 2
+        _stmt.bindLong(_argIndex, limit.toLong())
+        val _columnIndexOfId: Int = getColumnIndexOrThrow(_stmt, "id")
+        val _columnIndexOfName: Int = getColumnIndexOrThrow(_stmt, "name")
+        val _columnIndexOfUnitLabel: Int = getColumnIndexOrThrow(_stmt, "unitLabel")
+        val _columnIndexOfKcal: Int = getColumnIndexOrThrow(_stmt, "kcal")
+        val _columnIndexOfProteinG: Int = getColumnIndexOrThrow(_stmt, "proteinG")
+        val _columnIndexOfCarbsG: Int = getColumnIndexOrThrow(_stmt, "carbsG")
+        val _columnIndexOfFatG: Int = getColumnIndexOrThrow(_stmt, "fatG")
+        val _columnIndexOfCategory: Int = getColumnIndexOrThrow(_stmt, "category")
+        val _columnIndexOfIsCustom: Int = getColumnIndexOrThrow(_stmt, "isCustom")
+        val _columnIndexOfIsSupplement: Int = getColumnIndexOrThrow(_stmt, "isSupplement")
+        val _columnIndexOfAliases: Int = getColumnIndexOrThrow(_stmt, "aliases")
+        val _columnIndexOfSource: Int = getColumnIndexOrThrow(_stmt, "source")
+        val _columnIndexOfFiberG: Int = getColumnIndexOrThrow(_stmt, "fiberG")
+        val _columnIndexOfSugarG: Int = getColumnIndexOrThrow(_stmt, "sugarG")
+        val _columnIndexOfSatFatG: Int = getColumnIndexOrThrow(_stmt, "satFatG")
+        val _columnIndexOfSodiumMg: Int = getColumnIndexOrThrow(_stmt, "sodiumMg")
+        val _columnIndexOfPotassiumMg: Int = getColumnIndexOrThrow(_stmt, "potassiumMg")
+        val _columnIndexOfCalciumMg: Int = getColumnIndexOrThrow(_stmt, "calciumMg")
+        val _columnIndexOfIronMg: Int = getColumnIndexOrThrow(_stmt, "ironMg")
+        val _columnIndexOfMagnesiumMg: Int = getColumnIndexOrThrow(_stmt, "magnesiumMg")
+        val _columnIndexOfZincMg: Int = getColumnIndexOrThrow(_stmt, "zincMg")
+        val _columnIndexOfVitAMcg: Int = getColumnIndexOrThrow(_stmt, "vitAMcg")
+        val _columnIndexOfVitCMg: Int = getColumnIndexOrThrow(_stmt, "vitCMg")
+        val _columnIndexOfVitDMcg: Int = getColumnIndexOrThrow(_stmt, "vitDMcg")
+        val _columnIndexOfVitB12Mcg: Int = getColumnIndexOrThrow(_stmt, "vitB12Mcg")
+        val _columnIndexOfFolateMcg: Int = getColumnIndexOrThrow(_stmt, "folateMcg")
+        val _columnIndexOfOmega3G: Int = getColumnIndexOrThrow(_stmt, "omega3G")
+        val _result: MutableList<FoodItem> = mutableListOf()
+        while (_stmt.step()) {
+          val _item: FoodItem
+          val _tmpId: Long
+          _tmpId = _stmt.getLong(_columnIndexOfId)
+          val _tmpName: String
+          _tmpName = _stmt.getText(_columnIndexOfName)
+          val _tmpUnitLabel: String
+          _tmpUnitLabel = _stmt.getText(_columnIndexOfUnitLabel)
+          val _tmpKcal: Double
+          _tmpKcal = _stmt.getDouble(_columnIndexOfKcal)
+          val _tmpProteinG: Double
+          _tmpProteinG = _stmt.getDouble(_columnIndexOfProteinG)
+          val _tmpCarbsG: Double
+          _tmpCarbsG = _stmt.getDouble(_columnIndexOfCarbsG)
+          val _tmpFatG: Double
+          _tmpFatG = _stmt.getDouble(_columnIndexOfFatG)
+          val _tmpCategory: String
+          _tmpCategory = _stmt.getText(_columnIndexOfCategory)
+          val _tmpIsCustom: Boolean
+          val _tmp: Int
+          _tmp = _stmt.getLong(_columnIndexOfIsCustom).toInt()
+          _tmpIsCustom = _tmp != 0
+          val _tmpIsSupplement: Boolean
+          val _tmp_1: Int
+          _tmp_1 = _stmt.getLong(_columnIndexOfIsSupplement).toInt()
+          _tmpIsSupplement = _tmp_1 != 0
+          val _tmpAliases: String
+          _tmpAliases = _stmt.getText(_columnIndexOfAliases)
+          val _tmpSource: String
+          _tmpSource = _stmt.getText(_columnIndexOfSource)
+          val _tmpMicros: Micros
+          val _tmpFiberG: Double
+          _tmpFiberG = _stmt.getDouble(_columnIndexOfFiberG)
+          val _tmpSugarG: Double
+          _tmpSugarG = _stmt.getDouble(_columnIndexOfSugarG)
+          val _tmpSatFatG: Double
+          _tmpSatFatG = _stmt.getDouble(_columnIndexOfSatFatG)
+          val _tmpSodiumMg: Double
+          _tmpSodiumMg = _stmt.getDouble(_columnIndexOfSodiumMg)
+          val _tmpPotassiumMg: Double
+          _tmpPotassiumMg = _stmt.getDouble(_columnIndexOfPotassiumMg)
+          val _tmpCalciumMg: Double
+          _tmpCalciumMg = _stmt.getDouble(_columnIndexOfCalciumMg)
+          val _tmpIronMg: Double
+          _tmpIronMg = _stmt.getDouble(_columnIndexOfIronMg)
+          val _tmpMagnesiumMg: Double
+          _tmpMagnesiumMg = _stmt.getDouble(_columnIndexOfMagnesiumMg)
+          val _tmpZincMg: Double
+          _tmpZincMg = _stmt.getDouble(_columnIndexOfZincMg)
+          val _tmpVitAMcg: Double
+          _tmpVitAMcg = _stmt.getDouble(_columnIndexOfVitAMcg)
+          val _tmpVitCMg: Double
+          _tmpVitCMg = _stmt.getDouble(_columnIndexOfVitCMg)
+          val _tmpVitDMcg: Double
+          _tmpVitDMcg = _stmt.getDouble(_columnIndexOfVitDMcg)
+          val _tmpVitB12Mcg: Double
+          _tmpVitB12Mcg = _stmt.getDouble(_columnIndexOfVitB12Mcg)
+          val _tmpFolateMcg: Double
+          _tmpFolateMcg = _stmt.getDouble(_columnIndexOfFolateMcg)
+          val _tmpOmega3G: Double
+          _tmpOmega3G = _stmt.getDouble(_columnIndexOfOmega3G)
+          _tmpMicros =
+              Micros(_tmpFiberG,_tmpSugarG,_tmpSatFatG,_tmpSodiumMg,_tmpPotassiumMg,_tmpCalciumMg,_tmpIronMg,_tmpMagnesiumMg,_tmpZincMg,_tmpVitAMcg,_tmpVitCMg,_tmpVitDMcg,_tmpVitB12Mcg,_tmpFolateMcg,_tmpOmega3G)
+          _item =
+              FoodItem(_tmpId,_tmpName,_tmpUnitLabel,_tmpKcal,_tmpProteinG,_tmpCarbsG,_tmpFatG,_tmpCategory,_tmpIsCustom,_tmpIsSupplement,_tmpMicros,_tmpAliases,_tmpSource)
+          _result.add(_item)
+        }
+        _result
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
   public override fun allLoggedFoodDays(): Flow<List<Long>> {
     val _sql: String = "SELECT DISTINCT dateEpochDay FROM food_log ORDER BY dateEpochDay DESC"
     return createFlow(__db, false, arrayOf("food_log")) { _connection ->

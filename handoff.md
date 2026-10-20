@@ -212,7 +212,7 @@ before pushing. Strike an item when it lands.
    Needs one DAO query over all working sets (read-only, no schema change).
 4. ~~**This week** card~~ (done) on Today: sessions, volume, average protein and calories
    against target, versus last week. No schema.
-5. **Recent foods** next to the usual suspects: the last distinct foods logged.
+5. ~~**Recent foods**~~ (done) next to the usual suspects: the last distinct foods logged.
    A DAO query; no schema.
 6. **Fasting timer** (16:8 and the like) on Fuel, start time in DataStore.
 7. **Export to CSV** of sets, food log and weights through the platform share

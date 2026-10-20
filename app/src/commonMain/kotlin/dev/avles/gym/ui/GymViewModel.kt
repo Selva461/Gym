@@ -240,6 +240,9 @@ class GymViewModel(
         .map { picks -> picks.filter { it.name != WATER_FOOD }.take(8) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    val recentFoods: StateFlow<List<FoodItem>> = repo.recentFoods()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     val foods: StateFlow<List<FoodItem>> = repo.foods
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
