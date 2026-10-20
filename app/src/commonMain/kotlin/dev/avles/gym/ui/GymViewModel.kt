@@ -3,6 +3,7 @@ package dev.avles.gym.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.avles.gym.data.BodyMeasurement
+import dev.avles.gym.data.CardioEntry
 import dev.avles.gym.data.BodyWeight
 import dev.avles.gym.data.DayVolume
 import dev.avles.gym.data.Exercise
@@ -609,6 +610,18 @@ class GymViewModel(
         }
 
     fun removeFoodLog(logId: Long) = viewModelScope.launch { repo.removeFoodLog(logId) }
+
+    // ---------- Cardio ----------
+
+    val cardio: StateFlow<List<CardioEntry>> = _selectedDate
+        .flatMapLatest { repo.cardioOn(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun logCardio(activity: String, minutes: Int, distanceKm: Double) = viewModelScope.launch {
+        repo.logCardio(_selectedDate.value, activity, minutes, distanceKm)
+    }
+
+    fun deleteCardio(id: Long) = viewModelScope.launch { repo.deleteCardio(id) }
 
     // ---------- Saved meals ----------
 

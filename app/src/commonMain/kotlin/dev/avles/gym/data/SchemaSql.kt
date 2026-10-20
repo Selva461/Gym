@@ -217,6 +217,22 @@ object SchemaSql {
 
     val V12_STATEMENTS = listOf(CREATE_SAVED_MEAL, CREATE_SAVED_MEAL_ITEM, INDEX_SAVED_MEAL_ITEM_MEAL)
 
+    // ---- v13: cardio ----------------------------------------------------------
+
+    const val CREATE_CARDIO_ENTRY =
+        "CREATE TABLE IF NOT EXISTS `cardio_entry` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`dateEpochDay` INTEGER NOT NULL, " +
+            "`activity` TEXT NOT NULL, " +
+            "`minutes` INTEGER NOT NULL, " +
+            "`distanceKm` REAL NOT NULL, " +
+            "`loggedAt` INTEGER NOT NULL)"
+
+    const val INDEX_CARDIO_ENTRY_DATE =
+        "CREATE INDEX IF NOT EXISTS `index_cardio_entry_dateEpochDay` ON `cardio_entry` (`dateEpochDay`)"
+
+    val V13_STATEMENTS = listOf(CREATE_CARDIO_ENTRY, INDEX_CARDIO_ENTRY_DATE)
+
     /** Every statement the v5 migration runs, in order. */
     val V5_STATEMENTS = listOf(
         CREATE_PROGRESS_PHOTO,

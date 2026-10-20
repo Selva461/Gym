@@ -482,3 +482,18 @@ data class SavedMealRow(
     val kcal: Double,
     val proteinG: Double
 )
+
+/**
+ * A cardio session: an activity, how long, optionally how far. Its own table rather
+ * than sets, because minutes and kilometres are not kilos and reps, and squeezing
+ * them into those columns would put a 5 km run into every volume total.
+ */
+@Entity(tableName = "cardio_entry", indices = [Index("dateEpochDay")])
+data class CardioEntry(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val dateEpochDay: Long,
+    val activity: String,
+    val minutes: Int,
+    val distanceKm: Double = 0.0,
+    val loggedAt: Long
+)

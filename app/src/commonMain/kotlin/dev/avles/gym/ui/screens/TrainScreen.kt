@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.avles.gym.core.Dates
+import dev.avles.gym.data.CardioEntry
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.PickedImage
 import dev.avles.gym.data.SessionSummary
@@ -122,7 +123,11 @@ fun TrainScreen(
     onSetNotes: (Long, String) -> Unit = { _, _ -> },
     superset: Supersets.Pair? = null,
     onStartSuperset: (Long, Long) -> Unit = { _, _ -> },
-    onEndSuperset: () -> Unit = {}
+    onEndSuperset: () -> Unit = {},
+    cardio: List<CardioEntry> = emptyList(),
+    bodyKg: Double = 0.0,
+    onLogCardio: (String, Int, Double) -> Unit = { _, _, _ -> },
+    onDeleteCardio: (Long) -> Unit = {}
 ) {
     // Hoisted here because a set can be opened from the live session or from a past
     // one inside the session dialog, and both should land on the same editor.
@@ -141,6 +146,7 @@ fun TrainScreen(
                 onSaveSplit = onSaveSplit,
                 onDeleteSplit = onDeleteSplit,
                 onOpenSession = onOpenSession,
+                cardio = { CardioSection(cardio, bodyKg, onLogCardio, onDeleteCardio) },
                 modifier = modifier
             )
         } else {
@@ -209,6 +215,7 @@ private fun StartSessionPane(
     onSaveSplit: (Long, String, List<Long>) -> Unit,
     onDeleteSplit: (Long) -> Unit,
     onOpenSession: (Long?) -> Unit,
+    cardio: @Composable () -> Unit,
     modifier: Modifier
 ) {
     var editingSplit by remember { mutableStateOf<SplitPlan?>(null) }
@@ -282,6 +289,10 @@ private fun StartSessionPane(
             }
 
             Spacer(Modifier.height(28.dp))
+            Hairline()
+            Spacer(Modifier.height(22.dp))
+            cardio()
+            Spacer(Modifier.height(18.dp))
             Hairline()
             Spacer(Modifier.height(22.dp))
             SectionHeading(

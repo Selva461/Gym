@@ -34,7 +34,7 @@ class MigrationSqlTest {
          * Kept in step with @Database(version = ...) by hand, and asserted below so
          * the two cannot drift apart silently.
          */
-        const val DB_VERSION = 12
+        const val DB_VERSION = 13
     }
 
     /**
@@ -274,6 +274,12 @@ class MigrationSqlTest {
         assertTrue(SchemaSql.ADD_EXERCISE_ASSISTED.endsWith(SchemaSql.EXPECTED_EXERCISE_ASSISTED_COLUMN))
         assertTrue(SchemaSql.FLAG_ASSISTED_EXERCISES.contains("'%assisted%'"))
         assertEquals(listOf(SchemaSql.ADD_EXERCISE_ASSISTED, SchemaSql.FLAG_ASSISTED_EXERCISES), SchemaSql.V8_STATEMENTS)
+    }
+
+    @Test
+    fun `the cardio table is created exactly as Room expects it`() {
+        assertEquals(expectedCreateSql("cardio_entry"), SchemaSql.CREATE_CARDIO_ENTRY)
+        assertEquals(expectedIndexSql("cardio_entry", "index_cardio_entry_dateEpochDay"), SchemaSql.INDEX_CARDIO_ENTRY_DATE)
     }
 
     @Test

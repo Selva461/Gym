@@ -8,6 +8,7 @@ import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.Achievements
 import dev.avles.gym.domain.Alternatives
 import dev.avles.gym.domain.Burn
+import dev.avles.gym.domain.Cardio
 import dev.avles.gym.data.SeedData
 import dev.avles.gym.domain.Energy
 import dev.avles.gym.domain.Export
@@ -415,5 +416,14 @@ class ToolkitTest {
         assertEquals(394, Burn.kcal(60, 75.0))
         assertEquals(0, Burn.kcal(60, 0.0))
         assertEquals(0, Burn.kcal(0, 75.0))
+    }
+
+    @Test
+    fun `cardio burns by its activity and gives a pace for a distance`() {
+        // 9.8 × 3.5 × 70 / 200 × 30 = 360.15
+        assertEquals(360, Cardio.kcal("Running", 30, 70.0))
+        assertEquals("6:00 /km", Cardio.pace(30, 5.0))
+        assertNull(Cardio.pace(30, 0.0))
+        assertEquals(5.0, Cardio.activity("Something else").met, 0.0)
     }
 }

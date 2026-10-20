@@ -262,6 +262,21 @@ class GymRepository(
 
     val savedMealRows: Flow<List<SavedMealRow>> = dao.savedMealRows()
 
+    fun cardioOn(day: LocalDate): Flow<List<CardioEntry>> = dao.cardioOn(day.epochDay)
+
+    suspend fun logCardio(day: LocalDate, activity: String, minutes: Int, distanceKm: Double) {
+        if (minutes > 0) {
+            dao.insertCardio(
+                CardioEntry(
+                    dateEpochDay = day.epochDay, activity = activity, minutes = minutes,
+                    distanceKm = distanceKm.coerceAtLeast(0.0), loggedAt = Dates.nowMillis()
+                )
+            )
+        }
+    }
+
+    suspend fun deleteCardio(id: Long) = dao.deleteCardio(id)
+
     /** Keeps [rows] as a meal called [name]. Nothing is saved for an empty meal. */
     suspend fun saveMeal(name: String, rows: List<FoodLogRow>) {
         if (rows.isEmpty() || name.isBlank()) return

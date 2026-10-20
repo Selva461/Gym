@@ -116,6 +116,7 @@ fun GymNav(vm: GymViewModel) {
     val records by vm.records.collectAsStateWithLifecycle()
     val superset by vm.superset.collectAsStateWithLifecycle()
     val needsWelcome by vm.needsWelcome.collectAsStateWithLifecycle()
+    val cardio by vm.cardio.collectAsStateWithLifecycle()
 
     val haptics = LocalHapticFeedback.current
 
@@ -265,7 +266,11 @@ fun GymNav(vm: GymViewModel) {
                     onSetNotes = { id, notes -> vm.setExerciseNotes(id, notes) },
                     superset = superset,
                     onStartSuperset = vm::startSuperset,
-                    onEndSuperset = vm::endSuperset
+                    onEndSuperset = vm::endSuperset,
+                    cardio = cardio,
+                    bodyKg = progress.weights.maxByOrNull { it.dateEpochDay }?.weightKg ?: 0.0,
+                    onLogCardio = { a, m, km -> vm.logCardio(a, m, km) },
+                    onDeleteCardio = { vm.deleteCardio(it) }
                 )
             }
             composable("fuel") {

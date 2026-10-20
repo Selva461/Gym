@@ -468,4 +468,15 @@ interface GymDao {
         """
     )
     suspend fun everySet(): List<SetRow>
+
+    // ---- Cardio ----
+
+    @Insert
+    suspend fun insertCardio(entry: CardioEntry): Long
+
+    @Query("DELETE FROM cardio_entry WHERE id = :id")
+    suspend fun deleteCardio(id: Long)
+
+    @Query("SELECT * FROM cardio_entry WHERE dateEpochDay = :day ORDER BY loggedAt ASC")
+    fun cardioOn(day: Long): Flow<List<CardioEntry>>
 }
