@@ -6,6 +6,7 @@ import android.content.Intent
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Notifications.dailyReminder(context)
+        if (intent.action == Notifications.ACTION_WATER) Notifications.waterReminder(context)
+        else Notifications.dailyReminder(context)
     }
 }

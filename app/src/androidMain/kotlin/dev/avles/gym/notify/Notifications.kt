@@ -22,6 +22,9 @@ object Notifications {
     private const val ID_REST = 1001
     private const val ID_REMINDER = 1002
     private const val REQUEST_DAILY = 2001
+    private const val REQUEST_WATER = 2002
+    private const val ID_WATER = 1003
+    const val ACTION_WATER = "dev.avles.gym.WATER"
 
     fun createChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
@@ -125,6 +128,51 @@ object Notifications {
             context,
             REQUEST_DAILY,
             Intent(context, ReminderReceiver::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+    /** Posted only in waking hours: the repeating alarm is inexact and runs all day. */
+    fun waterReminder(context: Context) {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        if (hour !in 10..20 || !canPost(context)) return
+        val n = NotificationCompat.Builder(context, CHANNEL_REMINDER)
+            .setSmallIcon(R.drawable.ic_stat_gym)
+            .setContentTitle("Water")
+            .setContentText("A glass now. Tap + on the water card once you have.")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setAutoCancel(true)
+            .setContentIntent(openAppIntent(context))
+            .build()
+        NotificationManagerCompat.from(context).notify(ID_WATER, n)
+    }
+
+    /** Every two hours from the next even hour; inexact, so no exact-alarm permission. */
+    fun scheduleWaterReminders(context: Context) {
+        val alarms = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        val start = Calendar.getInstance().apply {
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            add(Calendar.HOUR_OF_DAY, if (get(Calendar.HOUR_OF_DAY) % 2 == 0) 2 else 1)
+        }
+        alarms.setInexactRepeating(
+            AlarmManager.RTC_WAKEUP,
+            start.timeInMillis,
+            2 * AlarmManager.INTERVAL_HOUR,
+            waterPendingIntent(context)
+        )
+    }
+
+    fun cancelWaterReminders(context: Context) {
+        val alarms = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        alarms.cancel(waterPendingIntent(context))
+    }
+
+    private fun waterPendingIntent(context: Context): PendingIntent =
+        PendingIntent.getBroadcast(
+            context,
+            REQUEST_WATER,
+            Intent(context, ReminderReceiver::class.java).setAction(ACTION_WATER),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 }

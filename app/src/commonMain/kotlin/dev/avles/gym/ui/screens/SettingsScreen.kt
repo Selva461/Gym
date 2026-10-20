@@ -68,6 +68,7 @@ fun SettingsScreen(
     var minute by remember(settings) { mutableStateOf(settings.reminderMinute.toString()) }
     var remindersOn by remember(settings) { mutableStateOf(settings.remindersOn) }
     var restByLift by remember(settings) { mutableStateOf(settings.restByLift) }
+    var waterReminders by remember(settings) { mutableStateOf(settings.waterReminders) }
     var goalWeight by remember(settings) {
         mutableStateOf(if (settings.goalWeightKg > 0) Training.formatWeight(settings.goalWeightKg) else "")
     }
@@ -174,6 +175,22 @@ fun SettingsScreen(
             )
         }
         Spacer(Modifier.height(12.dp))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("Remind me to drink water", style = MaterialTheme.typography.bodyLarge, color = Bone)
+                Text("Every two hours, 10:00 to 20:00.", style = MaterialTheme.typography.labelSmall, color = Faint)
+            }
+            Switch(
+                checked = waterReminders,
+                onCheckedChange = { waterReminders = it },
+                colors = SwitchDefaults.colors(checkedThumbColor = Slate, checkedTrackColor = Brass, uncheckedTrackColor = Raised)
+            )
+        }
+        Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             NumField(hour, { hour = it }, "hour, 0-23", Modifier.weight(1f))
             NumField(minute, { minute = it }, "minute", Modifier.weight(1f))
@@ -206,6 +223,7 @@ fun SettingsScreen(
                         reminderMinute = (minute.toIntOrNull() ?: settings.reminderMinute).coerceIn(0, 59),
                         remindersOn = remindersOn,
                         restByLift = restByLift,
+                        waterReminders = waterReminders,
                         goalWeightKg = goalWeight.toDoubleOrNull()?.takeIf { it in 30.0..300.0 } ?: 0.0,
                         waterGlasses = (water.toIntOrNull() ?: settings.waterGlasses).coerceIn(1, 30)
                     )

@@ -24,4 +24,9 @@ interface Notifier {
     fun scheduleDailyReminder(hour: Int, minute: Int)
 
     fun cancelDailyReminder()
+
+    /** A nudge to drink every two hours from 10:00 to 20:00. Off unless asked for. */
+    fun scheduleWaterReminders() {}
+
+    fun cancelWaterReminders() {}
 }

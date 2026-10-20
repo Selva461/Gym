@@ -12,4 +12,8 @@ class AndroidNotifier(private val context: Context) : Notifier {
         Notifications.scheduleDailyReminder(context, hour, minute)
 
     override fun cancelDailyReminder() = Notifications.cancelDailyReminder(context)
+
+    override fun scheduleWaterReminders() = Notifications.scheduleWaterReminders(context)
+
+    override fun cancelWaterReminders() = Notifications.cancelWaterReminders(context)
 }

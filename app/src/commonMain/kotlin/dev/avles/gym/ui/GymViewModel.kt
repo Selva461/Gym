@@ -745,6 +745,7 @@ class GymViewModel(
         } else {
             notifier.cancelDailyReminder()
         }
+        if (updated.waterReminders) notifier.scheduleWaterReminders() else notifier.cancelWaterReminders()
     }
 
     private fun lastSessionOf(history: List<SetRow>, activeSessionId: Long?): List<SetRow> {

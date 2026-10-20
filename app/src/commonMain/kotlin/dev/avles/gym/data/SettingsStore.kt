@@ -37,7 +37,8 @@ data class GymSettings(
     /** Target body weight; zero for none. */
     val goalWeightKg: Double = 0.0,
     /** The first-run welcome has been answered or dismissed. */
-    val welcomed: Boolean = false
+    val welcomed: Boolean = false,
+    val waterReminders: Boolean = false
 )
 
 class SettingsStore(private val store: DataStore<Preferences>) {
@@ -58,6 +59,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val restByLift = intPreferencesKey("rest_by_lift")
         val goalWeight = doublePreferencesKey("goal_weight_kg")
         val welcomed = intPreferencesKey("welcomed")
+        val waterReminders = intPreferencesKey("water_reminders")
     }
 
     val settings: Flow<GymSettings> = store.data.map { p ->
@@ -76,7 +78,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             isFemale = (p[Keys.female] ?: 0) == 1,
             restByLift = (p[Keys.restByLift] ?: 1) == 1,
             goalWeightKg = p[Keys.goalWeight] ?: 0.0,
-            welcomed = (p[Keys.welcomed] ?: 0) == 1
+            welcomed = (p[Keys.welcomed] ?: 0) == 1,
+            waterReminders = (p[Keys.waterReminders] ?: 0) == 1
         )
     }
 
@@ -97,6 +100,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             p[Keys.restByLift] = if (s.restByLift) 1 else 0
             p[Keys.goalWeight] = s.goalWeightKg
             p[Keys.welcomed] = if (s.welcomed) 1 else 0
+            p[Keys.waterReminders] = if (s.waterReminders) 1 else 0
         }
     }
 }

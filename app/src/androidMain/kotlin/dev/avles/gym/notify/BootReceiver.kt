@@ -21,6 +21,7 @@ class BootReceiver : BroadcastReceiver() {
                 if (s.remindersOn) {
                     Notifications.scheduleDailyReminder(app, s.reminderHour, s.reminderMinute)
                 }
+                if (s.waterReminders) Notifications.scheduleWaterReminders(app)
             } finally {
                 pending.finish()
             }
