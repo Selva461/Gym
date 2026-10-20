@@ -112,6 +112,7 @@ fun GymNav(vm: GymViewModel) {
     val coach by vm.coachState.collectAsStateWithLifecycle()
     val patterns by vm.patternState.collectAsStateWithLifecycle()
     val workoutReport by vm.workoutReport.collectAsStateWithLifecycle()
+    val records by vm.records.collectAsStateWithLifecycle()
 
     val haptics = LocalHapticFeedback.current
 
@@ -282,6 +283,7 @@ fun GymNav(vm: GymViewModel) {
                     onOpenPatterns = { go("patterns") },
                     onOpenRecords = { go("records") },
                     onOpenMeasurements = { go("measurements") },
+                    liftsWithRecords = records.size,
                     restDays = markers.filter { it.kind == DayKinds.REST }.map { it.dateEpochDay }.toSet()
                 )
             }
@@ -298,7 +300,6 @@ fun GymNav(vm: GymViewModel) {
                 )
             }
             composable("records") {
-                val records by vm.records.collectAsStateWithLifecycle()
                 RecordsScreen(records = records, exercises = train.exercises, liftHistory = vm::liftHistory)
             }
             composable("patterns") {

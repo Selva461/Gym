@@ -28,7 +28,7 @@ Standing constraints, all deliberate and all enforced by tests:
 | Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | 706 built in (76 Tamil curries in `SeedFoodsTamil.kt`, 92 staples in `SeedFoodsStaples.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
 | Database | v11 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`), migrations 1→…→11, Room 2.7 KMP |
-| Tests | 222, none needing a device |
+| Tests | 223, none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 |
 
 This phase, in order:
@@ -228,7 +228,7 @@ barcode lookup, step counts, Health Connect / HealthKit sync, social feeds.
 
 ### Backlog, second wave
 
-11. **Achievements** on Progress: workouts logged (1/10/50/100/250), training
+11. ~~**Achievements**~~ (done) on Progress: workouts logged (1/10/50/100/250), training
     runs (7/30 days), total kilos moved (10k/100k/1M), records set, food logged
     days. Computed from data already stored; no schema.
 12. **Smart rest defaults**: a heavy compound (top of range ≤ 6) rests 3 min, an

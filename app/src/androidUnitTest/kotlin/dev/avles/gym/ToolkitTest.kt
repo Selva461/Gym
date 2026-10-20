@@ -3,6 +3,7 @@ package dev.avles.gym
 import dev.avles.gym.data.BodyMeasurement
 import dev.avles.gym.data.BodyWeight
 import dev.avles.gym.data.SetRow
+import dev.avles.gym.domain.Achievements
 import dev.avles.gym.domain.Energy
 import dev.avles.gym.domain.Export
 import dev.avles.gym.domain.Fasting
@@ -302,5 +303,18 @@ class ToolkitTest {
         assertEquals("drop set · RPE 8.5", SetKinds.describe(set(1, 1, 60.0, 8).copy(kind = SetKinds.DROP, rpe = 8.5)))
         assertEquals("RPE 10", SetKinds.describe(set(1, 1, 60.0, 8).copy(rpe = 10.0)))
         assertEquals("", SetKinds.describe(set(1, 1, 60.0, 8)))
+    }
+
+    // ---- Achievements ---------------------------------------------------------
+
+    @Test
+    fun `badges are earned at their number and the next one is the first unearned`() {
+        val t = Achievements.Totals(daysTrained = 12, longestRun = 7, kilosMoved = 120_000.0, liftsWithRecords = 4, daysFoodLogged = 0)
+        val earned = Achievements.all(t).filter { it.earned }.map { it.title }
+        assertEquals(listOf("First session", "10 training days", "3-day run", "7-day run", "10k kg", "100k kg"), earned)
+        val next = Achievements.next(t).associate { it.family to it.title }
+        assertEquals("50 training days", next["Training days"])
+        assertEquals("Records on 5 lifts", next["Lifts with a record"])
+        assertEquals(0.8f, Achievements.next(t).first { it.family == "Lifts with a record" }.progress, 1e-6f)
     }
 }

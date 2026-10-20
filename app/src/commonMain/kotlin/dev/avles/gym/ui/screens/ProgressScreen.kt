@@ -26,9 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.core.Dates
+import dev.avles.gym.domain.Achievements
 import dev.avles.gym.domain.Consistency
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.ProgressState
+import dev.avles.gym.ui.components.AchievementsCard
 import dev.avles.gym.ui.components.BarStrip
 import dev.avles.gym.ui.components.BigNumber
 import dev.avles.gym.ui.components.Hairline
@@ -54,6 +56,7 @@ fun ProgressScreen(
     modifier: Modifier = Modifier,
     onOpenRecords: () -> Unit = {},
     onOpenMeasurements: () -> Unit = {},
+    liftsWithRecords: Int = 0,
     restDays: Set<Long> = emptySet()
 ) {
     var logging by remember { mutableStateOf(false) }
@@ -225,7 +228,21 @@ fun ProgressScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = Faint
             )
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(26.dp))
+            Hairline()
+            Spacer(Modifier.height(22.dp))
+            AchievementsCard(
+                Achievements.Totals(
+                    daysTrained = state.trained.size,
+                    longestRun = Consistency.longestStreak(state.trained),
+                    kilosMoved = state.volume.sumOf { it.volume },
+                    liftsWithRecords = liftsWithRecords,
+                    daysFoodLogged = state.fuelled.size
+                )
+            )
+            Spacer(Modifier.height(26.dp))
+            Hairline()
+            Spacer(Modifier.height(22.dp))
             MonthCalendar(trained = state.trained, fuelled = state.fuelled, restDays = restDays)
             Spacer(Modifier.height(6.dp))
             Text(
