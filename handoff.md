@@ -26,9 +26,9 @@ Standing constraints, all deliberate and all enforced by tests:
 |---|---|
 | Platforms | Android (APK, every push) and iOS (unsigned IPA, on `main` or on demand) — both green |
 | Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
-| Foods | 614 built in (76 Tamil curries in `SeedFoodsTamil.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
+| Foods | 705 built in (76 Tamil curries in `SeedFoodsTamil.kt`, 91 staples in `SeedFoodsStaples.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
 | Database | v8 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`), migrations 1→…→8, Room 2.7 KMP |
-| Tests | 193, none needing a device |
+| Tests | 194, none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 |
 
 This phase, in order:

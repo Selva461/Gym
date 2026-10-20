@@ -92,7 +92,7 @@ excluded from iCloud backup, as they are left out of Android's cloud backup.
 Today      protein first, calories second, a week strip with a dot per logged day
 Train      split → lift → kg × reps, a target for every lift, rest timer, records
            tap "How to do it" for a muscle map and how the movement works
-Fuel       search or browse 675 foods by name or local name, macros and 15 micronutrients
+Fuel       search or browse 766 foods by name or local name, macros and 15 micronutrients
 Progress   weight trend, 14-day volume, streaks, and progress photos
 Settings   your targets, rest length, nightly reminder
 ```
@@ -160,7 +160,7 @@ screen, in order, one tap each. That is the whole point: not picking from a list
 of 486 between two sets. Splits are editable, reorderable and deletable, and
 deleting one leaves every session already run from it untouched.
 
-**614 built-in foods in 25 categories.** South Indian cooking gets the detail it deserves —
+**705 built-in foods in 25 categories.** South Indian cooking gets the detail it deserves —
 twenty-four dosa varieties (masala, Mysore masala, ghee roast, paper, rava, set,
 neer, kal, karam, ragi, kambu, thinai, oats, pesarattu, adai and the rest), seven
 kinds of idli, forty-three tiffin items (pongal, upma, uttapam, kuzhi paniyaram,
@@ -184,6 +184,16 @@ kari, paya, kudal, Pallipalayam chicken, nandu and eral kuzhambu, karuvadu).
 Each carries its English names too, so "brinjal", "drumstick" or "horse gram"
 finds it. Their calories are computed from their macros rather than typed, so
 none can disagree with itself.
+
+**Staples, for people who weigh.** Chicken breast and thigh, mutton, seer fish,
+sardine and prawns each come raw and cooked per 100 g, because cooking drives
+out water and the same piece is a third denser afterwards. Flour, rava, poha,
+vermicelli, raw rice, dry soya chunks and idli batter are there by weight, as
+they are measured before cooking. Bananas by name (nendran, poovan, red,
+rasthali), boiled legumes with nothing added (kollu, karamani, pachai payaru,
+chickpeas, rajma), the tubers (senai, seppankizhangu, maravalli) and the
+tea-stall and bakery snacks: bread omelette, veg puff, rusk, pottukadalai,
+boiled peanuts. Tamil names are aliases, so "kollu" or "nellikai" finds them.
 
 **Juices are their own category**, not filed under Drinks. A glass of sugarcane
 juice is 180 kcal of almost pure sugar; a tender coconut is 46. Among the teas and
