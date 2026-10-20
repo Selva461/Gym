@@ -207,6 +207,9 @@ fun GymNav(vm: GymViewModel) {
                 }
                 TodayScreen(
                     week = week,
+                    latestWeightKg = progress.weights.maxByOrNull { it.dateEpochDay }?.weightKg,
+                    onWelcomeTargets = { vm.applyWelcomeTargets(it) },
+                    onDismissWelcome = { vm.dismissWelcome() },
                     day = day,
                     dots = dots,
                     onSelectDate = vm::selectDate,

@@ -242,6 +242,6 @@ barcode lookup, step counts, Health Connect / HealthKit sync, social feeds.
 16. ~~**Alternatives**~~ (done) for a lift: same muscle, different equipment, for when the
     machine is taken. From the catalogue; no schema.
 17. ~~**Save a past session as a split**~~ (done) from the session dialog.
-18. **First-run welcome** on Today: set targets (with the calculator) before the
+18. ~~**First-run welcome**~~ (done) on Today: set targets (with the calculator) before the
     first log, instead of silently using the defaults.
 19. **Supersets**: pair two lifts so the rest timer waits for the second.

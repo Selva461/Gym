@@ -27,6 +27,7 @@ import dev.avles.gym.domain.Coach
 import dev.avles.gym.domain.Patterns
 import dev.avles.gym.domain.Physique
 import dev.avles.gym.domain.Physiques
+import dev.avles.gym.domain.Energy
 import dev.avles.gym.domain.ExerciseGuide
 import dev.avles.gym.domain.Export
 import dev.avles.gym.domain.LiftHistory
@@ -670,6 +671,21 @@ class GymViewModel(
             ExportKind.WEIGHTS -> Export.weights(repo.weights.first())
         }
         share(kind.subject, text)
+    }
+
+    // ---------- First run ----------
+
+    /** Takes the calculator's targets from the welcome card and closes it for good. */
+    fun applyWelcomeTargets(t: Energy.Targets) = viewModelScope.launch {
+        settingsStore.save(
+            settingsStore.settings.first().copy(
+                kcalTarget = t.kcal, proteinTargetG = t.proteinG, waterGlasses = t.waterGlasses, welcomed = true
+            )
+        )
+    }
+
+    fun dismissWelcome() = viewModelScope.launch {
+        settingsStore.save(settingsStore.settings.first().copy(welcomed = true))
     }
 
     // ---------- Fasting ----------

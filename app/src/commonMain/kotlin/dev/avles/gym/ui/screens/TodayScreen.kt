@@ -2,6 +2,7 @@ package dev.avles.gym.ui.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,18 +14,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.core.Dates
 import dev.avles.gym.data.DayKinds
 import dev.avles.gym.data.Meals
+import dev.avles.gym.domain.Energy
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Training
 import dev.avles.gym.domain.Weekly
@@ -50,6 +58,7 @@ import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Sage
+import dev.avles.gym.ui.theme.Slate
 import kotlin.math.roundToInt
 import kotlinx.datetime.LocalDate
 
@@ -66,8 +75,15 @@ fun TodayScreen(
     modifier: Modifier = Modifier,
     onAddWater: () -> Unit = {},
     onRemoveWater: () -> Unit = {},
-    week: Weekly.Comparison? = null
+    week: Weekly.Comparison? = null,
+    latestWeightKg: Double? = null,
+    onWelcomeTargets: (Energy.Targets) -> Unit = {},
+    onDismissWelcome: () -> Unit = {}
 ) {
+    var calculating by remember { mutableStateOf(false) }
+    // Shown until answered, and only to someone who has not started: a person who
+    // has been logging for a month does not need to be welcomed.
+    val showWelcome = !day.settings.welcomed && dots.trained.isEmpty() && dots.fuelled.isEmpty()
     val today = Dates.today()
     val protein = day.totals.proteinG
     val kcal = day.totals.kcal
@@ -121,6 +137,10 @@ fun TodayScreen(
             Spacer(Modifier.height(22.dp))
             Hairline()
             Spacer(Modifier.height(22.dp))
+            if (showWelcome) {
+                WelcomeCard(onSetTargets = { calculating = true }, onDismiss = onDismissWelcome)
+                Spacer(Modifier.height(22.dp))
+            }
         }
 
         // --- Fuel -----------------------------------------------------
@@ -272,6 +292,43 @@ fun TodayScreen(
                     modifier = Modifier.animateItem().padding(bottom = 6.dp)
                 )
             }
+        }
+    }
+
+    if (calculating) {
+        TargetCalculatorDialog(
+            initialWeightKg = latestWeightKg,
+            onUse = { onWelcomeTargets(it); calculating = false },
+            onDismiss = { calculating = false }
+        )
+    }
+}
+
+/** The first thing a new install shows: targets first, because everything is measured against them. */
+@Composable
+private fun WelcomeCard(onSetTargets: () -> Unit, onDismiss: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Sage.copy(alpha = 0.10f))
+            .padding(16.dp)
+    ) {
+        Text("Welcome", style = MaterialTheme.typography.titleMedium, color = Bone)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Everything here is measured against your protein and calorie targets. " +
+                "Thirty seconds of weight, height and age sets them; you can change them any time in Settings.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Mute
+        )
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = onSetTargets,
+                colors = ButtonDefaults.buttonColors(containerColor = Sage, contentColor = Slate)
+            ) { Text("Set my targets") }
+            TextButton(onClick = onDismiss) { Text("Use the defaults", color = Mute) }
         }
     }
 }
