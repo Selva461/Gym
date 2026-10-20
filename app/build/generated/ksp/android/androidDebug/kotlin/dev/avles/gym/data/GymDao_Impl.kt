@@ -54,6 +54,8 @@ public class GymDao_Impl(
 
   private val __insertAdapterOfDayMarker: EntityInsertAdapter<DayMarker>
 
+  private val __insertAdapterOfBodyMeasurement: EntityInsertAdapter<BodyMeasurement>
+
   private val __deleteAdapterOfSetEntry: EntityDeleteOrUpdateAdapter<SetEntry>
 
   private val __updateAdapterOfExercise: EntityDeleteOrUpdateAdapter<Exercise>
@@ -282,6 +284,17 @@ public class GymDao_Impl(
         statement.bindLong(5, entity.markedAt)
       }
     }
+    this.__insertAdapterOfBodyMeasurement = object : EntityInsertAdapter<BodyMeasurement>() {
+      protected override fun createQuery(): String =
+          "INSERT OR REPLACE INTO `body_measurement` (`id`,`dateEpochDay`,`part`,`cm`) VALUES (nullif(?, 0),?,?,?)"
+
+      protected override fun bind(statement: SQLiteStatement, entity: BodyMeasurement) {
+        statement.bindLong(1, entity.id)
+        statement.bindLong(2, entity.dateEpochDay)
+        statement.bindText(3, entity.part)
+        statement.bindDouble(4, entity.cm)
+      }
+    }
     this.__deleteAdapterOfSetEntry = object : EntityDeleteOrUpdateAdapter<SetEntry>() {
       protected override fun createQuery(): String = "DELETE FROM `set_entry` WHERE `id` = ?"
 
@@ -459,6 +472,11 @@ public class GymDao_Impl(
       false, true) { _connection ->
     val _result: Long = __insertAdapterOfDayMarker.insertAndReturnId(_connection, marker)
     _result
+  }
+
+  public override suspend fun upsertMeasurements(rows: List<BodyMeasurement>): Unit =
+      performSuspending(__db, false, true) { _connection ->
+    __insertAdapterOfBodyMeasurement.insert(_connection, rows)
   }
 
   public override suspend fun deleteSet(entry: SetEntry): Unit = performSuspending(__db, false,
@@ -2361,6 +2379,36 @@ public class GymDao_Impl(
     }
   }
 
+  public override fun measurements(): Flow<List<BodyMeasurement>> {
+    val _sql: String = "SELECT * FROM body_measurement ORDER BY dateEpochDay ASC"
+    return createFlow(__db, false, arrayOf("body_measurement")) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        val _columnIndexOfId: Int = getColumnIndexOrThrow(_stmt, "id")
+        val _columnIndexOfDateEpochDay: Int = getColumnIndexOrThrow(_stmt, "dateEpochDay")
+        val _columnIndexOfPart: Int = getColumnIndexOrThrow(_stmt, "part")
+        val _columnIndexOfCm: Int = getColumnIndexOrThrow(_stmt, "cm")
+        val _result: MutableList<BodyMeasurement> = mutableListOf()
+        while (_stmt.step()) {
+          val _item: BodyMeasurement
+          val _tmpId: Long
+          _tmpId = _stmt.getLong(_columnIndexOfId)
+          val _tmpDateEpochDay: Long
+          _tmpDateEpochDay = _stmt.getLong(_columnIndexOfDateEpochDay)
+          val _tmpPart: String
+          _tmpPart = _stmt.getText(_columnIndexOfPart)
+          val _tmpCm: Double
+          _tmpCm = _stmt.getDouble(_columnIndexOfCm)
+          _item = BodyMeasurement(_tmpId,_tmpDateEpochDay,_tmpPart,_tmpCm)
+          _result.add(_item)
+        }
+        _result
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
   public override suspend fun editSet(
     id: Long,
     weightKg: Double,
@@ -2549,6 +2597,20 @@ public class GymDao_Impl(
 
   public override suspend fun clearDayMarker(day: Long) {
     val _sql: String = "DELETE FROM day_marker WHERE dateEpochDay = ?"
+    return performSuspending(__db, false, true) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        var _argIndex: Int = 1
+        _stmt.bindLong(_argIndex, day)
+        _stmt.step()
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
+  public override suspend fun deleteMeasurementsOn(day: Long) {
+    val _sql: String = "DELETE FROM body_measurement WHERE dateEpochDay = ?"
     return performSuspending(__db, false, true) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {

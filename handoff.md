@@ -27,8 +27,8 @@ Standing constraints, all deliberate and all enforced by tests:
 | Platforms | Android (APK, every push) and iOS (unsigned IPA, on `main` or on demand) — both green |
 | Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | 706 built in (76 Tamil curries in `SeedFoodsTamil.kt`, 92 staples in `SeedFoodsStaples.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
-| Database | v8 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`), migrations 1→…→8, Room 2.7 KMP |
-| Tests | 216, none needing a device |
+| Database | v9 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`), migrations 1→…→9, Room 2.7 KMP |
+| Tests | 219, none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 |
 
 This phase, in order:
@@ -217,7 +217,7 @@ before pushing. Strike an item when it lands.
 6. ~~**Fasting timer**~~ (done) (16:8 and the like) on Fuel, start time in DataStore.
 7. ~~**Export to CSV**~~ (done) of sets, food log and weights through the platform share
    sheet (a new expect/actual seam; no network involved).
-8. **Body measurements** (waist, chest, arms, hips, thighs) with trends, and a
+8. ~~**Body measurements**~~ (done) (waist, chest, arms, hips, thighs) with trends, and a
    US Navy body-fat estimate. Room v9: new table, migration, MigrationSqlTest.
 9. **Set types and RPE** (warm-up exists; add drop set, to failure, RPE 6–10).
    Room v9/v10 column with a default, migration and test.

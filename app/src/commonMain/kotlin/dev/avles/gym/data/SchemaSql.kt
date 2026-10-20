@@ -164,6 +164,22 @@ object SchemaSql {
 
     val V8_STATEMENTS = listOf(ADD_EXERCISE_ASSISTED, FLAG_ASSISTED_EXERCISES)
 
+    // ---- v9: tape measurements ----------------------------------------------
+
+    const val CREATE_BODY_MEASUREMENT =
+        "CREATE TABLE IF NOT EXISTS `body_measurement` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`dateEpochDay` INTEGER NOT NULL, " +
+            "`part` TEXT NOT NULL, " +
+            "`cm` REAL NOT NULL)"
+
+    /** Unique on the pair: one figure per part per day. */
+    const val INDEX_BODY_MEASUREMENT_DATE_PART =
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_body_measurement_dateEpochDay_part` " +
+            "ON `body_measurement` (`dateEpochDay`, `part`)"
+
+    val V9_STATEMENTS = listOf(CREATE_BODY_MEASUREMENT, INDEX_BODY_MEASUREMENT_DATE_PART)
+
     /** Every statement the v5 migration runs, in order. */
     val V5_STATEMENTS = listOf(
         CREATE_PROGRESS_PHOTO,

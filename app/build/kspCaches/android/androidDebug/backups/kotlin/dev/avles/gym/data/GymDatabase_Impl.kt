@@ -32,8 +32,8 @@ public class GymDatabase_Impl : GymDatabase() {
   }
 
   protected override fun createOpenDelegate(): RoomOpenDelegate {
-    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(8,
-        "89894b4afea2bee255fc8dcb771ca63e", "52866054cf01eb49126572dd954b3ad2") {
+    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(9,
+        "2eae8055ea4db395182e1522f313fa4f", "95b3145caf6214b22798158ce2b02651") {
       public override fun createAllTables(connection: SQLiteConnection) {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `exercise` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `muscleGroup` TEXT NOT NULL, `isBodyweight` INTEGER NOT NULL, `isCustom` INTEGER NOT NULL, `repLow` INTEGER NOT NULL, `repHigh` INTEGER NOT NULL, `incrementKg` REAL NOT NULL, `isAssisted` INTEGER NOT NULL DEFAULT 0)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `workout_session` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `label` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER, `notes` TEXT NOT NULL, `splitId` INTEGER)")
@@ -57,8 +57,10 @@ public class GymDatabase_Impl : GymDatabase() {
         connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_exercise_photo_exerciseId` ON `exercise_photo` (`exerciseId`)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `day_marker` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `kind` TEXT NOT NULL, `note` TEXT NOT NULL, `markedAt` INTEGER NOT NULL)")
         connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_day_marker_dateEpochDay` ON `day_marker` (`dateEpochDay`)")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `body_measurement` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `part` TEXT NOT NULL, `cm` REAL NOT NULL)")
+        connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_body_measurement_dateEpochDay_part` ON `body_measurement` (`dateEpochDay`, `part`)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
-        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '89894b4afea2bee255fc8dcb771ca63e')")
+        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2eae8055ea4db395182e1522f313fa4f')")
       }
 
       public override fun dropAllTables(connection: SQLiteConnection) {
@@ -73,6 +75,7 @@ public class GymDatabase_Impl : GymDatabase() {
         connection.execSQL("DROP TABLE IF EXISTS `progress_photo`")
         connection.execSQL("DROP TABLE IF EXISTS `exercise_photo`")
         connection.execSQL("DROP TABLE IF EXISTS `day_marker`")
+        connection.execSQL("DROP TABLE IF EXISTS `body_measurement`")
       }
 
       public override fun onCreate(connection: SQLiteConnection) {
@@ -448,6 +451,31 @@ public class GymDatabase_Impl : GymDatabase() {
               | Found:
               |""".trimMargin() + _existingDayMarker)
         }
+        val _columnsBodyMeasurement: MutableMap<String, TableInfo.Column> = mutableMapOf()
+        _columnsBodyMeasurement.put("id", TableInfo.Column("id", "INTEGER", true, 1, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsBodyMeasurement.put("dateEpochDay", TableInfo.Column("dateEpochDay", "INTEGER",
+            true, 0, null, TableInfo.CREATED_FROM_ENTITY))
+        _columnsBodyMeasurement.put("part", TableInfo.Column("part", "TEXT", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsBodyMeasurement.put("cm", TableInfo.Column("cm", "REAL", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        val _foreignKeysBodyMeasurement: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
+        val _indicesBodyMeasurement: MutableSet<TableInfo.Index> = mutableSetOf()
+        _indicesBodyMeasurement.add(TableInfo.Index("index_body_measurement_dateEpochDay_part",
+            true, listOf("dateEpochDay", "part"), listOf("ASC", "ASC")))
+        val _infoBodyMeasurement: TableInfo = TableInfo("body_measurement", _columnsBodyMeasurement,
+            _foreignKeysBodyMeasurement, _indicesBodyMeasurement)
+        val _existingBodyMeasurement: TableInfo = read(connection, "body_measurement")
+        if (!_infoBodyMeasurement.equals(_existingBodyMeasurement)) {
+          return RoomOpenDelegate.ValidationResult(false, """
+              |body_measurement(dev.avles.gym.data.BodyMeasurement).
+              | Expected:
+              |""".trimMargin() + _infoBodyMeasurement + """
+              |
+              | Found:
+              |""".trimMargin() + _existingBodyMeasurement)
+        }
         return RoomOpenDelegate.ValidationResult(true, null)
       }
     }
@@ -459,12 +487,13 @@ public class GymDatabase_Impl : GymDatabase() {
     val _viewTables: MutableMap<String, Set<String>> = mutableMapOf()
     return InvalidationTracker(this, _shadowTablesMap, _viewTables, "exercise", "workout_session",
         "set_entry", "food_item", "food_log", "body_weight", "split", "split_exercise",
-        "progress_photo", "exercise_photo", "day_marker")
+        "progress_photo", "exercise_photo", "day_marker", "body_measurement")
   }
 
   public override fun clearAllTables() {
     super.performClear(false, "exercise", "workout_session", "set_entry", "food_item", "food_log",
-        "body_weight", "split", "split_exercise", "progress_photo", "exercise_photo", "day_marker")
+        "body_weight", "split", "split_exercise", "progress_photo", "exercise_photo", "day_marker",
+        "body_measurement")
   }
 
   protected override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {

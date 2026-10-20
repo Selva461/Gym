@@ -23,9 +23,10 @@ import kotlinx.coroutines.IO
         SplitExercise::class,
         ProgressPhoto::class,
         ExercisePhoto::class,
-        DayMarker::class
+        DayMarker::class,
+        BodyMeasurement::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 @ConstructedBy(GymDatabaseConstructor::class)
@@ -157,9 +158,19 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v8 → v9: a table for tape measurements. New and empty, so nothing already
+         * logged is touched.
+         */
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(connection: SQLiteConnection) {
+                SchemaSql.V9_STATEMENTS.forEach { connection.execSQL(it) }
+            }
+        }
+
         val MIGRATIONS = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
-            MIGRATION_7_8
+            MIGRATION_7_8, MIGRATION_8_9
         )
 
         /** The file name, the same on both platforms; only the directory differs. */

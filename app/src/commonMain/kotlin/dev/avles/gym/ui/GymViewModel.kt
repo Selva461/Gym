@@ -2,6 +2,7 @@ package dev.avles.gym.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.avles.gym.data.BodyMeasurement
 import dev.avles.gym.data.BodyWeight
 import dev.avles.gym.data.DayVolume
 import dev.avles.gym.data.Exercise
@@ -730,6 +731,20 @@ class GymViewModel(
 
     fun recordWeight(kg: Double) = viewModelScope.launch {
         if (kg > 0) repo.recordWeight(_selectedDate.value, kg)
+    }
+
+    // ---------- Tape measurements ----------
+
+    val measurements: StateFlow<List<BodyMeasurement>> = repo.measurements
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun saveMeasurements(cmByPart: Map<String, Double>) = viewModelScope.launch {
+        repo.saveMeasurements(_selectedDate.value.epochDay, cmByPart)
+    }
+
+    /** Height and sex for the body-fat estimate, saved without touching anything else. */
+    fun saveBody(heightCm: Double, isFemale: Boolean) = viewModelScope.launch {
+        settingsStore.save(settingsStore.settings.first().copy(heightCm = heightCm, isFemale = isFemale))
     }
 
     // ---------- Export ----------

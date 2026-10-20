@@ -34,7 +34,7 @@ class MigrationSqlTest {
          * Kept in step with @Database(version = ...) by hand, and asserted below so
          * the two cannot drift apart silently.
          */
-        const val DB_VERSION = 8
+        const val DB_VERSION = 9
     }
 
     /**
@@ -274,6 +274,20 @@ class MigrationSqlTest {
         assertTrue(SchemaSql.ADD_EXERCISE_ASSISTED.endsWith(SchemaSql.EXPECTED_EXERCISE_ASSISTED_COLUMN))
         assertTrue(SchemaSql.FLAG_ASSISTED_EXERCISES.contains("'%assisted%'"))
         assertEquals(listOf(SchemaSql.ADD_EXERCISE_ASSISTED, SchemaSql.FLAG_ASSISTED_EXERCISES), SchemaSql.V8_STATEMENTS)
+    }
+
+    /** Version 9 adds the tape-measurement table, unique on the day and the part. */
+    @Test
+    fun `the body measurement table is created exactly as Room expects it`() {
+        assertEquals(expectedCreateSql("body_measurement"), SchemaSql.CREATE_BODY_MEASUREMENT)
+        assertEquals(
+            expectedIndexSql("body_measurement", "index_body_measurement_dateEpochDay_part"),
+            SchemaSql.INDEX_BODY_MEASUREMENT_DATE_PART
+        )
+        assertEquals(
+            listOf(SchemaSql.CREATE_BODY_MEASUREMENT, SchemaSql.INDEX_BODY_MEASUREMENT_DATE_PART),
+            SchemaSql.V9_STATEMENTS
+        )
     }
 
     @Test

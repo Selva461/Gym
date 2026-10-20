@@ -1,11 +1,13 @@
 package dev.avles.gym
 
+import dev.avles.gym.data.BodyMeasurement
 import dev.avles.gym.data.BodyWeight
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.domain.Energy
 import dev.avles.gym.domain.Export
 import dev.avles.gym.domain.Fasting
 import dev.avles.gym.domain.LiftHistory
+import dev.avles.gym.domain.Measurements
 import dev.avles.gym.domain.MonthGrid
 import dev.avles.gym.domain.Plates
 import dev.avles.gym.domain.Warmups
@@ -266,5 +268,29 @@ class ToolkitTest {
         val day = LocalDate(2026, 10, 20).toEpochDays().toLong()
         val csv = Export.weights(listOf(BodyWeight(dateEpochDay = day, weightKg = 72.25), BodyWeight(dateEpochDay = day - 1, weightKg = 72.5, note = "after, travel")))
         assertEquals("date,kg,note\n2026-10-19,72.5,\"after, travel\"\n2026-10-20,72.25,\n", csv)
+    }
+
+    // ---- Tape measurements ----------------------------------------------------
+
+    @Test
+    fun `the Navy estimate matches the published equation and refuses impossible input`() {
+        // 495 / (1.0324 − 0.19077·log10(48) + 0.15456·log10(178)) − 450 = 17.2
+        assertEquals(17.2, Measurements.navyBodyFat(false, 178.0, 38.0, 86.0, null)!!, 0.1)
+        assertNull(Measurements.navyBodyFat(false, 178.0, 40.0, 38.0, null))
+        assertNull(Measurements.navyBodyFat(true, 165.0, 33.0, 75.0, null)) // needs hips
+        assertTrue(Measurements.navyBodyFat(true, 165.0, 33.0, 75.0, 98.0)!! in 20.0..35.0)
+    }
+
+    @Test
+    fun `trends come back per part in tape order with the change since the first`() {
+        val rows = listOf(
+            BodyMeasurement(dateEpochDay = 2, part = "Waist", cm = 84.0),
+            BodyMeasurement(dateEpochDay = 1, part = "Waist", cm = 86.5),
+            BodyMeasurement(dateEpochDay = 1, part = "Arm", cm = 36.0)
+        )
+        val t = Measurements.trends(rows)
+        assertEquals(listOf("Arm", "Waist"), t.map { it.part })
+        assertEquals(-2.5, t.last().changeCm, 1e-9)
+        assertEquals(listOf(86.5, 84.0), t.last().points)
     }
 }

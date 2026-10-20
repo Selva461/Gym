@@ -272,6 +272,14 @@ class GymRepository(
     // ---------- Body ----------
 
     val weights: Flow<List<BodyWeight>> = dao.weights()
+
+    val measurements: Flow<List<BodyMeasurement>> = dao.measurements()
+
+    /** One day's tape figures; an empty map clears the day. Parts left out are not kept. */
+    suspend fun saveMeasurements(day: Long, cmByPart: Map<String, Double>) {
+        dao.deleteMeasurementsOn(day)
+        dao.upsertMeasurements(cmByPart.filterValues { it > 0 }.map { (part, cm) -> BodyMeasurement(dateEpochDay = day, part = part, cm = cm) })
+    }
     val latestWeight: Flow<BodyWeight?> = dao.latestWeight()
 
     suspend fun recordWeight(day: LocalDate, kg: Double, note: String = "") =

@@ -419,3 +419,20 @@ data class SessionDay(val id: Long, val dateEpochDay: Long)
 
 /** A day's eating, summed in SQL. Days with nothing logged simply do not appear. */
 data class DayMacroRow(val dateEpochDay: Long, val kcal: Double, val proteinG: Double)
+
+/**
+ * One tape measurement: a body part on a day, in centimetres. Unique on the pair,
+ * so measuring the waist twice in a day keeps the later figure rather than two.
+ * [part] is a name from [dev.avles.gym.domain.Measurements.PARTS], stored as text
+ * so adding a site later is data, not a migration.
+ */
+@Entity(
+    tableName = "body_measurement",
+    indices = [Index(value = ["dateEpochDay", "part"], unique = true)]
+)
+data class BodyMeasurement(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val dateEpochDay: Long,
+    val part: String,
+    val cm: Double
+)

@@ -95,7 +95,8 @@ Train      split → lift → kg × reps, a target for every lift, last time's s
            a per-lift history with a rep-max table, and a summary card when you finish
 Fuel       search or browse 767 foods by name or local name, macros and 15 micronutrients,
            water, and "same breakfast as yesterday" in one tap
-Progress   weight trend, 14-day volume, streaks, and progress photos
+Progress   weight trend, 14-day volume, streaks, a month calendar, personal records,
+           tape measurements with a body-fat estimate, and progress photos
 Settings   your targets (or work them out from your body), water goal, rest, reminder
 ```
 

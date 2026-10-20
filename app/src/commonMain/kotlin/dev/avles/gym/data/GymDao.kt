@@ -402,4 +402,16 @@ interface GymDao {
     /** Which day each session belongs to, for counting a training week. */
     @Query("SELECT id, dateEpochDay FROM workout_session")
     fun sessionDays(): Flow<List<SessionDay>>
+
+    // ---- Tape measurements ----
+
+    /** Replaces on the (day, part) unique index, so re-measuring a day overwrites it. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertMeasurements(rows: List<BodyMeasurement>)
+
+    @Query("SELECT * FROM body_measurement ORDER BY dateEpochDay ASC")
+    fun measurements(): Flow<List<BodyMeasurement>>
+
+    @Query("DELETE FROM body_measurement WHERE dateEpochDay = :day")
+    suspend fun deleteMeasurementsOn(day: Long)
 }

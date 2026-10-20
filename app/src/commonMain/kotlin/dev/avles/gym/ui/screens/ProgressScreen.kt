@@ -53,6 +53,7 @@ fun ProgressScreen(
     onOpenPatterns: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenRecords: () -> Unit = {},
+    onOpenMeasurements: () -> Unit = {},
     restDays: Set<Long> = emptySet()
 ) {
     var logging by remember { mutableStateOf(false) }
@@ -102,6 +103,12 @@ fun ProgressScreen(
                     color = Brass,
                     style = MaterialTheme.typography.bodyMedium
                 )
+            }
+            androidx.compose.material3.TextButton(
+                onClick = onOpenMeasurements,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) {
+                Text("Measurements and body fat", color = Brass, style = MaterialTheme.typography.bodyMedium)
             }
             androidx.compose.material3.TextButton(
                 onClick = onOpenRecords,
