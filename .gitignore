@@ -4,6 +4,10 @@
 /.idea
 .DS_Store
 /build
+# Every module's build output, not only the root's: a bare `/build` let
+# app/build into commits once builds started running locally.
+build/
+.kotlin/
 /captures
 .externalNativeBuild
 .cxx

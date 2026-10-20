@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.ArchitectureTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-20T18:09:05.996Z" hostname="vm" time="0.381">
-  <properties/>
-  <testcase name="no layer reaches somewhere it should not" classname="dev.avles.gym.ArchitectureTest" time="0.138"/>
-  <testcase name="no query is assembled by string interpolation" classname="dev.avles.gym.ArchitectureTest" time="0.221"/>
-  <testcase name="no source file has grown past the point of being readable" classname="dev.avles.gym.ArchitectureTest" time="0.021"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
