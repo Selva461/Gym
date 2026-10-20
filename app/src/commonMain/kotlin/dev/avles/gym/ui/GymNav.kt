@@ -1,9 +1,17 @@
 package dev.avles.gym.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -16,8 +24,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -25,6 +36,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.avles.gym.core.epochDay
+import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.screens.CoachScreen
 import dev.avles.gym.ui.screens.FuelScreen
 import dev.avles.gym.ui.screens.PatternsScreen
@@ -55,6 +67,19 @@ private val DESTINATIONS = listOf(
     Destination("settings", "Settings", Mute)
 )
 
+private val TABS = DESTINATIONS.map { it.route }.toSet()
+
+/**
+ * Tabs fade through each other: they are siblings, so neither should look like it
+ * sits on top. Screens opened from a tab (photos, goal, patterns) slide in from
+ * the side and back out the way they came, because those do sit on top.
+ */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isPush(): Boolean =
+    targetState.destination.route !in TABS && initialState.destination.route in TABS
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isPop(): Boolean =
+    initialState.destination.route !in TABS && targetState.destination.route in TABS
+
 @Composable
 fun GymNav(vm: GymViewModel) {
     val navController = rememberNavController()
@@ -80,6 +105,8 @@ fun GymNav(vm: GymViewModel) {
     val coach by vm.coachState.collectAsStateWithLifecycle()
     val patterns by vm.patternState.collectAsStateWithLifecycle()
 
+    val haptics = LocalHapticFeedback.current
+
     fun go(route: String) {
         navController.navigate(route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -94,15 +121,26 @@ fun GymNav(vm: GymViewModel) {
             NavigationBar(containerColor = Ink, tonalElevation = 0.dp) {
                 DESTINATIONS.forEach { destination ->
                     val selected = currentRoute?.hierarchy?.any { it.route == destination.route } == true
+                    // The dot stretches into a short bar when its tab is chosen, so the
+                    // selection travels visibly instead of jumping between items.
+                    val tabWidth by animateDpAsState(if (selected) 18.dp else 5.dp, Motion.press(), label = "tab-width")
+                    val tabHeight by animateDpAsState(if (selected) 6.dp else 5.dp, Motion.press(), label = "tab-height")
+                    val dot by animateColorAsState(
+                        if (selected) destination.accent else Faint, Motion.quick(), label = "tab-colour"
+                    )
                     NavigationBarItem(
                         selected = selected,
-                        onClick = { go(destination.route) },
+                        onClick = {
+                            if (!selected) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                            go(destination.route)
+                        },
                         icon = {
                             Box(
                                 Modifier
-                                    .size(if (selected) 7.dp else 5.dp)
+                                    .width(tabWidth)
+                                    .height(tabHeight)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(if (selected) destination.accent else Faint)
+                                    .background(dot)
                             )
                         },
                         label = {
@@ -124,7 +162,28 @@ fun GymNav(vm: GymViewModel) {
         NavHost(
             navController = navController,
             startDestination = "today",
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(padding),
+            enterTransition = {
+                when {
+                    isPush() -> slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start, Motion.standard()
+                    ) + fadeIn(Motion.enter())
+                    else -> fadeIn(Motion.enter()) + scaleIn(Motion.enter(), initialScale = 0.98f)
+                }
+            },
+            exitTransition = {
+                if (isPush()) fadeOut(Motion.quick()) + scaleOut(Motion.quick(), targetScale = 0.98f)
+                else fadeOut(Motion.quick())
+            },
+            popEnterTransition = {
+                fadeIn(Motion.enter()) + scaleIn(Motion.enter(), initialScale = 0.98f)
+            },
+            popExitTransition = {
+                if (isPop()) slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.End, Motion.standard()
+                ) + fadeOut(Motion.standard())
+                else fadeOut(Motion.quick())
+            }
         ) {
             composable("today") {
                 TodayScreen(

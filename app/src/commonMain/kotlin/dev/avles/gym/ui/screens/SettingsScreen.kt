@@ -1,5 +1,7 @@
 package dev.avles.gym.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,17 +21,23 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.data.GymSettings
 import dev.avles.gym.ui.components.Hairline
+import dev.avles.gym.ui.components.Motion.fadeThrough
 import dev.avles.gym.ui.components.SectionHeading
+import dev.avles.gym.ui.components.pressScale
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
@@ -38,6 +46,7 @@ import dev.avles.gym.ui.theme.Raised
 import dev.avles.gym.ui.theme.Sage
 import dev.avles.gym.ui.theme.Slate
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 @Composable
 fun SettingsScreen(
@@ -117,8 +126,21 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(28.dp))
+        // The button itself says it worked, for a second and a half, because saving
+        // otherwise changes nothing on screen and leaves you tapping it twice.
+        var savedTick by remember { mutableIntStateOf(0) }
+        LaunchedEffect(savedTick) {
+            if (savedTick > 0) {
+                delay(1500)
+                savedTick = 0
+            }
+        }
+        val haptics = LocalHapticFeedback.current
+        val savePress = remember { MutableInteractionSource() }
         Button(
             onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                savedTick += 1
                 onSave(
                     GymSettings(
                         proteinTargetG = protein.toDoubleOrNull() ?: settings.proteinTargetG,
@@ -130,9 +152,14 @@ fun SettingsScreen(
                     )
                 )
             },
+            interactionSource = savePress,
             colors = ButtonDefaults.buttonColors(containerColor = Brass, contentColor = Slate),
-            modifier = Modifier.fillMaxWidth().height(52.dp)
-        ) { Text("Save settings", style = MaterialTheme.typography.labelLarge) }
+            modifier = Modifier.fillMaxWidth().height(52.dp).pressScale(savePress)
+        ) {
+            AnimatedContent(targetState = savedTick > 0, transitionSpec = { fadeThrough() }, label = "saved") { saved ->
+                Text(if (saved) "Saved" else "Save settings", style = MaterialTheme.typography.labelLarge)
+            }
+        }
 
         Spacer(Modifier.height(28.dp))
         Hairline()

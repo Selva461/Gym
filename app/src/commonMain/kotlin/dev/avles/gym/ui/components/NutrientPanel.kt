@@ -1,7 +1,11 @@
 package dev.avles.gym.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -55,7 +59,7 @@ fun NutrientPanel(
             title = "Nutrients",
             trailing = if (expanded) "hide" else "show all",
             accent = Sage,
-            modifier = Modifier.clickable { onToggle() }
+            modifier = Modifier.pressable(RoundedCornerShape(8.dp), pressedScale = 0.99f, onClick = onToggle)
         )
         Spacer(Modifier.height(8.dp))
 
@@ -74,20 +78,26 @@ fun NutrientPanel(
             color = if (over.isNotEmpty()) Coral else Mute
         )
 
-        if (expanded) {
-            Spacer(Modifier.height(16.dp))
-            Nutrients.ALL.forEach { ref ->
-                NutrientRow(ref, micros)
-                Spacer(Modifier.height(12.dp))
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(Motion.standard()) + fadeIn(Motion.enter()),
+            exit = shrinkVertically(Motion.standard()) + fadeOut(Motion.quick())
+        ) {
+            Column {
+                Spacer(Modifier.height(16.dp))
+                Nutrients.ALL.forEach { ref ->
+                    NutrientRow(ref, micros)
+                    Spacer(Modifier.height(12.dp))
+                }
+                Text(
+                    "Reference intakes for an adult, not targets this app worked out for you. " +
+                        "A zero means the food was never estimated for that nutrient, not that " +
+                        "it contains none — home-style dishes are built up from their main " +
+                        "ingredients and should be read as a direction, not a measurement.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint
+                )
             }
-            Text(
-                "Reference intakes for an adult, not targets this app worked out for you. " +
-                    "A zero means the food was never estimated for that nutrient, not that " +
-                    "it contains none — home-style dishes are built up from their main " +
-                    "ingredients and should be read as a direction, not a measurement.",
-                style = MaterialTheme.typography.labelSmall,
-                color = Faint
-            )
         }
     }
 }

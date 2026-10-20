@@ -1,5 +1,8 @@
 package dev.avles.gym.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +18,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -28,6 +32,9 @@ import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.Meter
+import dev.avles.gym.ui.components.Motion
+import dev.avles.gym.ui.components.Motion.fadeThrough
+import dev.avles.gym.ui.components.pressScale
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.StripLegend
@@ -74,17 +81,21 @@ fun TodayScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
-                Column {
-                    Text(
-                        if (day.date == today) "Today" else Dates.dayName(day.date),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Bone
-                    )
-                    Text(
-                        Dates.dayAndMonth(day.date),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Mute
-                    )
+                // Walking the week changes the heading, so it crossfades with the day
+                // rather than snapping; the strip below says which way you moved.
+                AnimatedContent(targetState = day.date, transitionSpec = { fadeThrough() }, label = "day") { date ->
+                    Column {
+                        Text(
+                            if (date == today) "Today" else Dates.dayName(date),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = Bone
+                        )
+                        Text(
+                            Dates.dayAndMonth(date),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Mute
+                        )
+                    }
                 }
                 StripLegend()
             }
@@ -128,13 +139,15 @@ fun TodayScreen(
                 height = 3
             )
             Spacer(Modifier.height(14.dp))
+            val fuelPress = remember { MutableInteractionSource() }
             Button(
                 onClick = onGoFuel,
+                interactionSource = fuelPress,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Sage.copy(alpha = 0.14f),
                     contentColor = Sage
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().pressScale(fuelPress)
             ) { Text("Log food") }
             Spacer(Modifier.height(26.dp))
             Hairline()
@@ -165,13 +178,15 @@ fun TodayScreen(
                 )
             }
             Spacer(Modifier.height(14.dp))
+            val trainPress = remember { MutableInteractionSource() }
             Button(
                 onClick = onGoTrain,
+                interactionSource = trainPress,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Brass.copy(alpha = 0.14f),
                     contentColor = Brass
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().pressScale(trainPress)
             ) { Text(if (trainedToday) "Open session" else "Start a session") }
 
             // Offered only on a day with no session. Marking a day you trained as a
@@ -203,7 +218,8 @@ fun TodayScreen(
                                 "Tap the same one again to clear it."
                     },
                     style = MaterialTheme.typography.labelSmall,
-                    color = Faint
+                    color = Faint,
+                    modifier = Modifier.animateContentSize(Motion.standard())
                 )
             }
             Spacer(Modifier.height(26.dp))
@@ -232,7 +248,7 @@ fun TodayScreen(
                     detail = "${Training.formatWeight(row.quantity)} x ${row.unitLabel}   ${row.meal}",
                     trailing = "${(row.proteinG * row.quantity).roundToInt()} p",
                     accent = Sage,
-                    modifier = Modifier.padding(bottom = 6.dp)
+                    modifier = Modifier.animateItem().padding(bottom = 6.dp)
                 )
             }
         }

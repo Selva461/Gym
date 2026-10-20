@@ -195,6 +195,13 @@ chickpeas, rajma), the tubers (senai, seppankizhangu, maravalli) and the
 tea-stall and bakery snacks: bread omelette, veg puff, rusk, pottukadalai,
 boiled peanuts. Tamil names are aliases, so "kollu" or "nellikai" finds them.
 
+**It answers back.** Everything you tap gives slightly under the finger and springs
+back, and picking something ticks the phone's haptics while committing something
+(logging a set or a food, saving settings) gives a firmer confirm. A new record
+buzzes twice and lights its row. Numbers roll up or down to their new value, meters
+fill in, tabs fade through each other and pushed screens slide in from the side.
+Every animation is under a third of a second, because it runs between sets.
+
 **Juices are their own category**, not filed under Drinks. A glass of sugarcane
 juice is 180 kcal of almost pure sugar; a tender coconut is 46. Among the teas and
 coffees that difference disappears, and in a list of its own it is the first thing
@@ -301,7 +308,8 @@ app/src/commonMain/   everything that is the same on both phones — nearly all 
                       Indian dataset importer, DataStore settings
   domain/             pure Kotlin — macro and micronutrient maths, 1RM and records,
                       streaks, progression, food checks and search. All unit tested.
-  ui/                 one ViewModel, the screens, a small set of shared components
+  ui/                 one ViewModel, the screens, a small set of shared components;
+                      components/Motion.kt holds every curve, the press and the haptics
   core/               the log, the clock and calendar
   composeResources/   exercise demonstrations and the food dataset, bundled
 app/src/androidMain/  Android: GymApp, MainActivity, notifications, photo store

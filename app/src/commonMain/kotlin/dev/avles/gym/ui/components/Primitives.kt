@@ -1,9 +1,11 @@
 package dev.avles.gym.ui.components
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,13 +21,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.ui.components.Motion.rollNumber
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Line
@@ -76,11 +84,13 @@ fun BigNumber(
 ) {
     Column(modifier) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                value,
-                style = MaterialTheme.typography.displayMedium,
-                color = accent
-            )
+            AnimatedContent(targetState = value, transitionSpec = { rollNumber() }, label = "big-number") {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.displayMedium,
+                    color = accent
+                )
+            }
             Text(
                 unit,
                 style = MaterialTheme.typography.titleMedium,
@@ -106,10 +116,17 @@ fun Meter(
     overflow: Boolean = false,
     height: Int = 6
 ) {
-    val animated by animateFloatAsState(
-        targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = tween(durationMillis = 450),
-        label = "meter"
+    // Starts empty and fills to the value, so a meter that comes into view shows
+    // how far along the day is rather than simply being there.
+    val target = progress.coerceIn(0f, 1f)
+    val animated = remember { Animatable(0f) }
+    LaunchedEffect(target) {
+        animated.animateTo(target, tween(durationMillis = 650, easing = FastOutSlowInEasing))
+    }
+    val fill by animateColorAsState(
+        if (overflow) MaterialTheme.colorScheme.error else accent,
+        Motion.standard(),
+        label = "meter-colour"
     )
     Box(
         modifier
@@ -120,10 +137,10 @@ fun Meter(
     ) {
         Box(
             Modifier
-                .fillMaxWidth(animated)
+                .fillMaxWidth(animated.value)
                 .height(height.dp)
                 .clip(RoundedCornerShape(height.dp))
-                .background(if (overflow) MaterialTheme.colorScheme.error else accent)
+                .background(fill)
         )
     }
 }
@@ -139,14 +156,29 @@ fun EntryRow(
     trailing: String,
     accent: Color,
     modifier: Modifier = Modifier,
+    highlight: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
+    val shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)
+    // A record lights the row in its accent and lets it fade back over a second and
+    // a half: enough to catch the eye between sets, gone before it becomes noise.
+    val glow = remember { Animatable(0f) }
+    LaunchedEffect(highlight) {
+        if (highlight) {
+            glow.snapTo(1f)
+            glow.animateTo(0f, tween(1600))
+        }
+    }
+    val lit = accent.copy(alpha = 0.32f).compositeOver(Slate)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp))
-            .background(Slate)
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+            .then(
+                if (onClick != null) Modifier.pressable(shape, pressedScale = 0.985f, onClick = onClick)
+                else Modifier.clip(shape)
+            )
+            // Read in the draw phase, so the fade repaints the row without recomposing it.
+            .drawBehind { drawRect(lerp(Slate, lit, glow.value)) }
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -186,19 +218,22 @@ fun PillRow(
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEach { option ->
             val isOn = option == selected
+            val fill by animateColorAsState(
+                if (isOn) accent.copy(alpha = 0.16f) else Raised, Motion.quick(), label = "pill"
+            )
+            val ink by animateColorAsState(if (isOn) accent else Mute, Motion.quick(), label = "pill-text")
             Box(
                 Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (isOn) accent.copy(alpha = 0.16f) else Raised)
-                    .clickable { onSelect(option) }
+                    .pressable(RoundedCornerShape(10.dp)) { onSelect(option) }
+                    .background(fill)
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     option,
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (isOn) accent else Mute,
+                    color = ink,
                     maxLines = 1
                 )
             }
@@ -239,21 +274,7 @@ fun ChipRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(options, key = { "chip-$it" }) { option ->
-            val isOn = option == selected
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (isOn) accent.copy(alpha = 0.18f) else Raised)
-                    .clickable { onSelect(option) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-            ) {
-                Text(
-                    option,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (isOn) accent else Mute,
-                    maxLines = 1
-                )
-            }
+            Chip(option, isOn = option == selected, accent = accent) { onSelect(option) }
         }
     }
 }
@@ -266,4 +287,24 @@ fun Dot(color: Color, size: Int = 4) {
             .clip(RoundedCornerShape(size.dp))
             .background(color)
     )
+}
+
+/**
+ * One selectable chip. Shared by every horizontally scrolling filter in the app so
+ * they all light up, press and tick the same way.
+ */
+@Composable
+fun Chip(label: String, isOn: Boolean, accent: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val fill by animateColorAsState(
+        if (isOn) accent.copy(alpha = 0.18f) else Raised, Motion.quick(), label = "chip"
+    )
+    val ink by animateColorAsState(if (isOn) accent else Mute, Motion.quick(), label = "chip-text")
+    Box(
+        modifier
+            .pressable(RoundedCornerShape(10.dp), onClick = onClick)
+            .background(fill)
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = ink, maxLines = 1)
+    }
 }

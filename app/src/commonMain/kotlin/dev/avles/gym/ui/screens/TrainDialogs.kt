@@ -1,7 +1,7 @@
 package dev.avles.gym.ui.screens
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,9 +29,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.core.Dates
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.SplitPlan
@@ -39,7 +39,9 @@ import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.SessionDetail
 import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.Hairline
+import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.components.PillRow
+import dev.avles.gym.ui.components.pressable
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
@@ -47,7 +49,6 @@ import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
 import dev.avles.gym.ui.theme.Slate
-import dev.avles.gym.core.Dates
 import kotlin.math.roundToInt
 
 /**
@@ -200,8 +201,7 @@ fun SessionDetailDialog(
                         Row(
                             Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { onEditSet(row) }
+                                .pressable(RoundedCornerShape(8.dp), pressedScale = 0.985f) { onEditSet(row) }
                                 .padding(vertical = 8.dp, horizontal = 4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
@@ -377,8 +377,7 @@ fun SplitEditorDialog(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { chosen = chosen + exercise.id }
+                            .pressable(RoundedCornerShape(8.dp), pressedScale = 0.985f) { chosen = chosen + exercise.id }
                             .padding(vertical = 8.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -472,13 +471,15 @@ fun SplitLiftRow(
         // is nothing here worth virtualising.
         plan.exercises.forEach { exercise ->
             val on = exercise.id == selectedId
+            val fill by animateColorAsState(
+                if (on) Brass.copy(alpha = 0.16f) else Raised, Motion.quick(), label = "split-lift"
+            )
             Box(
                 Modifier
                     .fillMaxWidth()
                     .padding(bottom = 6.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (on) Brass.copy(alpha = 0.16f) else Raised)
-                    .clickable { onPick(exercise) }
+                    .pressable(RoundedCornerShape(10.dp), pressedScale = 0.985f) { onPick(exercise) }
+                    .background(fill)
                     .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
                 Text(

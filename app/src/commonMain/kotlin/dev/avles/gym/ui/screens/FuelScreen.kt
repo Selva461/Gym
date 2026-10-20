@@ -1,7 +1,7 @@
 package dev.avles.gym.ui.screens
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.core.Dates
@@ -47,13 +48,16 @@ import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Numbers
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.DayState
+import dev.avles.gym.ui.components.Chip
 import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.Meter
+import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.components.NutrientPanel
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
+import dev.avles.gym.ui.components.pressable
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
@@ -141,20 +145,7 @@ fun FuelScreen(
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(categories, key = { it }) { name ->
                     val on = category == name
-                    Box(
-                        Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (on) Sage.copy(alpha = 0.18f) else Raised)
-                            .clickable { category = if (on) null else name }
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            name,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (on) Sage else Mute,
-                            maxLines = 1
-                        )
-                    }
+                    Chip(name, isOn = on, accent = Sage) { category = if (on) null else name }
                 }
             }
             Spacer(Modifier.height(14.dp))
@@ -191,9 +182,9 @@ fun FuelScreen(
                         items(quickPicks, key = { "quick-${it.id}" }) { food ->
                             Box(
                                 Modifier
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .animateItem()
+                                    .pressable(RoundedCornerShape(10.dp)) { pending = food }
                                     .background(Raised)
-                                    .clickable { pending = food }
                                     .padding(horizontal = 14.dp, vertical = 10.dp)
                             ) {
                                 Column {
@@ -255,7 +246,7 @@ fun FuelScreen(
                         trailing = "${(row.proteinG * row.quantity).roundToInt()} p",
                         accent = if (row.isSupplement) Brass else Sage,
                         onClick = { editingEntry = row },
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        modifier = Modifier.animateItem().padding(bottom = 6.dp)
                     )
                 }
                 item { Spacer(Modifier.height(16.dp)) }
@@ -284,12 +275,14 @@ fun FuelScreen(
         )
     }
 
+    val haptics = LocalHapticFeedback.current
     pending?.let { food ->
         QuantityDialog(
             food = food,
             meal = Meals.slotFor(food.isSupplement, meal),
             onConfirm = { qty ->
                 onLog(food.id, Meals.slotFor(food.isSupplement, meal), qty)
+                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                 pending = null
             },
             onDismiss = { pending = null }
@@ -356,21 +349,7 @@ private fun FoodEntryEditorDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("0.5", "1", "1.5", "2").forEach { preset ->
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Raised)
-                                .clickable { qty = preset }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(preset, style = MaterialTheme.typography.labelMedium, color = Bone)
-                        }
-                    }
-                }
+                PresetRow(qty) { qty = it }
                 if (!row.isSupplement) {
                     Spacer(Modifier.height(14.dp))
                     PillRow(Meals.PICKABLE, slot, Sage, { slot = it })
@@ -400,9 +379,8 @@ private fun FoodPickRow(food: FoodItem, onTap: () -> Unit, onEdit: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .pressable(RoundedCornerShape(10.dp), pressedScale = 0.985f, onClick = onTap)
             .background(Slate)
-            .clickable { onTap() }
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -458,21 +436,7 @@ private fun QuantityDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(14.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("0.5", "1", "1.5", "2").forEach { preset ->
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Raised)
-                                .clickable { qty = preset }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(preset, style = MaterialTheme.typography.labelMedium, color = Bone)
-                        }
-                    }
-                }
+                PresetRow(qty) { qty = it }
                 Spacer(Modifier.height(14.dp))
                 Text(
                     "${(food.proteinG * parsed).roundToInt()} g protein, " +
@@ -718,4 +682,30 @@ private fun defaultMealForNow(): String = when (Dates.hourNow()) {
     in 11..15 -> Meals.LUNCH
     in 16..19 -> Meals.SNACK
     else -> Meals.DINNER
+}
+
+/**
+ * Half, one, one and a half, two. The one matching what is typed lights up, so a
+ * preset reads as the current choice rather than a button that did something.
+ */
+@Composable
+private fun PresetRow(current: String, onPick: (String) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("0.5", "1", "1.5", "2").forEach { preset ->
+            val on = current.toDoubleOrNull() == preset.toDouble()
+            val fill by animateColorAsState(
+                if (on) Sage.copy(alpha = 0.18f) else Raised, Motion.quick(), label = "preset"
+            )
+            Box(
+                Modifier
+                    .weight(1f)
+                    .pressable(RoundedCornerShape(8.dp)) { onPick(preset) }
+                    .background(fill)
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(preset, style = MaterialTheme.typography.labelMedium, color = if (on) Sage else Bone)
+            }
+        }
+    }
 }

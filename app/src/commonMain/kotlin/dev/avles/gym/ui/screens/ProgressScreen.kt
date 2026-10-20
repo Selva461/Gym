@@ -1,5 +1,6 @@
 package dev.avles.gym.ui.screens
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,21 +25,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.core.Dates
 import dev.avles.gym.domain.Consistency
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.ProgressState
-import dev.avles.gym.ui.components.BigNumber
 import dev.avles.gym.ui.components.BarStrip
+import dev.avles.gym.ui.components.BigNumber
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.TrendChart
+import dev.avles.gym.ui.components.pressScale
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Sage
 import dev.avles.gym.ui.theme.Slate
-import dev.avles.gym.core.Dates
 import kotlin.math.abs
 
 @Composable
@@ -141,13 +143,15 @@ fun ProgressScreen(
                 emptyMessage = "Record a second weight and the trend appears."
             )
             Spacer(Modifier.height(12.dp))
+            val recordPress = remember { MutableInteractionSource() }
             Button(
                 onClick = { logging = true },
+                interactionSource = recordPress,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Sage.copy(alpha = 0.14f),
                     contentColor = Sage
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().pressScale(recordPress)
             ) { Text("Record today's weight") }
 
             Spacer(Modifier.height(28.dp))

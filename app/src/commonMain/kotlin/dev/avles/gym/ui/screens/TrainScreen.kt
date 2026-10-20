@@ -1,7 +1,14 @@
 package dev.avles.gym.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.core.Dates
@@ -51,7 +61,12 @@ import dev.avles.gym.ui.components.BigNumber
 import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
+import dev.avles.gym.ui.components.Haptic
 import dev.avles.gym.ui.components.Meter
+import dev.avles.gym.ui.components.Motion
+import dev.avles.gym.ui.components.Motion.fadeThrough
+import dev.avles.gym.ui.components.pressScale
+import dev.avles.gym.ui.components.pressable
 import dev.avles.gym.ui.components.ChipRow
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
@@ -101,37 +116,41 @@ fun TrainScreen(
     // one inside the session dialog, and both should land on the same editor.
     var editingSet by remember { mutableStateOf<SetRow?>(null) }
 
-    if (state.active == null) {
-        StartSessionPane(
-            state = state,
-            splits = splits,
-            summaries = summaries,
-            onStartFromSplit = onStartFromSplit,
-            onStartBlank = onStartBlank,
-            onSaveSplit = onSaveSplit,
-            onDeleteSplit = onDeleteSplit,
-            onOpenSession = onOpenSession,
-            modifier = modifier
-        )
-    } else {
-        ActiveSessionPane(
-            state = state,
-            restRemaining = restRemaining,
-            prSetId = prSetId,
-            guidance = guidance,
-            activePlan = activePlan,
-            onSelectExercise = onSelectExercise,
-            onSelectVariation = onSelectVariation,
-            exercisePhotos = exercisePhotos,
-            onAttachExercisePhoto = onAttachExercisePhoto,
-            onDetachExercisePhoto = onDetachExercisePhoto,
-            onFinish = onFinish,
-            onLogSet = onLogSet,
-            onEditSetRow = { editingSet = it },
-            onSkipRest = onSkipRest,
-            onAddExercise = onAddExercise,
-            modifier = modifier
-        )
+    // Starting or finishing a session swaps the whole screen; it settles in rather
+    // than cutting, so the change of mode is felt as well as seen.
+    AnimatedContent(targetState = state.active == null, transitionSpec = { fadeThrough() }, label = "train-mode") { idle ->
+        if (idle) {
+            StartSessionPane(
+                state = state,
+                splits = splits,
+                summaries = summaries,
+                onStartFromSplit = onStartFromSplit,
+                onStartBlank = onStartBlank,
+                onSaveSplit = onSaveSplit,
+                onDeleteSplit = onDeleteSplit,
+                onOpenSession = onOpenSession,
+                modifier = modifier
+            )
+        } else {
+            ActiveSessionPane(
+                state = state,
+                restRemaining = restRemaining,
+                prSetId = prSetId,
+                guidance = guidance,
+                activePlan = activePlan,
+                onSelectExercise = onSelectExercise,
+                onSelectVariation = onSelectVariation,
+                exercisePhotos = exercisePhotos,
+                onAttachExercisePhoto = onAttachExercisePhoto,
+                onDetachExercisePhoto = onDetachExercisePhoto,
+                onFinish = onFinish,
+                onLogSet = onLogSet,
+                onEditSetRow = { editingSet = it },
+                onSkipRest = onSkipRest,
+                onAddExercise = onAddExercise,
+                modifier = modifier
+            )
+        }
     }
 
     openSession?.let { detail ->
@@ -202,6 +221,7 @@ private fun StartSessionPane(
             // closed the app outright the moment you had one past session.
             items(splits, key = { "split-${it.id}" }) { plan ->
                 SplitCard(
+                    modifier = Modifier.animateItem(),
                     plan = plan,
                     onStart = { onStartFromSplit(plan) },
                     onEdit = { editingSplit = plan }
@@ -220,18 +240,24 @@ private fun StartSessionPane(
                 }
             }
 
-            if (showAdHoc) {
-                Spacer(Modifier.height(8.dp))
-                PillRow(AD_HOC_LABELS, adHocLabel, Brass, { adHocLabel = it })
-                Spacer(Modifier.height(10.dp))
-                Button(
-                    onClick = { onStartBlank(adHocLabel) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Brass.copy(alpha = 0.16f),
-                        contentColor = Brass
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Start $adHocLabel session") }
+            AnimatedVisibility(
+                visible = showAdHoc,
+                enter = expandVertically(Motion.standard()) + fadeIn(Motion.enter()),
+                exit = shrinkVertically(Motion.standard()) + fadeOut(Motion.quick())
+            ) {
+                Column {
+                    Spacer(Modifier.height(8.dp))
+                    PillRow(AD_HOC_LABELS, adHocLabel, Brass, { adHocLabel = it })
+                    Spacer(Modifier.height(10.dp))
+                    Button(
+                        onClick = { onStartBlank(adHocLabel) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Brass.copy(alpha = 0.16f),
+                            contentColor = Brass
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Start $adHocLabel session") }
+                }
             }
 
             Spacer(Modifier.height(28.dp))
@@ -260,7 +286,7 @@ private fun StartSessionPane(
                     trailing = minutes?.let { "$it min" } ?: "open",
                     accent = Brass,
                     onClick = { onOpenSession(session.id) },
-                    modifier = Modifier.padding(bottom = 6.dp)
+                    modifier = Modifier.animateItem().padding(bottom = 6.dp)
                 )
             }
         }
@@ -288,9 +314,9 @@ private fun StartSessionPane(
 }
 
 @Composable
-private fun SplitCard(plan: SplitPlan, onStart: () -> Unit, onEdit: () -> Unit) {
+private fun SplitCard(plan: SplitPlan, onStart: () -> Unit, onEdit: () -> Unit, modifier: Modifier = Modifier) {
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp)
             .clip(RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp))
@@ -301,7 +327,7 @@ private fun SplitCard(plan: SplitPlan, onStart: () -> Unit, onEdit: () -> Unit) 
         Column(
             Modifier
                 .weight(1f)
-                .clickable { onStart() }
+                .pressable(haptic = Haptic.CONFIRM, onClick = onStart)
                 .padding(start = 12.dp, top = 12.dp, bottom = 12.dp)
         ) {
             Text(plan.name, style = MaterialTheme.typography.bodyLarge, color = Bone)
@@ -351,6 +377,15 @@ private fun ActiveSessionPane(
 
     val volume = Training.volume(state.sets)
     val working = state.sets.count { !it.isWarmup }
+    val haptics = LocalHapticFeedback.current
+    // A new record gets a second, stronger buzz after the confirm of logging it, and
+    // its row glows. Only a record set while this pane is open: the one already on
+    // screen when you come back to the tab is old news and stays quiet.
+    val recordOnArrival = remember { prSetId }
+    val freshRecord = prSetId?.takeIf { it != recordOnArrival }
+    LaunchedEffect(freshRecord) {
+        if (freshRecord != null) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -385,9 +420,19 @@ private fun ActiveSessionPane(
                 accent = Brass
             )
 
-            if (restRemaining != null) {
-                Spacer(Modifier.height(16.dp))
-                RestBanner(restRemaining, onSkipRest)
+            AnimatedVisibility(
+                visible = restRemaining != null,
+                enter = expandVertically(Motion.standard()) + fadeIn(Motion.enter()),
+                exit = shrinkVertically(Motion.standard()) + fadeOut(Motion.quick())
+            ) {
+                // Holds the last value while the banner folds away, so it never
+                // collapses showing a blank clock.
+                val last = remember { IntArray(1) }
+                if (restRemaining != null) last[0] = restRemaining
+                Column {
+                    Spacer(Modifier.height(16.dp))
+                    RestBanner(restRemaining ?: last[0], onSkipRest)
+                }
             }
 
             Spacer(Modifier.height(22.dp))
@@ -408,9 +453,8 @@ private fun ActiveSessionPane(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
+                    .pressable(RoundedCornerShape(14.dp), pressedScale = 0.985f) { showPicker = true }
                     .background(Slate)
-                    .clickable { showPicker = true }
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
                 Text(
@@ -500,9 +544,11 @@ private fun ActiveSessionPane(
             val canLog = selectedExercise != null &&
                 kg != null && (kg > 0 || (kg == 0.0 && selectedExercise.isAssisted)) &&
                 (reps.toIntOrNull() ?: 0) > 0
+            val logPress = remember { MutableInteractionSource() }
             Button(
                 onClick = {
                     val ex = selectedExercise ?: return@Button
+                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                     onLogSet(
                         ex.id,
                         weight.toDoubleOrNull() ?: 0.0,
@@ -512,13 +558,14 @@ private fun ActiveSessionPane(
                     reps = ""
                 },
                 enabled = canLog,
+                interactionSource = logPress,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Brass,
                     contentColor = Slate,
                     disabledContainerColor = Raised,
                     disabledContentColor = Faint
                 ),
-                modifier = Modifier.fillMaxWidth().height(52.dp)
+                modifier = Modifier.fillMaxWidth().height(52.dp).pressScale(logPress)
             ) { Text("Log set", style = MaterialTheme.typography.labelLarge) }
 
             Spacer(Modifier.height(26.dp))
@@ -541,8 +588,9 @@ private fun ActiveSessionPane(
                     ).joinToString("  ·  "),
                     trailing = Training.formatSet(row),
                     accent = if (row.isWarmup) Mute else Brass,
+                    highlight = row.setId == freshRecord,
                     onClick = { onEditSetRow(row) },
-                    modifier = Modifier.padding(bottom = 6.dp)
+                    modifier = Modifier.animateItem().padding(bottom = 6.dp)
                 )
             }
             item {
@@ -599,6 +647,7 @@ private fun TargetCard(guidance: LiftGuidance, onUseTarget: (Double, Int) -> Uni
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(Brass.copy(alpha = 0.10f))
+            .animateContentSize(Motion.standard())
             .padding(16.dp)
     ) {
         if (rec == null) {
@@ -634,13 +683,15 @@ private fun TargetCard(guidance: LiftGuidance, onUseTarget: (Double, Int) -> Uni
 
         Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                rec.headline,
-                style = MaterialTheme.typography.displaySmall,
-                color = Brass
-            )
+            AnimatedContent(targetState = rec.headline, transitionSpec = { fadeThrough() }, label = "target") {
+                Text(it, style = MaterialTheme.typography.displaySmall, color = Brass)
+            }
             Spacer(Modifier.weight(1f))
-            TextButton(onClick = { onUseTarget(rec.weightKg, rec.reps) }) {
+            val haptics = LocalHapticFeedback.current
+            TextButton(onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                onUseTarget(rec.weightKg, rec.reps)
+            }) {
                 Text("Use", color = Brass, style = MaterialTheme.typography.labelLarge)
             }
         }

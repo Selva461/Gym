@@ -1,6 +1,5 @@
 package dev.avles.gym.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -27,6 +27,7 @@ import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.components.ChipRow
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
+import dev.avles.gym.ui.components.pressable
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
@@ -86,7 +87,7 @@ internal fun ExercisePicker(
                             Column(
                                 Modifier
                                     .fillMaxWidth()
-                                    .clickable { onPick(exercise) }
+                                    .pressable(RoundedCornerShape(8.dp), pressedScale = 0.985f) { onPick(exercise) }
                                     .padding(vertical = 8.dp)
                             ) {
                                 Text(
