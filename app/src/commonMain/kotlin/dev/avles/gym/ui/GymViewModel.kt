@@ -36,6 +36,7 @@ import dev.avles.gym.domain.Progression
 import dev.avles.gym.domain.Recommendation
 import dev.avles.gym.domain.RestTimes
 import dev.avles.gym.domain.SavedMeals
+import dev.avles.gym.domain.Supersets
 import dev.avles.gym.domain.Totals
 import dev.avles.gym.domain.Training
 import dev.avles.gym.notify.Notifier
@@ -391,6 +392,7 @@ class GymViewModel(
 
     fun finishSession() = viewModelScope.launch {
         val session = trainState.value.active ?: return@launch
+        endSuperset()
         val sets = trainState.value.sets
         // Everything earlier on the same lifts, so a record means better than any
         // previous session. Read before closing, while the sets are still current.
@@ -430,6 +432,9 @@ class GymViewModel(
             val index = Training.nextSetIndex(trainState.value.sets, exerciseId)
             val newId = repo.logSet(session.id, exerciseId, index, weightKg, reps, isWarmup, variation, kind, rpe)
 
+            val superset = Supersets.after(_superset.value, exerciseId).takeIf { !isWarmup }
+            if (superset != null) selectExercise(superset.exerciseId)
+
             if (!isWarmup) {
                 val history = repo.historyForExercise(exerciseId).first()
                 val logged = history.firstOrNull { it.setId == newId }
@@ -438,12 +443,30 @@ class GymViewModel(
                 }
                 val exercise = trainState.value.exercises.firstOrNull { it.id == exerciseId }
                 val stored = settingsStore.settings.first()
+                // Mid-superset: straight on to the second lift, no rest.
+                if (superset != null && !superset.rest) {
+                    cancelRest()
+                    return@launch
+                }
                 startRest(
                     seconds = if (stored.restByLift) RestTimes.forLift(exercise, stored.restSeconds) else stored.restSeconds,
                     exerciseName = logged?.exerciseName ?: exercise?.name
                 )
             }
         }
+
+    private val _superset = MutableStateFlow<Supersets.Pair?>(null)
+
+    /** The two lifts being done back to back, if any. Not saved: a superset lasts a session. */
+    val superset: StateFlow<Supersets.Pair?> = _superset.asStateFlow()
+
+    fun startSuperset(first: Long, second: Long) {
+        if (first != second) _superset.value = Supersets.Pair(first, second)
+    }
+
+    fun endSuperset() {
+        _superset.value = null
+    }
 
     fun deleteSet(setId: Long) = viewModelScope.launch {
         repo.deleteSet(setId)

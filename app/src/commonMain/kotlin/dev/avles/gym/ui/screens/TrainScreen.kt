@@ -54,6 +54,7 @@ import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
 import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.SetKinds
+import dev.avles.gym.domain.Supersets
 import dev.avles.gym.domain.Training
 import dev.avles.gym.domain.Variations
 import dev.avles.gym.ui.LiftGuidance
@@ -120,7 +121,10 @@ fun TrainScreen(
     workoutReport: LiftHistory.Report? = null,
     onDismissReport: () -> Unit = {},
     liftHistory: (Long) -> Flow<List<SetRow>> = { flowOf(emptyList()) },
-    onSetNotes: (Long, String) -> Unit = { _, _ -> }
+    onSetNotes: (Long, String) -> Unit = { _, _ -> },
+    superset: Supersets.Pair? = null,
+    onStartSuperset: (Long, Long) -> Unit = { _, _ -> },
+    onEndSuperset: () -> Unit = {}
 ) {
     // Hoisted here because a set can be opened from the live session or from a past
     // one inside the session dialog, and both should land on the same editor.
@@ -161,6 +165,9 @@ fun TrainScreen(
                 onAddExercise = onAddExercise,
                 liftHistory = liftHistory,
                 onSetNotes = onSetNotes,
+                superset = superset,
+                onStartSuperset = onStartSuperset,
+                onEndSuperset = onEndSuperset,
                 modifier = modifier
             )
         }
@@ -383,6 +390,9 @@ private fun ActiveSessionPane(
     onAddExercise: (String, String) -> Unit,
     liftHistory: (Long) -> Flow<List<SetRow>>,
     onSetNotes: (Long, String) -> Unit,
+    superset: Supersets.Pair?,
+    onStartSuperset: (Long, Long) -> Unit,
+    onEndSuperset: () -> Unit,
     modifier: Modifier
 ) {
     val session = state.active ?: return
@@ -399,6 +409,7 @@ private fun ActiveSessionPane(
     var showPlates by remember { mutableStateOf(false) }
     var editingNote by remember { mutableStateOf<Exercise?>(null) }
     var swapping by remember { mutableStateOf<Exercise?>(null) }
+    var pairing by remember { mutableStateOf<Exercise?>(null) }
 
     val volume = Training.volume(state.sets)
     val working = state.sets.count { !it.isWarmup }
@@ -467,6 +478,28 @@ private fun ActiveSessionPane(
             Hairline()
             Spacer(Modifier.height(20.dp))
 
+            if (superset != null) {
+                val names = state.exercises.associate { it.id to it.name }
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Brass.copy(alpha = 0.12f))
+                        .padding(start = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Superset: ${names[superset.first] ?: "?"} + ${names[superset.second] ?: "?"}. " +
+                            "Rest comes after the second.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Brass,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = onEndSuperset) { Text("End", color = Brass) }
+                }
+                Spacer(Modifier.height(12.dp))
+            }
+
             // The split's own lifts, which is the whole point of having started from
             // one: no searching a catalogue of eighty-odd between two sets.
             if (activePlan != null && activePlan.exercises.isNotEmpty()) {
@@ -517,6 +550,11 @@ private fun ActiveSessionPane(
                     }
                     TextButton(onClick = { swapping = selectedExercise }) {
                         Text("Swap", color = Brass, style = MaterialTheme.typography.labelSmall)
+                    }
+                    if (superset == null) {
+                        TextButton(onClick = { pairing = selectedExercise }) {
+                            Text("Superset", color = Brass, style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 }
                 // On its own line now that four actions share the row above, which
@@ -702,6 +740,15 @@ private fun ActiveSessionPane(
         val history by remember(exercise.id) { liftHistory(exercise.id) }
             .collectAsStateWithLifecycle(emptyList())
         LiftHistoryDialog(exercise, history, onDismiss = { showingHistory = null })
+    }
+
+    pairing?.let { first ->
+        ExercisePicker(
+            exercises = state.exercises.filter { it.id != first.id },
+            onPick = { second -> onStartSuperset(first.id, second.id); pairing = null },
+            onAddNew = { pairing = null; showNewExercise = true },
+            onDismiss = { pairing = null }
+        )
     }
 
     swapping?.let { exercise ->

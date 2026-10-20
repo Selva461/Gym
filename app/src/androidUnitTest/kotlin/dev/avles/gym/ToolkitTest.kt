@@ -18,6 +18,7 @@ import dev.avles.gym.domain.Plates
 import dev.avles.gym.domain.RestTimes
 import dev.avles.gym.domain.SavedMeals
 import dev.avles.gym.domain.SetKinds
+import dev.avles.gym.domain.Supersets
 import dev.avles.gym.domain.Warmups
 import dev.avles.gym.domain.WeightGoal
 import dev.avles.gym.domain.Weekly
@@ -378,5 +379,14 @@ class ToolkitTest {
         assertTrue(swaps.all { it.muscleGroup == target.muscleGroup && it.id != target.id })
         val kit = swaps.take(4).map { dev.avles.gym.domain.ExerciseGuide.of(it).equipment }
         assertEquals("the first four should all be different kit: $kit", kit.size, kit.toSet().size)
+    }
+
+    @Test
+    fun `a superset goes straight to the second lift and rests after it`() {
+        val pair = Supersets.Pair(first = 1, second = 2)
+        assertEquals(Supersets.Next(2, rest = false), Supersets.after(pair, 1))
+        assertEquals(Supersets.Next(1, rest = true), Supersets.after(pair, 2))
+        assertNull(Supersets.after(pair, 3))
+        assertNull(Supersets.after(null, 1))
     }
 }

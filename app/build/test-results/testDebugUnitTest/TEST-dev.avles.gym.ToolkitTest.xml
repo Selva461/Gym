@@ -1,34 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.ToolkitTest" tests="30" skipped="0" failures="0" errors="0" timestamp="2026-10-20T18:04:14.048Z" hostname="vm" time="0.055">
+<testsuite name="dev.avles.gym.ToolkitTest" tests="31" skipped="0" failures="0" errors="0" timestamp="2026-10-20T18:09:07.608Z" hostname="vm" time="0.038">
   <properties/>
-  <testcase name="the workout card counts a record only against earlier sessions" classname="dev.avles.gym.ToolkitTest" time="0.003"/>
+  <testcase name="the workout card counts a record only against earlier sessions" classname="dev.avles.gym.ToolkitTest" time="0.002"/>
   <testcase name="a rolling week against the one before, skipping unlogged days" classname="dev.avles.gym.ToolkitTest" time="0.002"/>
-  <testcase name="weights export as ISO dates, oldest first, with plate precision" classname="dev.avles.gym.ToolkitTest" time="0.004"/>
-  <testcase name="saved meals group their foods and total a serving" classname="dev.avles.gym.ToolkitTest" time="0.002"/>
+  <testcase name="weights export as ISO dates, oldest first, with plate precision" classname="dev.avles.gym.ToolkitTest" time="0.003"/>
+  <testcase name="saved meals group their foods and total a serving" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
   <testcase name="the trend has one point per session, oldest first, ignoring warm-ups" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
-  <testcase name="a fast reports how far along it is and when it is done" classname="dev.avles.gym.ToolkitTest" time="0.007"/>
-  <testcase name="badges are earned at their number and the next one is the first unearned" classname="dev.avles.gym.ToolkitTest" time="0.004"/>
-  <testcase name="the split gives fat a quarter and carbohydrate the rest" classname="dev.avles.gym.ToolkitTest" time="0.003"/>
-  <testcase name="trends come back per part in tape order with the change since the first" classname="dev.avles.gym.ToolkitTest" time="0.002"/>
-  <testcase name="a swap stays on the muscle and offers other equipment first" classname="dev.avles.gym.ToolkitTest" time="0.005"/>
-  <testcase name="less help is the record on an assisted machine" classname="dev.avles.gym.ToolkitTest" time="0.002"/>
-  <testcase name="a month starts on its weekday and is padded to whole weeks" classname="dev.avles.gym.ToolkitTest" time="0.002"/>
-  <testcase name="a heavy set gets the full ramp, rounded down to plates" classname="dev.avles.gym.ToolkitTest" time="0.002"/>
+  <testcase name="a fast reports how far along it is and when it is done" classname="dev.avles.gym.ToolkitTest" time="0.006"/>
+  <testcase name="a superset goes straight to the second lift and rests after it" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
+  <testcase name="badges are earned at their number and the next one is the first unearned" classname="dev.avles.gym.ToolkitTest" time="0.002"/>
+  <testcase name="the split gives fat a quarter and carbohydrate the rest" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
+  <testcase name="trends come back per part in tape order with the change since the first" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
+  <testcase name="a swap stays on the muscle and offers other equipment first" classname="dev.avles.gym.ToolkitTest" time="0.002"/>
+  <testcase name="less help is the record on an assisted machine" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
+  <testcase name="a month starts on its weekday and is padded to whole weeks" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
+  <testcase name="a heavy set gets the full ramp, rounded down to plates" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
   <testcase name="plates are largest first and exact when the gym stocks them" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
-  <testcase name="a weight the plates cannot make says how far short it falls" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
-  <testcase name="the weekly rate is the trend line, and the date follows only toward the goal" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
-  <testcase name="records name the best, the heaviest and the most reps" classname="dev.avles.gym.ToolkitTest" time="0.003"/>
-  <testcase name="repeated plates are counted, and the bar alone is said plainly" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
-  <testcase name="Mifflin-St Jeor matches the published equation" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
+  <testcase name="a weight the plates cannot make says how far short it falls" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
+  <testcase name="the weekly rate is the trend line, and the date follows only toward the goal" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
+  <testcase name="records name the best, the heaviest and the most reps" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
+  <testcase name="repeated plates are counted, and the bar alone is said plainly" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
+  <testcase name="Mifflin-St Jeor matches the published equation" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
   <testcase name="months shift across the year end" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
-  <testcase name="below the bar is flagged, and other bars subtract their own weight" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
-  <testcase name="heavy lifts rest longer, isolation shorter, never against a longer setting" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
-  <testcase name="targets scale with goal and never cut below resting energy" classname="dev.avles.gym.ToolkitTest" time="0.002"/>
+  <testcase name="below the bar is flagged, and other bars subtract their own weight" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
+  <testcase name="heavy lifts rest longer, isolation shorter, never against a longer setting" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
+  <testcase name="targets scale with goal and never cut below resting energy" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
   <testcase name="a set describes its kind and effort, and a plain set says nothing" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
-  <testcase name="a light set gets a short ramp, and the bar alone needs none" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
+  <testcase name="a light set gets a short ramp, and the bar alone needs none" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
   <testcase name="the rep max table runs Epley backwards and rounds down to small plates" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
-  <testcase name="the Navy estimate matches the published equation and refuses impossible input" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
-  <testcase name="the records list keeps each lift's first best set, newest record first" classname="dev.avles.gym.ToolkitTest" time="0.003"/>
+  <testcase name="the Navy estimate matches the published equation and refuses impossible input" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
+  <testcase name="the records list keeps each lift's first best set, newest record first" classname="dev.avles.gym.ToolkitTest" time="0.001"/>
   <testcase name="water is 35 ml a kilo in glasses, at least eight" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
   <testcase name="CSV fields are quoted only when they must be" classname="dev.avles.gym.ToolkitTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>

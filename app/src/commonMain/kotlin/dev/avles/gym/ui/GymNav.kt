@@ -114,6 +114,7 @@ fun GymNav(vm: GymViewModel) {
     val patterns by vm.patternState.collectAsStateWithLifecycle()
     val workoutReport by vm.workoutReport.collectAsStateWithLifecycle()
     val records by vm.records.collectAsStateWithLifecycle()
+    val superset by vm.superset.collectAsStateWithLifecycle()
 
     val haptics = LocalHapticFeedback.current
 
@@ -258,7 +259,10 @@ fun GymNav(vm: GymViewModel) {
                     workoutReport = workoutReport,
                     onDismissReport = vm::dismissWorkoutReport,
                     liftHistory = vm::liftHistory,
-                    onSetNotes = { id, notes -> vm.setExerciseNotes(id, notes) }
+                    onSetNotes = { id, notes -> vm.setExerciseNotes(id, notes) },
+                    superset = superset,
+                    onStartSuperset = vm::startSuperset,
+                    onEndSuperset = vm::endSuperset
                 )
             }
             composable("fuel") {

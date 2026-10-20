@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.FoodDatasetTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-10-20T18:04:12.771Z" hostname="vm" time="0.417">
+<testsuite name="dev.avles.gym.FoodDatasetTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-10-20T18:09:06.534Z" hostname="vm" time="0.482">
   <properties/>
-  <testcase name="importing twice adds nothing the second time" classname="dev.avles.gym.FoodDatasetTest" time="0.13"/>
-  <testcase name="dishes the app has under another name are left alone" classname="dev.avles.gym.FoodDatasetTest" time="0.046"/>
-  <testcase name="the csv reader handles what a spreadsheet writes" classname="dev.avles.gym.FoodDatasetTest" time="0.025"/>
-  <testcase name="the second language moves from the name to the aliases" classname="dev.avles.gym.FoodDatasetTest" time="0.031"/>
-  <testcase name="a dish with calories but no macros is declined, not zeroed" classname="dev.avles.gym.FoodDatasetTest" time="0.017"/>
-  <testcase name="source spellings are fixed" classname="dev.avles.gym.FoodDatasetTest" time="0.015"/>
-  <testcase name="nothing imported duplicates a built-in food" classname="dev.avles.gym.FoodDatasetTest" time="0.026"/>
-  <testcase name="a countable thing keeps its own unit, a vessel becomes per 100" classname="dev.avles.gym.FoodDatasetTest" time="0.037"/>
-  <testcase name="every dish is accounted for once" classname="dev.avles.gym.FoodDatasetTest" time="0.017"/>
-  <testcase name="drinks file under drinks and every category is one the app already uses" classname="dev.avles.gym.FoodDatasetTest" time="0.013"/>
-  <testcase name="numbers are rescaled, not copied, when the unit changes" classname="dev.avles.gym.FoodDatasetTest" time="0.012"/>
-  <testcase name="an empty or header-only file imports nothing and does not throw" classname="dev.avles.gym.FoodDatasetTest" time="0.011"/>
+  <testcase name="importing twice adds nothing the second time" classname="dev.avles.gym.FoodDatasetTest" time="0.125"/>
+  <testcase name="dishes the app has under another name are left alone" classname="dev.avles.gym.FoodDatasetTest" time="0.044"/>
+  <testcase name="the csv reader handles what a spreadsheet writes" classname="dev.avles.gym.FoodDatasetTest" time="0.043"/>
+  <testcase name="the second language moves from the name to the aliases" classname="dev.avles.gym.FoodDatasetTest" time="0.041"/>
+  <testcase name="a dish with calories but no macros is declined, not zeroed" classname="dev.avles.gym.FoodDatasetTest" time="0.037"/>
+  <testcase name="source spellings are fixed" classname="dev.avles.gym.FoodDatasetTest" time="0.036"/>
+  <testcase name="nothing imported duplicates a built-in food" classname="dev.avles.gym.FoodDatasetTest" time="0.031"/>
+  <testcase name="a countable thing keeps its own unit, a vessel becomes per 100" classname="dev.avles.gym.FoodDatasetTest" time="0.027"/>
+  <testcase name="every dish is accounted for once" classname="dev.avles.gym.FoodDatasetTest" time="0.02"/>
+  <testcase name="drinks file under drinks and every category is one the app already uses" classname="dev.avles.gym.FoodDatasetTest" time="0.014"/>
+  <testcase name="numbers are rescaled, not copied, when the unit changes" classname="dev.avles.gym.FoodDatasetTest" time="0.014"/>
+  <testcase name="an empty or header-only file imports nothing and does not throw" classname="dev.avles.gym.FoodDatasetTest" time="0.013"/>
   <testcase name="a dish that is mostly fat by weight is declined" classname="dev.avles.gym.FoodDatasetTest" time="0.011"/>
   <testcase name="a dish whose calories contradict its own macros is declined" classname="dev.avles.gym.FoodDatasetTest" time="0.011"/>
-  <testcase name="nothing imported passes a gate the built-in foods would fail" classname="dev.avles.gym.FoodDatasetTest" time="0.013"/>
+  <testcase name="nothing imported passes a gate the built-in foods would fail" classname="dev.avles.gym.FoodDatasetTest" time="0.012"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
