@@ -14,12 +14,13 @@ import dev.avles.gym.data.SetRow
 object Export {
 
     fun sets(sets: List<SetRow>): String = csv(
-        listOf("date", "exercise", "set", "kg", "reps", "warm-up", "assisted", "variation", "estimated 1RM"),
+        listOf("date", "exercise", "set", "kg", "reps", "warm-up", "assisted", "variation", "type", "RPE", "estimated 1RM"),
         sets.sortedBy { it.loggedAt }.map {
             listOf(
                 iso(Dates.epochDayOf(it.loggedAt)), it.exerciseName, it.setIndex.toString(),
                 Plates.label(it.weightKg), it.reps.toString(),
                 yesNo(it.isWarmup), yesNo(it.isAssisted), Variations.label(it.variation),
+                SetKinds.label(it.kind), if (it.rpe > 0) SetKinds.rpeLabel(it.rpe) else "",
                 if (it.isWarmup || it.isAssisted) "" else Numbers.fixed(Training.estimatedOneRepMax(it.weightKg, it.reps), 1)
             )
         }

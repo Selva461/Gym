@@ -180,6 +180,16 @@ object SchemaSql {
 
     val V9_STATEMENTS = listOf(CREATE_BODY_MEASUREMENT, INDEX_BODY_MEASUREMENT_DATE_PART)
 
+    // ---- v10: drop sets, sets to failure, and RPE ---------------------------
+
+    const val ADD_SET_KIND = "ALTER TABLE `set_entry` ADD COLUMN `kind` TEXT NOT NULL DEFAULT ''"
+    const val ADD_SET_RPE = "ALTER TABLE `set_entry` ADD COLUMN `rpe` REAL NOT NULL DEFAULT 0"
+
+    const val EXPECTED_SET_KIND_COLUMN = "`kind` TEXT NOT NULL DEFAULT ''"
+    const val EXPECTED_SET_RPE_COLUMN = "`rpe` REAL NOT NULL DEFAULT 0"
+
+    val V10_STATEMENTS = listOf(ADD_SET_KIND, ADD_SET_RPE)
+
     /** Every statement the v5 migration runs, in order. */
     val V5_STATEMENTS = listOf(
         CREATE_PROGRESS_PHOTO,

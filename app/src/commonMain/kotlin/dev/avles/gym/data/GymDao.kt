@@ -98,9 +98,11 @@ interface GymDao {
     // including its loggedAt, just to change a weight.
     @Query(
         "UPDATE set_entry SET weightKg = :weightKg, reps = :reps, isWarmup = :isWarmup, " +
-            "variation = :variation WHERE id = :id"
+            "variation = :variation, kind = :kind, rpe = :rpe WHERE id = :id"
     )
-    suspend fun editSet(id: Long, weightKg: Double, reps: Int, isWarmup: Boolean, variation: String)
+    suspend fun editSet(
+        id: Long, weightKg: Double, reps: Int, isWarmup: Boolean, variation: String, kind: String, rpe: Double
+    )
 
     @Query("SELECT * FROM workout_session WHERE id = :id")
     suspend fun sessionById(id: Long): WorkoutSession?
@@ -131,7 +133,8 @@ interface GymDao {
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
                s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-               s.variation AS variation, e.isAssisted AS isAssisted
+               s.variation AS variation, e.isAssisted AS isAssisted,
+               s.kind AS kind, s.rpe AS rpe
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.sessionId = :sessionId
@@ -145,7 +148,8 @@ interface GymDao {
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
                s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-               s.variation AS variation, e.isAssisted AS isAssisted
+               s.variation AS variation, e.isAssisted AS isAssisted,
+               s.kind AS kind, s.rpe AS rpe
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.exerciseId = :exerciseId AND s.isWarmup = 0
@@ -371,7 +375,8 @@ interface GymDao {
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
                s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-               s.variation AS variation, e.isAssisted AS isAssisted
+               s.variation AS variation, e.isAssisted AS isAssisted,
+               s.kind AS kind, s.rpe AS rpe
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.isWarmup = 0

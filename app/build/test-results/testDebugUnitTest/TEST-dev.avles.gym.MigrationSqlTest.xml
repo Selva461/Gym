@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.MigrationSqlTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:41:29.965Z" hostname="vm" time="0.024">
+<testsuite name="dev.avles.gym.MigrationSqlTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:45:46.642Z" hostname="vm" time="0.029">
   <properties/>
-  <testcase name="the set variation column carries the same default on both sides" classname="dev.avles.gym.MigrationSqlTest" time="0.007"/>
-  <testcase name="the photo tables are created exactly as Room expects them" classname="dev.avles.gym.MigrationSqlTest" time="0.003"/>
+  <testcase name="the set variation column carries the same default on both sides" classname="dev.avles.gym.MigrationSqlTest" time="0.008"/>
+  <testcase name="the photo tables are created exactly as Room expects them" classname="dev.avles.gym.MigrationSqlTest" time="0.002"/>
   <testcase name="the assisted column carries the same default on both sides and is backfilled" classname="dev.avles.gym.MigrationSqlTest" time="0.001"/>
-  <testcase name="the day marker table is created exactly as Room expects it" classname="dev.avles.gym.MigrationSqlTest" time="0.001"/>
+  <testcase name="the day marker table is created exactly as Room expects it" classname="dev.avles.gym.MigrationSqlTest" time="0.002"/>
+  <testcase name="the set kind and RPE columns carry the same default on both sides" classname="dev.avles.gym.MigrationSqlTest" time="0.003"/>
   <testcase name="the split table is created exactly as Room expects it" classname="dev.avles.gym.MigrationSqlTest" time="0.001"/>
   <testcase name="one picture per lift is enforced by a unique index" classname="dev.avles.gym.MigrationSqlTest" time="0.001"/>
   <testcase name="the food aliases and source columns carry the same default on both sides" classname="dev.avles.gym.MigrationSqlTest" time="0.003"/>
   <testcase name="the body measurement table is created exactly as Room expects it" classname="dev.avles.gym.MigrationSqlTest" time="0.001"/>
   <testcase name="the split_exercise table is created exactly as Room expects it" classname="dev.avles.gym.MigrationSqlTest" time="0.001"/>
   <testcase name="both split_exercise indices match Room's own" classname="dev.avles.gym.MigrationSqlTest" time="0.001"/>
-  <testcase name="the session split column is nullable on both sides" classname="dev.avles.gym.MigrationSqlTest" time="0.0"/>
-  <testcase name="the exported schema is the version the database declares" classname="dev.avles.gym.MigrationSqlTest" time="0.003"/>
+  <testcase name="the session split column is nullable on both sides" classname="dev.avles.gym.MigrationSqlTest" time="0.001"/>
+  <testcase name="the exported schema is the version the database declares" classname="dev.avles.gym.MigrationSqlTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

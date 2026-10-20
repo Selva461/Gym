@@ -34,7 +34,7 @@ class MigrationSqlTest {
          * Kept in step with @Database(version = ...) by hand, and asserted below so
          * the two cannot drift apart silently.
          */
-        const val DB_VERSION = 9
+        const val DB_VERSION = 10
     }
 
     /**
@@ -274,6 +274,16 @@ class MigrationSqlTest {
         assertTrue(SchemaSql.ADD_EXERCISE_ASSISTED.endsWith(SchemaSql.EXPECTED_EXERCISE_ASSISTED_COLUMN))
         assertTrue(SchemaSql.FLAG_ASSISTED_EXERCISES.contains("'%assisted%'"))
         assertEquals(listOf(SchemaSql.ADD_EXERCISE_ASSISTED, SchemaSql.FLAG_ASSISTED_EXERCISES), SchemaSql.V8_STATEMENTS)
+    }
+
+    /** Version 10 adds a set's kind and RPE, both with defaults so old sets stay valid. */
+    @Test
+    fun `the set kind and RPE columns carry the same default on both sides`() {
+        val create = expectedCreateSql("set_entry")
+        assertTrue("set_entry lacks ${SchemaSql.EXPECTED_SET_KIND_COLUMN}: $create", create.contains(SchemaSql.EXPECTED_SET_KIND_COLUMN))
+        assertTrue("set_entry lacks ${SchemaSql.EXPECTED_SET_RPE_COLUMN}: $create", create.contains(SchemaSql.EXPECTED_SET_RPE_COLUMN))
+        assertTrue(SchemaSql.ADD_SET_KIND.endsWith(SchemaSql.EXPECTED_SET_KIND_COLUMN))
+        assertTrue(SchemaSql.ADD_SET_RPE.endsWith(SchemaSql.EXPECTED_SET_RPE_COLUMN))
     }
 
     /** Version 9 adds the tape-measurement table, unique on the day and the part. */

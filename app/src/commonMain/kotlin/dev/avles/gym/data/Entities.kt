@@ -198,7 +198,15 @@ data class SetEntry(
      * asks for it. Without the annotation the migration and Room's expectation differ
      * by that clause, and Room throws on launch for everyone upgrading with data.
      */
-    @ColumnInfo(defaultValue = "''") val variation: String = ""
+    @ColumnInfo(defaultValue = "''") val variation: String = "",
+    /**
+     * What kind of working set this was beyond a straight one: "drop" or "failure",
+     * from [dev.avles.gym.domain.SetKinds]. Empty is a straight set, which is every
+     * set logged before v10.
+     */
+    @ColumnInfo(defaultValue = "''") val kind: String = "",
+    /** Rate of perceived exertion, 6 to 10 in halves; zero when not given. */
+    @ColumnInfo(defaultValue = "0") val rpe: Double = 0.0
 )
 
 @Entity(tableName = "food_item")
@@ -295,7 +303,9 @@ data class SetRow(
      */
     val variation: String = "",
     /** Copied from the exercise, so rules that read a set know which way its weight points. */
-    val isAssisted: Boolean = false
+    val isAssisted: Boolean = false,
+    val kind: String = "",
+    val rpe: Double = 0.0
 )
 
 data class DayVolume(val dateEpochDay: Long, val volume: Double)

@@ -10,6 +10,7 @@ import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Measurements
 import dev.avles.gym.domain.MonthGrid
 import dev.avles.gym.domain.Plates
+import dev.avles.gym.domain.SetKinds
 import dev.avles.gym.domain.Warmups
 import dev.avles.gym.domain.Weekly
 import org.junit.Assert.assertEquals
@@ -292,5 +293,14 @@ class ToolkitTest {
         assertEquals(listOf("Arm", "Waist"), t.map { it.part })
         assertEquals(-2.5, t.last().changeCm, 1e-9)
         assertEquals(listOf(86.5, 84.0), t.last().points)
+    }
+
+    // ---- Set kinds and RPE ----------------------------------------------------
+
+    @Test
+    fun `a set describes its kind and effort, and a plain set says nothing`() {
+        assertEquals("drop set · RPE 8.5", SetKinds.describe(set(1, 1, 60.0, 8).copy(kind = SetKinds.DROP, rpe = 8.5)))
+        assertEquals("RPE 10", SetKinds.describe(set(1, 1, 60.0, 8).copy(rpe = 10.0)))
+        assertEquals("", SetKinds.describe(set(1, 1, 60.0, 8)))
     }
 }

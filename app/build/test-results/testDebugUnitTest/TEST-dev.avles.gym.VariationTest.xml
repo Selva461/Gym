@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="dev.avles.gym.VariationTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:41:30.650Z" hostname="vm" time="0.006">
+<testsuite name="dev.avles.gym.VariationTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-20T17:45:47.285Z" hostname="vm" time="0.005">
   <properties/>
-  <testcase name="an unspecified set is not ranked against a grip it may not have used" classname="dev.avles.gym.VariationTest" time="0.001"/>
-  <testcase name="two axes together are a different history from either alone" classname="dev.avles.gym.VariationTest" time="0.002"/>
-  <testcase name="borrowing cannot invent a starting weight out of nothing" classname="dev.avles.gym.VariationTest" time="0.0"/>
+  <testcase name="an unspecified set is not ranked against a grip it may not have used" classname="dev.avles.gym.VariationTest" time="0.0"/>
+  <testcase name="two axes together are a different history from either alone" classname="dev.avles.gym.VariationTest" time="0.001"/>
+  <testcase name="borrowing cannot invent a starting weight out of nothing" classname="dev.avles.gym.VariationTest" time="0.001"/>
   <testcase name="volume sums across every variation" classname="dev.avles.gym.VariationTest" time="0.0"/>
-  <testcase name="the first session on a new variation borrows a starting point and admits it" classname="dev.avles.gym.VariationTest" time="0.001"/>
+  <testcase name="the first session on a new variation borrows a starting point and admits it" classname="dev.avles.gym.VariationTest" time="0.0"/>
   <testcase name="unspecified sets are their own bucket, not a match for everything" classname="dev.avles.gym.VariationTest" time="0.0"/>
   <testcase name="a record on one grip does not erase a record on another" classname="dev.avles.gym.VariationTest" time="0.0"/>
   <testcase name="a label is offered only when there is something to say" classname="dev.avles.gym.VariationTest" time="0.001"/>
   <testcase name="reps on one grip do not raise the target on another" classname="dev.avles.gym.VariationTest" time="0.0"/>
-  <testcase name="a variation with its own history never borrows" classname="dev.avles.gym.VariationTest" time="0.001"/>
+  <testcase name="a variation with its own history never borrows" classname="dev.avles.gym.VariationTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

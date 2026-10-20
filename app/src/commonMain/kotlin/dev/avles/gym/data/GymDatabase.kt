@@ -26,7 +26,7 @@ import kotlinx.coroutines.IO
         DayMarker::class,
         BodyMeasurement::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true
 )
 @ConstructedBy(GymDatabaseConstructor::class)
@@ -168,9 +168,20 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v9 → v10: a set's kind (drop set, to failure) and its RPE. Two columns with
+         * defaults that say "a straight set, effort not recorded", which is exactly
+         * what every set logged before this was.
+         */
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(connection: SQLiteConnection) {
+                SchemaSql.V10_STATEMENTS.forEach { connection.execSQL(it) }
+            }
+        }
+
         val MIGRATIONS = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
-            MIGRATION_7_8, MIGRATION_8_9
+            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10
         )
 
         /** The file name, the same on both platforms; only the directory differs. */

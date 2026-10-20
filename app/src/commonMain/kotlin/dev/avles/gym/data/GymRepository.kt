@@ -202,7 +202,9 @@ class GymRepository(
         weightKg: Double,
         reps: Int,
         isWarmup: Boolean,
-        variation: String = ""
+        variation: String = "",
+        kind: String = "",
+        rpe: Double = 0.0
     ) = dao.insertSet(
         SetEntry(
             sessionId = sessionId,
@@ -212,7 +214,9 @@ class GymRepository(
             reps = reps,
             isWarmup = isWarmup,
             loggedAt = Dates.nowMillis(),
-            variation = variation.trim()
+            variation = variation.trim(),
+            kind = kind,
+            rpe = rpe
         )
     )
 
@@ -225,9 +229,13 @@ class GymRepository(
         weightKg: Double,
         reps: Int,
         isWarmup: Boolean,
-        variation: String = ""
+        variation: String = "",
+        kind: String = "",
+        rpe: Double = 0.0
     ) {
-        if (weightKg > 0 && reps > 0) dao.editSet(setId, weightKg, reps, isWarmup, variation.trim())
+        // Zero is a real weight: no help at all on an assisted machine, which logging
+        // already allows. Editing refused it, so such a set could not be corrected.
+        if (weightKg >= 0 && reps > 0) dao.editSet(setId, weightKg, reps, isWarmup, variation.trim(), kind, rpe)
     }
 
     suspend fun addExercise(name: String, muscleGroup: String): Long =

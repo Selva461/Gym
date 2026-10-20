@@ -240,11 +240,11 @@ fun GymNav(vm: GymViewModel) {
                     onReopenSession = vm::reopenSession,
                     onDeleteSession = vm::deleteSession,
                     onFinish = vm::finishSession,
-                    onLogSet = { exerciseId, weight, reps, warmup ->
-                        vm.logSet(exerciseId, weight, reps, warmup)
+                    onLogSet = { exerciseId, weight, reps, warmup, kind, rpe ->
+                        vm.logSet(exerciseId, weight, reps, warmup, kind = kind, rpe = rpe)
                     },
-                    onEditSet = { setId, weight, reps, warmup, variation ->
-                        vm.editSet(setId, weight, reps, warmup, variation)
+                    onEditSet = { setId, weight, reps, warmup, variation, kind, rpe ->
+                        vm.editSet(setId, weight, reps, warmup, variation, kind, rpe)
                     },
                     onDeleteSet = vm::deleteSet,
                     onSkipRest = vm::cancelRest,

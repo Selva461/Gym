@@ -112,7 +112,7 @@ public class GymDao_Impl(
     }
     this.__insertAdapterOfSetEntry = object : EntityInsertAdapter<SetEntry>() {
       protected override fun createQuery(): String =
-          "INSERT OR ABORT INTO `set_entry` (`id`,`sessionId`,`exerciseId`,`setIndex`,`weightKg`,`reps`,`isWarmup`,`loggedAt`,`variation`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?)"
+          "INSERT OR ABORT INTO `set_entry` (`id`,`sessionId`,`exerciseId`,`setIndex`,`weightKg`,`reps`,`isWarmup`,`loggedAt`,`variation`,`kind`,`rpe`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?)"
 
       protected override fun bind(statement: SQLiteStatement, entity: SetEntry) {
         statement.bindLong(1, entity.id)
@@ -125,6 +125,8 @@ public class GymDao_Impl(
         statement.bindLong(7, _tmp.toLong())
         statement.bindLong(8, entity.loggedAt)
         statement.bindText(9, entity.variation)
+        statement.bindText(10, entity.kind)
+        statement.bindDouble(11, entity.rpe)
       }
     }
     this.__insertAdapterOfFoodItem = object : EntityInsertAdapter<FoodItem>() {
@@ -936,6 +938,8 @@ public class GymDao_Impl(
         val _columnIndexOfIsWarmup: Int = getColumnIndexOrThrow(_stmt, "isWarmup")
         val _columnIndexOfLoggedAt: Int = getColumnIndexOrThrow(_stmt, "loggedAt")
         val _columnIndexOfVariation: Int = getColumnIndexOrThrow(_stmt, "variation")
+        val _columnIndexOfKind: Int = getColumnIndexOrThrow(_stmt, "kind")
+        val _columnIndexOfRpe: Int = getColumnIndexOrThrow(_stmt, "rpe")
         val _result: SetEntry?
         if (_stmt.step()) {
           val _tmpId: Long
@@ -958,8 +962,12 @@ public class GymDao_Impl(
           _tmpLoggedAt = _stmt.getLong(_columnIndexOfLoggedAt)
           val _tmpVariation: String
           _tmpVariation = _stmt.getText(_columnIndexOfVariation)
+          val _tmpKind: String
+          _tmpKind = _stmt.getText(_columnIndexOfKind)
+          val _tmpRpe: Double
+          _tmpRpe = _stmt.getDouble(_columnIndexOfRpe)
           _result =
-              SetEntry(_tmpId,_tmpSessionId,_tmpExerciseId,_tmpSetIndex,_tmpWeightKg,_tmpReps,_tmpIsWarmup,_tmpLoggedAt,_tmpVariation)
+              SetEntry(_tmpId,_tmpSessionId,_tmpExerciseId,_tmpSetIndex,_tmpWeightKg,_tmpReps,_tmpIsWarmup,_tmpLoggedAt,_tmpVariation,_tmpKind,_tmpRpe)
         } else {
           _result = null
         }
@@ -1065,7 +1073,8 @@ public class GymDao_Impl(
         |        SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
         |               e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
         |               s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-        |               s.variation AS variation, e.isAssisted AS isAssisted
+        |               s.variation AS variation, e.isAssisted AS isAssisted,
+        |               s.kind AS kind, s.rpe AS rpe
         |        FROM set_entry s
         |        JOIN exercise e ON e.id = s.exerciseId
         |        WHERE s.sessionId = ?
@@ -1088,6 +1097,8 @@ public class GymDao_Impl(
         val _columnIndexOfLoggedAt: Int = 8
         val _columnIndexOfVariation: Int = 9
         val _columnIndexOfIsAssisted: Int = 10
+        val _columnIndexOfKind: Int = 11
+        val _columnIndexOfRpe: Int = 12
         val _result: MutableList<SetRow> = mutableListOf()
         while (_stmt.step()) {
           val _item: SetRow
@@ -1117,8 +1128,12 @@ public class GymDao_Impl(
           val _tmp_1: Int
           _tmp_1 = _stmt.getLong(_columnIndexOfIsAssisted).toInt()
           _tmpIsAssisted = _tmp_1 != 0
+          val _tmpKind: String
+          _tmpKind = _stmt.getText(_columnIndexOfKind)
+          val _tmpRpe: Double
+          _tmpRpe = _stmt.getDouble(_columnIndexOfRpe)
           _item =
-              SetRow(_tmpSetId,_tmpSessionId,_tmpExerciseId,_tmpExerciseName,_tmpSetIndex,_tmpWeightKg,_tmpReps,_tmpIsWarmup,_tmpLoggedAt,_tmpVariation,_tmpIsAssisted)
+              SetRow(_tmpSetId,_tmpSessionId,_tmpExerciseId,_tmpExerciseName,_tmpSetIndex,_tmpWeightKg,_tmpReps,_tmpIsWarmup,_tmpLoggedAt,_tmpVariation,_tmpIsAssisted,_tmpKind,_tmpRpe)
           _result.add(_item)
         }
         _result
@@ -1134,7 +1149,8 @@ public class GymDao_Impl(
         |        SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
         |               e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
         |               s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-        |               s.variation AS variation, e.isAssisted AS isAssisted
+        |               s.variation AS variation, e.isAssisted AS isAssisted,
+        |               s.kind AS kind, s.rpe AS rpe
         |        FROM set_entry s
         |        JOIN exercise e ON e.id = s.exerciseId
         |        WHERE s.exerciseId = ? AND s.isWarmup = 0
@@ -1160,6 +1176,8 @@ public class GymDao_Impl(
         val _columnIndexOfLoggedAt: Int = 8
         val _columnIndexOfVariation: Int = 9
         val _columnIndexOfIsAssisted: Int = 10
+        val _columnIndexOfKind: Int = 11
+        val _columnIndexOfRpe: Int = 12
         val _result: MutableList<SetRow> = mutableListOf()
         while (_stmt.step()) {
           val _item: SetRow
@@ -1189,8 +1207,12 @@ public class GymDao_Impl(
           val _tmp_1: Int
           _tmp_1 = _stmt.getLong(_columnIndexOfIsAssisted).toInt()
           _tmpIsAssisted = _tmp_1 != 0
+          val _tmpKind: String
+          _tmpKind = _stmt.getText(_columnIndexOfKind)
+          val _tmpRpe: Double
+          _tmpRpe = _stmt.getDouble(_columnIndexOfRpe)
           _item =
-              SetRow(_tmpSetId,_tmpSessionId,_tmpExerciseId,_tmpExerciseName,_tmpSetIndex,_tmpWeightKg,_tmpReps,_tmpIsWarmup,_tmpLoggedAt,_tmpVariation,_tmpIsAssisted)
+              SetRow(_tmpSetId,_tmpSessionId,_tmpExerciseId,_tmpExerciseName,_tmpSetIndex,_tmpWeightKg,_tmpReps,_tmpIsWarmup,_tmpLoggedAt,_tmpVariation,_tmpIsAssisted,_tmpKind,_tmpRpe)
           _result.add(_item)
         }
         _result
@@ -2259,7 +2281,8 @@ public class GymDao_Impl(
         |        SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
         |               e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
         |               s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-        |               s.variation AS variation, e.isAssisted AS isAssisted
+        |               s.variation AS variation, e.isAssisted AS isAssisted,
+        |               s.kind AS kind, s.rpe AS rpe
         |        FROM set_entry s
         |        JOIN exercise e ON e.id = s.exerciseId
         |        WHERE s.isWarmup = 0
@@ -2279,6 +2302,8 @@ public class GymDao_Impl(
         val _columnIndexOfLoggedAt: Int = 8
         val _columnIndexOfVariation: Int = 9
         val _columnIndexOfIsAssisted: Int = 10
+        val _columnIndexOfKind: Int = 11
+        val _columnIndexOfRpe: Int = 12
         val _result: MutableList<SetRow> = mutableListOf()
         while (_stmt.step()) {
           val _item: SetRow
@@ -2308,8 +2333,12 @@ public class GymDao_Impl(
           val _tmp_1: Int
           _tmp_1 = _stmt.getLong(_columnIndexOfIsAssisted).toInt()
           _tmpIsAssisted = _tmp_1 != 0
+          val _tmpKind: String
+          _tmpKind = _stmt.getText(_columnIndexOfKind)
+          val _tmpRpe: Double
+          _tmpRpe = _stmt.getDouble(_columnIndexOfRpe)
           _item =
-              SetRow(_tmpSetId,_tmpSessionId,_tmpExerciseId,_tmpExerciseName,_tmpSetIndex,_tmpWeightKg,_tmpReps,_tmpIsWarmup,_tmpLoggedAt,_tmpVariation,_tmpIsAssisted)
+              SetRow(_tmpSetId,_tmpSessionId,_tmpExerciseId,_tmpExerciseName,_tmpSetIndex,_tmpWeightKg,_tmpReps,_tmpIsWarmup,_tmpLoggedAt,_tmpVariation,_tmpIsAssisted,_tmpKind,_tmpRpe)
           _result.add(_item)
         }
         _result
@@ -2415,9 +2444,11 @@ public class GymDao_Impl(
     reps: Int,
     isWarmup: Boolean,
     variation: String,
+    kind: String,
+    rpe: Double,
   ) {
     val _sql: String =
-        "UPDATE set_entry SET weightKg = ?, reps = ?, isWarmup = ?, variation = ? WHERE id = ?"
+        "UPDATE set_entry SET weightKg = ?, reps = ?, isWarmup = ?, variation = ?, kind = ?, rpe = ? WHERE id = ?"
     return performSuspending(__db, false, true) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
@@ -2431,6 +2462,10 @@ public class GymDao_Impl(
         _argIndex = 4
         _stmt.bindText(_argIndex, variation)
         _argIndex = 5
+        _stmt.bindText(_argIndex, kind)
+        _argIndex = 6
+        _stmt.bindDouble(_argIndex, rpe)
+        _argIndex = 7
         _stmt.bindLong(_argIndex, id)
         _stmt.step()
       } finally {

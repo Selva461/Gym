@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 9,
-    "identityHash": "2eae8055ea4db395182e1522f313fa4f",
+    "version": 10,
+    "identityHash": "816dbc3425cb7cd94c8b51c462e12ddf",
     "entities": [
       {
         "tableName": "exercise",
@@ -136,7 +136,7 @@
       },
       {
         "tableName": "set_entry",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `exerciseId` INTEGER NOT NULL, `setIndex` INTEGER NOT NULL, `weightKg` REAL NOT NULL, `reps` INTEGER NOT NULL, `isWarmup` INTEGER NOT NULL, `loggedAt` INTEGER NOT NULL, `variation` TEXT NOT NULL DEFAULT '')",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `exerciseId` INTEGER NOT NULL, `setIndex` INTEGER NOT NULL, `weightKg` REAL NOT NULL, `reps` INTEGER NOT NULL, `isWarmup` INTEGER NOT NULL, `loggedAt` INTEGER NOT NULL, `variation` TEXT NOT NULL DEFAULT '', `kind` TEXT NOT NULL DEFAULT '', `rpe` REAL NOT NULL DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
@@ -192,6 +192,20 @@
             "affinity": "TEXT",
             "notNull": true,
             "defaultValue": "''"
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "rpe",
+            "columnName": "rpe",
+            "affinity": "REAL",
+            "notNull": true,
+            "defaultValue": "0"
           }
         ],
         "primaryKey": {
@@ -814,7 +828,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2eae8055ea4db395182e1522f313fa4f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '816dbc3425cb7cd94c8b51c462e12ddf')"
     ]
   }
 }

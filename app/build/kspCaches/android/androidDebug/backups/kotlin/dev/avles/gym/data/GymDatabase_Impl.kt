@@ -32,13 +32,13 @@ public class GymDatabase_Impl : GymDatabase() {
   }
 
   protected override fun createOpenDelegate(): RoomOpenDelegate {
-    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(9,
-        "2eae8055ea4db395182e1522f313fa4f", "95b3145caf6214b22798158ce2b02651") {
+    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(10,
+        "816dbc3425cb7cd94c8b51c462e12ddf", "6a99d823079c4c7931d7b08dff928735") {
       public override fun createAllTables(connection: SQLiteConnection) {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `exercise` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `muscleGroup` TEXT NOT NULL, `isBodyweight` INTEGER NOT NULL, `isCustom` INTEGER NOT NULL, `repLow` INTEGER NOT NULL, `repHigh` INTEGER NOT NULL, `incrementKg` REAL NOT NULL, `isAssisted` INTEGER NOT NULL DEFAULT 0)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `workout_session` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `label` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER, `notes` TEXT NOT NULL, `splitId` INTEGER)")
         connection.execSQL("CREATE INDEX IF NOT EXISTS `index_workout_session_dateEpochDay` ON `workout_session` (`dateEpochDay`)")
-        connection.execSQL("CREATE TABLE IF NOT EXISTS `set_entry` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `exerciseId` INTEGER NOT NULL, `setIndex` INTEGER NOT NULL, `weightKg` REAL NOT NULL, `reps` INTEGER NOT NULL, `isWarmup` INTEGER NOT NULL, `loggedAt` INTEGER NOT NULL, `variation` TEXT NOT NULL DEFAULT '')")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `set_entry` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `exerciseId` INTEGER NOT NULL, `setIndex` INTEGER NOT NULL, `weightKg` REAL NOT NULL, `reps` INTEGER NOT NULL, `isWarmup` INTEGER NOT NULL, `loggedAt` INTEGER NOT NULL, `variation` TEXT NOT NULL DEFAULT '', `kind` TEXT NOT NULL DEFAULT '', `rpe` REAL NOT NULL DEFAULT 0)")
         connection.execSQL("CREATE INDEX IF NOT EXISTS `index_set_entry_sessionId` ON `set_entry` (`sessionId`)")
         connection.execSQL("CREATE INDEX IF NOT EXISTS `index_set_entry_exerciseId` ON `set_entry` (`exerciseId`)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `food_item` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `unitLabel` TEXT NOT NULL, `kcal` REAL NOT NULL, `proteinG` REAL NOT NULL, `carbsG` REAL NOT NULL, `fatG` REAL NOT NULL, `category` TEXT NOT NULL, `isCustom` INTEGER NOT NULL, `isSupplement` INTEGER NOT NULL, `aliases` TEXT NOT NULL DEFAULT '', `source` TEXT NOT NULL DEFAULT '', `fiberG` REAL NOT NULL, `sugarG` REAL NOT NULL, `satFatG` REAL NOT NULL, `sodiumMg` REAL NOT NULL, `potassiumMg` REAL NOT NULL, `calciumMg` REAL NOT NULL, `ironMg` REAL NOT NULL, `magnesiumMg` REAL NOT NULL, `zincMg` REAL NOT NULL, `vitAMcg` REAL NOT NULL, `vitCMg` REAL NOT NULL, `vitDMcg` REAL NOT NULL, `vitB12Mcg` REAL NOT NULL, `folateMcg` REAL NOT NULL, `omega3G` REAL NOT NULL)")
@@ -60,7 +60,7 @@ public class GymDatabase_Impl : GymDatabase() {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `body_measurement` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `part` TEXT NOT NULL, `cm` REAL NOT NULL)")
         connection.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_body_measurement_dateEpochDay_part` ON `body_measurement` (`dateEpochDay`, `part`)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
-        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2eae8055ea4db395182e1522f313fa4f')")
+        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '816dbc3425cb7cd94c8b51c462e12ddf')")
       }
 
       public override fun dropAllTables(connection: SQLiteConnection) {
@@ -176,6 +176,10 @@ public class GymDatabase_Impl : GymDatabase() {
         _columnsSetEntry.put("loggedAt", TableInfo.Column("loggedAt", "INTEGER", true, 0, null,
             TableInfo.CREATED_FROM_ENTITY))
         _columnsSetEntry.put("variation", TableInfo.Column("variation", "TEXT", true, 0, "''",
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsSetEntry.put("kind", TableInfo.Column("kind", "TEXT", true, 0, "''",
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsSetEntry.put("rpe", TableInfo.Column("rpe", "REAL", true, 0, "0",
             TableInfo.CREATED_FROM_ENTITY))
         val _foreignKeysSetEntry: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
         val _indicesSetEntry: MutableSet<TableInfo.Index> = mutableSetOf()

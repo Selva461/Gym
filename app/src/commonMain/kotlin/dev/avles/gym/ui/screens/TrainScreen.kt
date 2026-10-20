@@ -31,6 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,12 +51,14 @@ import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
 import dev.avles.gym.domain.LiftHistory
+import dev.avles.gym.domain.SetKinds
 import dev.avles.gym.domain.Training
 import dev.avles.gym.domain.Variations
 import dev.avles.gym.ui.LiftGuidance
 import dev.avles.gym.ui.SessionDetail
 import dev.avles.gym.ui.TrainState
 import dev.avles.gym.ui.components.BigNumber
+import dev.avles.gym.ui.components.ChipRow
 import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
@@ -77,6 +80,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 private val AD_HOC_LABELS = listOf("Push", "Pull", "Legs", "Full")
+
+/** The set-type pills, short enough to share a row, and the kind each one stores. */
+private val SET_TYPES = listOf("Working" to "", "Warm-up" to "", "Drop" to SetKinds.DROP, "Failure" to SetKinds.FAILURE)
 
 @Composable
 fun TrainScreen(
@@ -102,8 +108,8 @@ fun TrainScreen(
     onReopenSession: (WorkoutSession) -> Unit,
     onDeleteSession: (Long) -> Unit,
     onFinish: () -> Unit,
-    onLogSet: (Long, Double, Int, Boolean) -> Unit,
-    onEditSet: (Long, Double, Int, Boolean, String) -> Unit,
+    onLogSet: (Long, Double, Int, Boolean, String, Double) -> Unit,
+    onEditSet: (Long, Double, Int, Boolean, String, String, Double) -> Unit,
     onDeleteSet: (Long) -> Unit,
     onSkipRest: () -> Unit,
     onAddExercise: (String, String) -> Unit,
@@ -174,7 +180,7 @@ fun TrainScreen(
         SetEditorDialog(
             row = row,
             onSave = { w, r, warm ->
-                onEditSet(row.setId, w, r, warm, row.variation)
+                onEditSet(row.setId, w, r, warm, row.variation, row.kind, row.rpe)
                 editingSet = null
             },
             onDelete = { onDeleteSet(row.setId); editingSet = null },
@@ -365,7 +371,7 @@ private fun ActiveSessionPane(
     onAttachExercisePhoto: (Long, PickedImage) -> Unit,
     onDetachExercisePhoto: (Long) -> Unit,
     onFinish: () -> Unit,
-    onLogSet: (Long, Double, Int, Boolean) -> Unit,
+    onLogSet: (Long, Double, Int, Boolean, String, Double) -> Unit,
     onEditSetRow: (SetRow) -> Unit,
     onSkipRest: () -> Unit,
     onAdjustRest: (Int) -> Unit,
@@ -377,7 +383,9 @@ private fun ActiveSessionPane(
     val selectedExercise = guidance?.exercise
     var weight by remember { mutableStateOf("") }
     var reps by remember { mutableStateOf("") }
-    var warmup by remember { mutableStateOf(false) }
+    var setType by remember { mutableStateOf("Working") }
+    var rpe by remember { mutableDoubleStateOf(0.0) }
+    val warmup = setType == "Warm-up"
     var showPicker by remember { mutableStateOf(false) }
     var showNewExercise by remember { mutableStateOf(false) }
     var showingReference by remember { mutableStateOf<Exercise?>(null) }
@@ -561,11 +569,21 @@ private fun ActiveSessionPane(
 
             Spacer(Modifier.height(12.dp))
             PillRow(
-                options = listOf("Working set", "Warm-up"),
-                selected = if (warmup) "Warm-up" else "Working set",
+                options = SET_TYPES.map { it.first },
+                selected = setType,
                 accent = Brass,
-                onSelect = { warmup = it == "Warm-up" }
+                onSelect = { setType = it }
             )
+            // How hard it felt, for those who track it. Optional: "–" logs no RPE.
+            if (!warmup) {
+                Spacer(Modifier.height(8.dp))
+                ChipRow(
+                    options = listOf("RPE –") + SetKinds.RPE_CHOICES.map { "RPE " + SetKinds.rpeLabel(it) },
+                    selected = if (rpe > 0) "RPE " + SetKinds.rpeLabel(rpe) else "RPE –",
+                    accent = Brass,
+                    onSelect = { label -> rpe = label.removePrefix("RPE ").toDoubleOrNull() ?: 0.0 }
+                )
+            }
 
             Spacer(Modifier.height(12.dp))
             // Zero is a real weight on an assisted machine: no help at all.
@@ -582,7 +600,9 @@ private fun ActiveSessionPane(
                         ex.id,
                         weight.toDoubleOrNull() ?: 0.0,
                         reps.toIntOrNull() ?: 0,
-                        warmup
+                        warmup,
+                        SET_TYPES.first { it.first == setType }.second,
+                        if (warmup) 0.0 else rpe
                     )
                     reps = ""
                 },
@@ -613,7 +633,8 @@ private fun ActiveSessionPane(
                     title = row.exerciseName + if (isPr) "  best yet" else "",
                     detail = listOfNotNull(
                         if (row.isWarmup) "warm-up" else "set ${row.setIndex}",
-                        Variations.label(row.variation).takeIf { it.isNotBlank() }
+                        Variations.label(row.variation).takeIf { it.isNotBlank() },
+                        SetKinds.describe(row).takeIf { it.isNotBlank() }
                     ).joinToString("  ·  "),
                     trailing = Training.formatSet(row),
                     accent = if (row.isWarmup) Mute else Brass,
