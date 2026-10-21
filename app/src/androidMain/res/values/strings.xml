@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Gym</string>
+    <string name="permission_read_training_label">read your Gym training log</string>
+    <string name="permission_read_training_description">Read the lifts, cardio and weigh-ins you log in Gym. Food, photos and notes stay private.</string>
 </resources>

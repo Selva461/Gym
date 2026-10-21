@@ -479,4 +479,11 @@ interface GymDao {
 
     @Query("SELECT * FROM cardio_entry WHERE dateEpochDay = :day ORDER BY loggedAt ASC")
     fun cardioOn(day: Long): Flow<List<CardioEntry>>
+
+    /** Every cardio entry, oldest first, for what other apps may read. */
+    @Query("SELECT * FROM cardio_entry ORDER BY loggedAt ASC")
+    suspend fun allCardio(): List<CardioEntry>
+
+    @Query("SELECT * FROM body_weight ORDER BY dateEpochDay ASC")
+    suspend fun allWeights(): List<BodyWeight>
 }

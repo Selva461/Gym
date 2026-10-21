@@ -401,6 +401,16 @@ class GymRepository(
 
     /** Every set including warm-ups, for the CSV export. */
     suspend fun everySet(): List<SetRow> = dao.everySet()
+
+    /**
+     * The read-only slice of the log that SelfUp is allowed to see once the user
+     * grants it: working sets, cardio and weigh-ins. No food, no photos, no notes.
+     */
+    suspend fun sharedTraining(): SharedTraining = SharedTraining(
+        sets = dao.everySet().filterNot { it.isWarmup },
+        cardio = dao.allCardio(),
+        weights = dao.allWeights()
+    )
     val dailyMacros: Flow<List<DayMacroRow>> = dao.dailyMacros()
     val dayMarkers: Flow<List<DayMarker>> = dao.dayMarkers()
     val sessionDays: Flow<List<SessionDay>> = dao.sessionDays()
