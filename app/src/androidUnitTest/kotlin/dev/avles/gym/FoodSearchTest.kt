@@ -59,6 +59,15 @@ class FoodSearchTest {
     }
 
     @Test
+    fun `packaged oats and protein foods are found by brand`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue(names("yoga bar").containsAll(listOf("Yoga Bar protein oats", "Yoga Bar protein muesli", "Yoga Bar protein bar")))
+        assertTrue(names("yogabar").contains("Yoga Bar protein oats"))
+        assertTrue(names("protein muesli").containsAll(listOf("Yoga Bar protein muesli", "True Elements protein muesli")))
+    }
+
+    @Test
     fun `street and fast food are found as they are ordered`() {
         val all = SeedData.foods()
         fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }

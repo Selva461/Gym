@@ -95,7 +95,7 @@ Train      split → lift → kg × reps, a target for every lift with its warm-
            a note per lift, swaps and supersets, rest that fits the lift and can be
            stretched, a live session clock, cardio with pace and burn, a per-lift history
            with a rep-max table, and a summary card with records and calories at the end
-Fuel       search or browse 1,086 foods by name or local name, macros and 15 micronutrients,
+Fuel       search or browse 1,104 foods by name or local name, macros and 15 micronutrients,
            recent and usual foods, saved meals, quick add, water with reminders, a
            fasting timer, and "same breakfast as yesterday" in one tap
 Progress   weight trend and goal date, 14-day volume, streaks, achievements, a month
@@ -182,7 +182,7 @@ screen, in order, one tap each. That is the whole point: not picking from a list
 of 486 between two sets. Splits are editable, reorderable and deletable, and
 deleting one leaves every session already run from it untouched.
 
-**1,025 built-in foods in 26 categories.** South Indian cooking gets the detail it deserves —
+**1,043 built-in foods in 26 categories.** South Indian cooking gets the detail it deserves —
 twenty-four dosa varieties (masala, Mysore masala, ghee roast, paper, rava, set,
 neer, kal, karam, ragi, kambu, thinai, oats, pesarattu, adai and the rest), seven
 kinds of idli, forty-three tiffin items (pongal, upma, uttapam, kuzhi paniyaram,
