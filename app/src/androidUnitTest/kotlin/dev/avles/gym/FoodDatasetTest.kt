@@ -29,8 +29,8 @@ class FoodDatasetTest {
     @Test
     fun `every dish is accounted for once`() {
         assertEquals(61, result.foods.size)
-        assertEquals(23, result.rejected.size)
-        assertEquals(38, result.alreadyPresent.size)
+        assertEquals(22, result.rejected.size)
+        assertEquals(39, result.alreadyPresent.size)
         val all = result.foods.map { it.name } + result.rejected.map { it.dish } + result.alreadyPresent
         assertEquals("a dish was counted twice", all.size, all.map { FoodDataset.key(it) }.toSet().size)
     }

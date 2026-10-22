@@ -58,6 +58,72 @@ class FoodSearchTest {
         assertTrue("Nandu kuzhambu" in names("crab"))
     }
 
+    @Test
+    fun `packaged oats and protein foods are found by brand`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue(names("yoga bar").containsAll(listOf("Yoga Bar protein oats", "Yoga Bar protein muesli", "Yoga Bar protein bar")))
+        assertTrue(names("yogabar").contains("Yoga Bar protein oats"))
+        assertTrue(names("protein muesli").containsAll(listOf("Yoga Bar protein muesli", "True Elements protein muesli")))
+    }
+
+    @Test
+    fun `street and fast food are found as they are ordered`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue("Crispy chicken burger" in names("zinger"))
+        assertTrue("Instant noodles" in names("maggi"))
+        assertTrue("Chicken mandi" in names("kuzhimandhi"))
+        assertTrue("Burma atho" in names("atho"))
+        assertTrue(names("pizza").containsAll(listOf("Veg pizza", "Chicken pizza", "Margherita pizza")))
+    }
+
+    @Test
+    fun `tea stall and juice shop orders are found as they are asked for`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue("Ginger tea" in names("inji tea"))
+        assertTrue("Goli soda" in names("goli soda"))
+        assertTrue("Fresh lime juice, sweet" in names("nimbu pani"))
+        assertTrue("Milagai bajji" in names("chilli bajji"))
+    }
+
+    @Test
+    fun `bakery items are found by their shop names`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue(names("puff").containsAll(listOf("Veg puff", "Egg puff", "Chicken puff")))
+        assertTrue("Coconut bun" in names("dilkush"))
+        assertTrue("Black forest pastry" in names("black forest"))
+        assertTrue("Ellu urundai" in names("sesame ball"))
+    }
+
+    /** Meals are ordered by name, the egg counter by its Tamil words. */
+    @Test
+    fun `meals, eggs and mushroom dishes are found by what people call them`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue(names("meals").containsAll(listOf("Veg meals", "Chicken meals", "Fish meals", "Mutton meals")))
+        assertTrue("Fish meals" in names("meen saapadu"))
+        assertTrue("Kalakki" in names("kalakki"))
+        assertTrue(names("omelette").containsAll(listOf("Omelette", "Masala omelette", "Cheese omelette")))
+        assertTrue("Mushroom gravy" in names("mushroom gravy"))
+        assertTrue("Dindigul mutton biryani" in names("thalappakatti"))
+    }
+
+    /** Restaurant orders are asked for the way the menu and the counter say them. */
+    @Test
+    fun `restaurant orders are found the way they are ordered`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue("Grill chicken, half" in names("half grill"))
+        assertTrue("BBQ chicken, full" in names("full bbq"))
+        assertTrue("Tandoori chicken, half" in names("half tandoori"))
+        assertTrue("Garlic chicken" in names("garlic chicken"))
+        assertTrue(names("chilli chicken").containsAll(listOf("Chilli chicken", "Chilli chicken, gravy")))
+        assertTrue("Chicken Schezwan fried rice" in names("szechuan rice"))
+    }
+
     /** Staples are asked for by the Tamil word as often as the English one, and raw or cooked matters. */
     @Test
     fun `a staple is found by its Tamil name, raw apart from cooked`() {
