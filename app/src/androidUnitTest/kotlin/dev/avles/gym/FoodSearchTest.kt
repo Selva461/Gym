@@ -58,6 +58,19 @@ class FoodSearchTest {
         assertTrue("Nandu kuzhambu" in names("crab"))
     }
 
+    /** Meals are ordered by name, the egg counter by its Tamil words. */
+    @Test
+    fun `meals, eggs and mushroom dishes are found by what people call them`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue(names("meals").containsAll(listOf("Veg meals", "Chicken meals", "Fish meals", "Mutton meals")))
+        assertTrue("Fish meals" in names("meen saapadu"))
+        assertTrue("Kalakki" in names("kalakki"))
+        assertTrue(names("omelette").containsAll(listOf("Omelette", "Masala omelette", "Cheese omelette")))
+        assertTrue("Mushroom gravy" in names("mushroom gravy"))
+        assertTrue("Dindigul mutton biryani" in names("thalappakatti"))
+    }
+
     /** Restaurant orders are asked for the way the menu and the counter say them. */
     @Test
     fun `restaurant orders are found the way they are ordered`() {
