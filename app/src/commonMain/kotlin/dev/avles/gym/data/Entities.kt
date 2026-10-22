@@ -497,3 +497,10 @@ data class CardioEntry(
     val distanceKm: Double = 0.0,
     val loggedAt: Long
 )
+
+/** What [GymRepository.sharedTraining] hands to another app. */
+data class SharedTraining(
+    val sets: List<SetRow>,
+    val cardio: List<CardioEntry>,
+    val weights: List<BodyWeight>
+)

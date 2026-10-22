@@ -93,6 +93,27 @@ class SecurityPostureTest {
     }
 
     /**
+     * The training log is health data. The permission that opens it to SelfUp has to
+     * be one the user is asked about — `dangerous` — and never `normal`, which Android
+     * grants silently to any app that declares it. The provider has to sit behind it.
+     */
+    @Test
+    fun `the shared training log is behind a permission the user must grant`() {
+        val permission = Regex("""<permission\b[^>]*READ_TRAINING[^>]*>""", RegexOption.DOT_MATCHES_ALL).find(manifest)?.value
+        assertTrue("READ_TRAINING is no longer defined", permission != null)
+        assertTrue(
+            "READ_TRAINING must be dangerous so the user is asked:\n$permission",
+            permission!!.contains("android:protectionLevel=\"dangerous\"")
+        )
+        val provider = Regex("""<provider\b[^>]*>""", RegexOption.DOT_MATCHES_ALL).find(manifest)?.value
+        assertTrue("the training provider is gone", provider != null)
+        assertTrue(
+            "the training provider must be guarded by READ_TRAINING:\n$provider",
+            provider!!.contains("android:permission=\"\${applicationId}.permission.READ_TRAINING\"")
+        )
+    }
+
+    /**
      * A debuggable APK can have its database read straight out of it with
      * `adb run-as` on an unlocked phone with USB debugging on. For a health log that
      * is the exposure worth engineering around.
