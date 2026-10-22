@@ -59,6 +59,16 @@ class FoodSearchTest {
     }
 
     @Test
+    fun `tea stall and juice shop orders are found as they are asked for`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue("Ginger tea" in names("inji tea"))
+        assertTrue("Goli soda" in names("goli soda"))
+        assertTrue("Fresh lime juice, sweet" in names("nimbu pani"))
+        assertTrue("Milagai bajji" in names("chilli bajji"))
+    }
+
+    @Test
     fun `bakery items are found by their shop names`() {
         val all = SeedData.foods()
         fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
