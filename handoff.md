@@ -51,7 +51,7 @@ release writes return 403); CI does the publishing.
 | Exercises | 486 across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | **1,248 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,309. 27 categories (newest: Alcohol). Newest file: `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
 | Database | **v13**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`. Exported schemas in `app/schemas/`. |
-| Tests | 244 (`gradle testDebugUnitTest`), none needing a device |
+| Tests | 247 (`gradle testDebugUnitTest`), none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 (CI) |
 
 Features, by screen (README → "What's in it" has the user-facing list):
@@ -63,13 +63,18 @@ Features, by screen (README → "What's in it" has the user-facing list):
   drop, failure) and RPE, notes per lift, swap (alternatives), supersets, rest
   timer that fits the lift (±15 s), session clock, lift history with rep-max
   table, workout summary card with records and calories, cardio log.
-- **Fuel**: search/browse with Tamil aliases, recent and usual foods, saved
-  meals, quick add, copy a meal from the day before, water, fasting timer.
+- **Fuel**: search/browse with Tamil aliases, favourites (star in the quantity
+  dialog, stored as ids in settings), recent and usual foods, saved meals, quick
+  add, recipe builder (`RecipeBuilder.kt` + `domain/Recipes.kt`: a custom food in
+  "My recipes", per serving), log by grams/ml when the unit states a weight
+  (`domain/Portions.kt`, `FoodDialogs.kt`), copy a meal from the day before,
+  water, fasting timer.
 - **Progress**: weight trend with goal date, achievements, month calendar,
   personal records, 1RM calculator, tape measurements with Navy body fat,
   progress photos, coach and patterns.
 - **Settings**: targets (with a Mifflin-St Jeor calculator), water and weight
-  goals, rest rules, reminders (nightly, water), CSV export (sets, food,
+  goals, rest rules, reminders (nightly, water, meals at
+  `Notifier.MEAL_TIMES`), backup/restore file (Android), CSV export (sets, food,
   weight), language (English / தமிழ் for tabs, headings, main buttons).
 - **Other session's addition** (`e512b0d`): `share/TrainingProvider.kt`, a
   read-only content provider letting the user's "SelfUp" app read working sets,
@@ -77,7 +82,7 @@ Features, by screen (README → "What's in it" has the user-facing list):
 
 Code map: `app/src/commonMain/kotlin/dev/avles/gym/` → `data/` (Room, seeds,
 dataset importer, settings), `domain/` (pure logic, all unit tested),
-`ui/` (one ViewModel `GymViewModel.kt` + `UiState.kt`, `GymNav.kt`, `screens/`,
+`ui/` (one ViewModel `GymViewModel.kt` (at the 800-line cap: move pure logic to `domain/` before adding) + `UiState.kt`, `GymNav.kt`, `screens/`,
 `components/` with `Motion.kt` for every animation and haptic, `i18n/`),
 `core/` (dates, log). Platform seams in `androidMain` / `iosMain`.
 
@@ -182,10 +187,14 @@ fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
    fix whatever the never-compiled iOS code turns up.
 2. **Install**: Android from the APK link above. An install over a copy signed
    before `dd89f2c` needs an uninstall first (old CI key is gone).
-3. Deferred by choice: full database backup/restore (needs a FileProvider, a
-   document picker on both platforms and a live DB swap; Android Auto Backup
-   and the CSV export cover most of it). Open security questions in
-   `SECURITY.md` (biometric lock, SQLCipher).
+3. Backup/restore: **Android done** (Settings › Your data › Back up / Restore).
+   `data/Backup.kt` snapshots with `VACUUM INTO` and validates a file
+   (schema version ≤ newest migration, core tables present);
+   `PlatformBackup.android.kt` uses the system file pickers, keeps the replaced
+   log as `gym-before-restore.db`, swaps the file and restarts the process.
+   Photos and settings are not in the file. **iOS returns null** (buttons
+   hidden): needs a `UIDocumentPickerViewController` and a relaunch prompt.
+   Open security questions in `SECURITY.md` (biometric lock, SQLCipher).
 4. Food requests come in batches by place: done so far are Tamil curries,
    staples, Indo-Chinese and grill counter, meals and restaurant chains,
    bakery, tea stall and juice shop, street and fast food, Kerala/Andhra/
@@ -221,7 +230,12 @@ Foods 1–11: **done** in `SeedFoodsWeek.kt`.
 11. **Chain menus with published nutrition**: McDonald's India, KFC, Domino's,
     Subway, Burger King, Starbucks, A2B (Adyar Ananda Bhavan) sweets.
 
-Features:
+Features 12–15: **done** (recipe builder, favourites, grams toggle, meal reminders).
+17 done on Android (see open item 3). 16 **declined for now**: the app has no
+network or camera permission and no verified EAN codes for the seeded brands;
+adding a camera, a barcode library and guessed codes would cost more trust than
+it saves taps. Revisit if the user supplies codes from their own packs.
+
 12. Recipe builder: combine foods into a home recipe with servings.
 13. Favourite foods pinned to the top of Fuel.
 14. Grams toggle: log any food by weight as well as by its unit.
@@ -230,5 +244,5 @@ Features:
     a camera seam on both platforms).
 17. Backup and restore (deferred; see item 3 above).
 
-The fitness-parity backlog (items 1–26 from earlier sessions) is complete except
-item 25 (backup/restore, deferred as above).
+The fitness-parity backlog (items 1–26 from earlier sessions) is complete; item
+25 (backup/restore) is done on Android only.

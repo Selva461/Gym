@@ -96,13 +96,15 @@ Train      split → lift → kg × reps, a target for every lift with its warm-
            stretched, a live session clock, cardio with pace and burn, a per-lift history
            with a rep-max table, and a summary card with records and calories at the end
 Fuel       search or browse 1,309 foods by name or local name, macros and 15 micronutrients,
-           recent and usual foods, saved meals, quick add, water with reminders, a
-           fasting timer, and "same breakfast as yesterday" in one tap
+           favourites, recent and usual foods, saved meals, home recipes by the serving,
+           logging by grams, quick add, water and meal reminders, a fasting timer, and
+           "same breakfast as yesterday" in one tap
 Progress   weight trend and goal date, 14-day volume, streaks, achievements, a month
            calendar, personal records, a one-rep max calculator, tape measurements with
            a body-fat estimate, and progress photos
 Settings   your targets (or work them out from your body), water and weight goals, rest,
-           reminder, and your data exported as CSV through the share sheet
+           reminders, your data exported as CSV through the share sheet, and a
+           whole-log backup file you can restore (Android)
 ```
 
 **What the big apps do, offline.** The habits Strong, Hevy, MyFitnessPal and

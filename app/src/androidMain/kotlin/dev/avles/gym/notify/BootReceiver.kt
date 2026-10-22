@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-/** Alarms do not survive a reboot, so put the nightly nudge back. */
+/** Alarms do not survive a reboot, so put the reminders back. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
@@ -22,6 +22,7 @@ class BootReceiver : BroadcastReceiver() {
                     Notifications.scheduleDailyReminder(app, s.reminderHour, s.reminderMinute)
                 }
                 if (s.waterReminders) Notifications.scheduleWaterReminders(app)
+                if (s.mealReminders) Notifications.scheduleMealReminders(app)
             } finally {
                 pending.finish()
             }

@@ -22,6 +22,8 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
  * identically on both.
  */
 class AppContainer(
+    /** Held only for [dev.avles.gym.data.Backup]; everything else goes through [repository]. */
+    val database: GymDatabase,
     val repository: GymRepository,
     val settings: SettingsStore,
     val notifier: Notifier
@@ -29,7 +31,7 @@ class AppContainer(
 
     /**
      * Work done once per launch, off the thread that draws: top up the catalogue,
-     * sweep photo files nothing points at, and re-arm the evening reminder.
+     * sweep photo files nothing points at, and re-arm the reminders.
      */
     suspend fun startUp() {
         repository.seedCatalogue()
@@ -37,6 +39,7 @@ class AppContainer(
         val s = settings.settings.first()
         if (s.remindersOn) notifier.scheduleDailyReminder(s.reminderHour, s.reminderMinute)
         if (s.waterReminders) notifier.scheduleWaterReminders()
+        if (s.mealReminders) notifier.scheduleMealReminders()
     }
 
     companion object {
@@ -48,6 +51,7 @@ class AppContainer(
             photos: PhotoStore,
             notifier: Notifier
         ): AppContainer = AppContainer(
+            database = database,
             repository = GymRepository(
                 dao = database.dao(),
                 photos = photos,

@@ -26,6 +26,7 @@ object Strings {
         "Weigh in" to "எடை பதிவு",
         "Save settings" to "அமைப்புகளைச் சேமி",
         "Usual suspects" to "வழக்கமானவை",
+        "Favourites" to "பிடித்தவை",
         "Recent" to "சமீபத்தியவை",
         "Saved meals" to "சேமித்த உணவுகள்",
         "Your splits" to "உங்கள் பயிற்சித் திட்டங்கள்",

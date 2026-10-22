@@ -40,7 +40,11 @@ data class GymSettings(
     val welcomed: Boolean = false,
     val waterReminders: Boolean = false,
     /** "en" or "ta"; see [dev.avles.gym.ui.i18n.Strings]. */
-    val language: String = "en"
+    val language: String = "en",
+    /** Foods starred in the quantity dialog, pinned at the top of Fuel. */
+    val favouriteFoodIds: Set<Long> = emptySet(),
+    /** A nudge at breakfast, lunch and dinner. Off unless asked for. */
+    val mealReminders: Boolean = false
 )
 
 class SettingsStore(private val store: DataStore<Preferences>) {
@@ -63,6 +67,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val welcomed = intPreferencesKey("welcomed")
         val waterReminders = intPreferencesKey("water_reminders")
         val language = stringPreferencesKey("language")
+        val favourites = stringPreferencesKey("favourite_foods")
+        val mealReminders = intPreferencesKey("meal_reminders")
     }
 
     val settings: Flow<GymSettings> = store.data.map { p ->
@@ -83,7 +89,9 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             goalWeightKg = p[Keys.goalWeight] ?: 0.0,
             welcomed = (p[Keys.welcomed] ?: 0) == 1,
             waterReminders = (p[Keys.waterReminders] ?: 0) == 1,
-            language = p[Keys.language] ?: "en"
+            language = p[Keys.language] ?: "en",
+            favouriteFoodIds = (p[Keys.favourites] ?: "").split(',').mapNotNull { it.toLongOrNull() }.toSet(),
+            mealReminders = (p[Keys.mealReminders] ?: 0) == 1
         )
     }
 
@@ -106,6 +114,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             p[Keys.welcomed] = if (s.welcomed) 1 else 0
             p[Keys.waterReminders] = if (s.waterReminders) 1 else 0
             p[Keys.language] = s.language
+            p[Keys.favourites] = s.favouriteFoodIds.joinToString(",")
+            p[Keys.mealReminders] = if (s.mealReminders) 1 else 0
         }
     }
 }

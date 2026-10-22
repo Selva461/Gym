@@ -25,6 +25,11 @@ object Notifications {
     private const val REQUEST_WATER = 2002
     private const val ID_WATER = 1003
     const val ACTION_WATER = "dev.avles.gym.WATER"
+    const val ACTION_MEAL = "dev.avles.gym.MEAL"
+    const val EXTRA_MEAL = "meal"
+    private const val ID_MEAL = 1004
+    /** One request code per meal, so the three alarms do not replace each other. */
+    private const val REQUEST_MEAL_BASE = 2010
 
     fun createChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
@@ -173,6 +178,52 @@ object Notifications {
             context,
             REQUEST_WATER,
             Intent(context, ReminderReceiver::class.java).setAction(ACTION_WATER),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+    fun mealReminder(context: Context, meal: String) {
+        if (!canPost(context)) return
+        val n = NotificationCompat.Builder(context, CHANNEL_REMINDER)
+            .setSmallIcon(R.drawable.ic_stat_gym)
+            .setContentTitle(meal.ifBlank { "Food" })
+            .setContentText("Log ${meal.lowercase().ifBlank { "it" }} while you still remember what it was.")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setAutoCancel(true)
+            .setContentIntent(openAppIntent(context))
+            .build()
+        NotificationManagerCompat.from(context).notify(ID_MEAL, n)
+    }
+
+    /** Daily and inexact, like the evening reminder. */
+    fun scheduleMealReminders(context: Context) {
+        val alarms = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        Notifier.MEAL_TIMES.forEachIndexed { i, (meal, hour, minute) ->
+            val next = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, hour)
+                set(Calendar.MINUTE, minute)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+            }
+            alarms.setInexactRepeating(
+                AlarmManager.RTC_WAKEUP,
+                next.timeInMillis,
+                AlarmManager.INTERVAL_DAY,
+                mealPendingIntent(context, i, meal)
+            )
+        }
+    }
+
+    fun cancelMealReminders(context: Context) {
+        val alarms = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        Notifier.MEAL_TIMES.forEachIndexed { i, (meal, _, _) -> alarms.cancel(mealPendingIntent(context, i, meal)) }
+    }
+
+    private fun mealPendingIntent(context: Context, index: Int, meal: String): PendingIntent =
+        PendingIntent.getBroadcast(
+            context,
+            REQUEST_MEAL_BASE + index,
+            Intent(context, ReminderReceiver::class.java).setAction(ACTION_MEAL).putExtra(EXTRA_MEAL, meal),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 }

@@ -547,7 +547,7 @@ class GymViewModel(
                         milestoneProgress = leastHelp?.let { Assistance.milestoneProgress(it) }
                             ?: Progression.milestoneProgress(best),
                         recentSets = history.take(5),
-                        lastTime = lastSessionOf(history, trainState.value.active?.id),
+                        lastTime = LiftHistory.lastSession(history, trainState.value.active?.id),
                         variation = variation,
                         guide = ExerciseGuide.of(exercise)
                     )
@@ -696,6 +696,13 @@ class GymViewModel(
         if (item.id == 0L) repo.saveFood(item) else repo.updateFood(item)
     }
 
+    /** Stars or unstars a food; starred ones are pinned at the top of Fuel. */
+    fun toggleFavourite(foodId: Long) = viewModelScope.launch {
+        val s = settingsStore.settings.first()
+        val ids = if (foodId in s.favouriteFoodIds) s.favouriteFoodIds - foodId else s.favouriteFoodIds + foodId
+        settingsStore.save(s.copy(favouriteFoodIds = ids))
+    }
+
     // ---------- Body and settings ----------
 
     fun recordWeight(kg: Double) = viewModelScope.launch {
@@ -773,27 +780,17 @@ class GymViewModel(
 
     fun saveSettings(updated: GymSettings) = viewModelScope.launch {
         settingsStore.save(updated)
-        if (updated.remindersOn) {
-            notifier.scheduleDailyReminder(updated.reminderHour, updated.reminderMinute)
-        } else {
-            notifier.cancelDailyReminder()
-        }
+        if (updated.remindersOn) notifier.scheduleDailyReminder(updated.reminderHour, updated.reminderMinute)
+        else notifier.cancelDailyReminder()
         if (updated.waterReminders) notifier.scheduleWaterReminders() else notifier.cancelWaterReminders()
-    }
-
-    private fun lastSessionOf(history: List<SetRow>, activeSessionId: Long?): List<SetRow> {
-        val earlier = history.filter { it.sessionId != activeSessionId && !it.isWarmup }
-        val last = earlier.firstOrNull()?.sessionId ?: return emptyList()
-        return earlier.filter { it.sessionId == last }.sortedBy { it.loggedAt }
+        if (updated.mealReminders) notifier.scheduleMealReminders() else notifier.cancelMealReminders()
     }
 
     private companion object {
         /** Category of quick-add entries, which the catalogue does not list. */
         const val QUICK_ADD = "Quick add"
-
         /** The seeded food the water card logs. */
         const val WATER_FOOD = "Water"
-
         /** Enough sets for years of one lift at a few sessions a week. */
         const val HISTORY_LIMIT = 2_000
     }

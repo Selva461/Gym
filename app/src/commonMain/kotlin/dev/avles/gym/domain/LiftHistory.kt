@@ -141,6 +141,16 @@ object LiftHistory {
             }
             .sortedByDescending { it.loggedAt }
 
+    /**
+     * The working sets of the latest session before [activeSessionId], in the order
+     * they were done: the "last time" chips. [history] is newest first.
+     */
+    fun lastSession(history: List<SetRow>, activeSessionId: Long?): List<SetRow> {
+        val earlier = history.filter { it.sessionId != activeSessionId && !it.isWarmup }
+        val last = earlier.firstOrNull()?.sessionId ?: return emptyList()
+        return earlier.filter { it.sessionId == last }.sortedBy { it.loggedAt }
+    }
+
     private fun floorTo(v: Double, step: Double): Double {
         val n = kotlin.math.floor(v / step + 1e-9)
         return n * step

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +40,9 @@ import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.i18n.Strings
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.domain.Training
+import dev.avles.gym.notify.Notifier
 import dev.avles.gym.ui.GymViewModel
+import dev.avles.gym.ui.components.rememberBackupActions
 import dev.avles.gym.ui.components.rememberTextSharer
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.Motion.fadeThrough
@@ -72,6 +75,7 @@ fun SettingsScreen(
     var remindersOn by remember(settings) { mutableStateOf(settings.remindersOn) }
     var restByLift by remember(settings) { mutableStateOf(settings.restByLift) }
     var waterReminders by remember(settings) { mutableStateOf(settings.waterReminders) }
+    var mealReminders by remember(settings) { mutableStateOf(settings.mealReminders) }
     var language by remember(settings) { mutableStateOf(settings.language) }
     var goalWeight by remember(settings) {
         mutableStateOf(if (settings.goalWeightKg > 0) Training.formatWeight(settings.goalWeightKg) else "")
@@ -209,6 +213,27 @@ fun SettingsScreen(
             )
         }
         Spacer(Modifier.height(12.dp))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("Remind me to log meals", style = MaterialTheme.typography.bodyLarge, color = Bone)
+                Text(
+                    Notifier.MEAL_TIMES.joinToString(", ") { (m, h, min) -> "${m.lowercase()} ${h}:${min.toString().padStart(2, '0')}" }
+                        .replaceFirstChar { it.uppercase() } + ".",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Faint
+                )
+            }
+            Switch(
+                checked = mealReminders,
+                onCheckedChange = { mealReminders = it },
+                colors = SwitchDefaults.colors(checkedThumbColor = Slate, checkedTrackColor = Brass, uncheckedTrackColor = Raised)
+            )
+        }
+        Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             NumField(hour, { hour = it }, "hour, 0-23", Modifier.weight(1f))
             NumField(minute, { minute = it }, "minute", Modifier.weight(1f))
@@ -242,6 +267,7 @@ fun SettingsScreen(
                         remindersOn = remindersOn,
                         restByLift = restByLift,
                         waterReminders = waterReminders,
+                        mealReminders = mealReminders,
                         language = language,
                         goalWeightKg = goalWeight.toDoubleOrNull()?.takeIf { it in 30.0..300.0 } ?: 0.0,
                         waterGlasses = (water.toIntOrNull() ?: settings.waterGlasses).coerceIn(1, 30)
@@ -272,6 +298,43 @@ fun SettingsScreen(
             TextButton(onClick = { onExport(GymViewModel.ExportKind.SETS, share) }) { Text("Sets", color = Sage) }
             TextButton(onClick = { onExport(GymViewModel.ExportKind.FOOD, share) }) { Text("Food log", color = Sage) }
             TextButton(onClick = { onExport(GymViewModel.ExportKind.WEIGHTS, share) }) { Text("Weight", color = Sage) }
+        }
+        // A whole-log file you can keep in Drive and put back on a new phone. Restoring
+        // replaces everything, so it asks first; the replaced log is kept beside it.
+        var backupNote by remember { mutableStateOf<String?>(null) }
+        var confirmRestore by remember { mutableStateOf(false) }
+        val backup = rememberBackupActions { backupNote = it }
+        if (backup != null) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Or the whole log as one backup file, to restore on this phone or a new one. " +
+                    "Photos are not included.",
+                style = MaterialTheme.typography.labelSmall,
+                color = Faint
+            )
+            Row {
+                TextButton(onClick = { backupNote = null; backup.backUp() }) { Text("Back up", color = Sage) }
+                TextButton(onClick = { backupNote = null; confirmRestore = true }) { Text("Restore", color = Sage) }
+            }
+            backupNote?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = Mute) }
+        }
+        if (confirmRestore && backup != null) {
+            AlertDialog(
+                onDismissRequest = { confirmRestore = false },
+                containerColor = Slate,
+                title = { Text("Restore a backup?", color = Bone) },
+                text = {
+                    Text(
+                        "Everything logged on this phone is replaced by the backup, and the app restarts. " +
+                            "The current log is kept as gym-before-restore.db in the app's files.",
+                        color = Mute
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { confirmRestore = false; backup.restore() }) { Text("Pick the file", color = Sage) }
+                },
+                dismissButton = { TextButton(onClick = { confirmRestore = false }) { Text("Cancel", color = Mute) } }
+            )
         }
 
         Spacer(Modifier.height(28.dp))

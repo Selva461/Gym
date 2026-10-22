@@ -92,7 +92,9 @@ fun FuelScreen(
     onLogSavedMeal: (SavedMeals.Meal, String) -> Unit = { _, _ -> },
     onDeleteSavedMeal: (Long) -> Unit = {},
     onSaveMeal: (String, String) -> Unit = { _, _ -> },
-    onQuickAdd: (Double, Double, Double, Double, String) -> Unit = { _, _, _, _, _ -> }
+    onQuickAdd: (Double, Double, Double, Double, String) -> Unit = { _, _, _, _, _ -> },
+    favouriteIds: Set<Long> = emptySet(),
+    onToggleFavourite: (Long) -> Unit = {}
 ) {
     var meal by remember { mutableStateOf(defaultMealForNow()) }
     var query by remember { mutableStateOf("") }
@@ -100,6 +102,7 @@ fun FuelScreen(
     var pending by remember { mutableStateOf<FoodItem?>(null) }
     var editing by remember { mutableStateOf<FoodItem?>(null) }
     var creating by remember { mutableStateOf(false) }
+    var buildingRecipe by remember { mutableStateOf(false) }
     var nutrientsOpen by remember { mutableStateOf(false) }
     var editingEntry by remember { mutableStateOf<FoodLogRow?>(null) }
     var copyNote by remember { mutableStateOf<String?>(null) }
@@ -199,6 +202,15 @@ fun FuelScreen(
             item { Spacer(Modifier.height(10.dp)) }
         } else if (query.isBlank() && category == null) {
             item {
+                // Starred foods first: what you chose to keep at hand beats what the
+                // counts guess.
+                val favourites = catalogue.filter { it.id in favouriteIds }
+                if (favourites.isNotEmpty()) {
+                    SectionHeading(tr("Favourites"), accent = Brass)
+                    Spacer(Modifier.height(10.dp))
+                    FoodChipRow(favourites, "fav") { pending = it }
+                    Spacer(Modifier.height(16.dp))
+                }
                 SectionHeading(
                     tr("Usual suspects"),
                     trailing = if (quickPicks.isEmpty()) "builds as you log" else null
@@ -229,10 +241,13 @@ fun FuelScreen(
         item {
             Row {
                 TextButton(onClick = { creating = true }) {
-                    Text("Add a food to the catalogue", color = Sage)
+                    Text("Add a food", color = Sage)
                 }
-                QuickAddButton(meal) { k, p, c, f -> onQuickAdd(k, p, c, f, meal) }
+                TextButton(onClick = { buildingRecipe = true }) {
+                    Text("Build a recipe", color = Sage)
+                }
             }
+            QuickAddButton(meal) { k, p, c, f -> onQuickAdd(k, p, c, f, meal) }
             Spacer(Modifier.height(10.dp))
             Hairline()
             Spacer(Modifier.height(18.dp))
@@ -307,6 +322,8 @@ fun FuelScreen(
         QuantityDialog(
             food = food,
             meal = Meals.slotFor(food.isSupplement, meal),
+            isFavourite = food.id in favouriteIds,
+            onToggleFavourite = { onToggleFavourite(food.id) },
             onConfirm = { qty ->
                 onLog(food.id, Meals.slotFor(food.isSupplement, meal), qty)
                 haptics.performHapticFeedback(HapticFeedbackType.Confirm)
@@ -321,6 +338,14 @@ fun FuelScreen(
             initial = food,
             onSave = { onSaveFood(it); editing = null },
             onDismiss = { editing = null }
+        )
+    }
+
+    if (buildingRecipe) {
+        RecipeBuilderDialog(
+            catalogue = catalogue,
+            onSave = { onSaveFood(it); buildingRecipe = false },
+            onDismiss = { buildingRecipe = false }
         )
     }
 
@@ -431,83 +456,6 @@ private fun FoodPickRow(food: FoodItem, onTap: () -> Unit, onEdit: () -> Unit) {
         TextButton(onClick = onEdit) { Text("Edit", color = Mute) }
     }
     Spacer(Modifier.height(6.dp))
-}
-
-@Composable
-private fun QuantityDialog(
-    food: FoodItem,
-    meal: String,
-    onConfirm: (Double) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var qty by remember { mutableStateOf("1") }
-    val parsed = qty.toDoubleOrNull() ?: 0.0
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Slate,
-        title = { Text(food.name, color = Bone) },
-        text = {
-            Column {
-                Text(
-                    "How many? One is ${food.unitLabel}.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Mute
-                )
-                Spacer(Modifier.height(14.dp))
-                OutlinedTextField(
-                    value = qty,
-                    onValueChange = { qty = it.filter { c -> c.isDigit() || c == '.' } },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(14.dp))
-                PresetRow(qty) { qty = it }
-                Spacer(Modifier.height(14.dp))
-                Text(
-                    "${(food.proteinG * parsed).roundToInt()} g protein, " +
-                        "${(food.kcal * parsed).roundToInt()} kcal into $meal",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Sage
-                )
-                val notable = notableMicros(food.micros, parsed)
-                if (notable.isNotEmpty()) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        notable,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Faint
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(parsed) },
-                enabled = parsed > 0,
-                colors = ButtonDefaults.buttonColors(containerColor = Sage, contentColor = Slate)
-            ) { Text("Add to $meal") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Mute) } }
-    )
-}
-
-/**
- * The two or three micronutrients this food actually moves, so the confirm step says
- * something useful about a fish oil capsule without listing fifteen zeroes.
- */
-private fun notableMicros(micros: Micros, qty: Double): String {
-    val scaled = micros * qty
-    val bits = buildList {
-        if (scaled.omega3G >= 0.1) add("${Numbers.fixed(scaled.omega3G, 1)} g omega-3")
-        if (scaled.magnesiumMg >= 20) add("${scaled.magnesiumMg.roundToInt()} mg magnesium")
-        if (scaled.ironMg >= 1.0) add("${Numbers.fixed(scaled.ironMg, 1)} mg iron")
-        if (scaled.calciumMg >= 80) add("${scaled.calciumMg.roundToInt()} mg calcium")
-        if (scaled.vitDMcg >= 1.0) add("${Numbers.fixed(scaled.vitDMcg, 1)} mcg vitamin D")
-        if (scaled.fiberG >= 2.0) add("${Numbers.fixed(scaled.fiberG, 1)} g fibre")
-    }
-    return bits.take(3).joinToString(" · ")
 }
 
 @Composable
@@ -716,7 +664,7 @@ private fun defaultMealForNow(): String = when (Dates.hourNow()) {
  * preset reads as the current choice rather than a button that did something.
  */
 @Composable
-private fun PresetRow(current: String, onPick: (String) -> Unit) {
+internal fun PresetRow(current: String, onPick: (String) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf("0.5", "1", "1.5", "2").forEach { preset ->
             val on = current.toDoubleOrNull() == preset.toDouble()
@@ -739,7 +687,7 @@ private fun PresetRow(current: String, onPick: (String) -> Unit) {
 
 /** A scrolling row of foods to log with one tap, each showing its protein. */
 @Composable
-private fun FoodChipRow(foods: List<FoodItem>, keyPrefix: String, onPick: (FoodItem) -> Unit) {
+internal fun FoodChipRow(foods: List<FoodItem>, keyPrefix: String, onPick: (FoodItem) -> Unit) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(foods, key = { "$keyPrefix-${it.id}" }) { food ->
             Box(
