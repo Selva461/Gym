@@ -49,9 +49,9 @@ release writes return 403); CI does the publishing.
 | | |
 |---|---|
 | Exercises | 486 across 13 muscle groups; 140 with bundled demonstrations |
-| Foods | **1,062 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,123. 26 categories (newest: Meals). Newest file: `SeedFoodsSupplements.kt` (protein powders and gainers by brand, flagged as supplements). |
+| Foods | **1,248 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,309. 27 categories (newest: Alcohol). Newest file: `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
 | Database | **v13**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`. Exported schemas in `app/schemas/`. |
-| Tests | 243 (`gradle testDebugUnitTest`), none needing a device |
+| Tests | 244 (`gradle testDebugUnitTest`), none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 (CI) |
 
 Features, by screen (README → "What's in it" has the user-facing list):
@@ -135,6 +135,9 @@ fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
 - **Names unique** across seeds; check against the dataset CSV too, because a
   seed name equal to a dataset dish moves that dish from imported/declined to
   "already present" and changes `FoodDatasetTest`'s counts (61 / 22 / 39 now).
+- **Alcohol** (category `Alcohol`, `FoodChecks.ALCOHOL`) is the one exception:
+  its energy is mostly ethanol, so kcal is given directly and the drift check
+  skips the category. The generator takes `kc=` for this.
 - Category `Protein` needs ≥ 5 g protein or ≥ 25% of kcal from protein.
 - Category `Supplement` must have `supp = true` and the reverse; supplements
   file under the Supplements meal slot whatever meal is picked.
@@ -186,11 +189,13 @@ fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
 4. Food requests come in batches by place: done so far are Tamil curries,
    staples, Indo-Chinese and grill counter, meals and restaurant chains,
    bakery, tea stall and juice shop, street and fast food, Kerala/Andhra/
-   Hyderabadi/Arabian, packaged oats and protein foods, protein powders.
+   Hyderabadi/Arabian, packaged oats and protein foods, protein powders, and
+   candidates 1–11 below (`SeedFoodsWeek.kt`). The generator scripts are not in
+   the repo; write a seed file directly or with a throwaway script.
 
-### Candidate additions (offered to the user; take in this order unless asked)
+### Candidate additions (the user asked for all 17)
 
-Foods:
+Foods 1–11: **done** in `SeedFoodsWeek.kt`.
 1. **Aavin and Tamil Nadu dairy**: Aavin milk variants (toned, standardised,
    full cream), Aavin curd, ghee, paneer, milkshakes, ice creams; Hatsun/Arun.
 2. **Packaged snack and biscuit brands**: Parle-G, Good Day, Marie Gold, Hide &

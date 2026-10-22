@@ -26,9 +26,13 @@ object FoodChecks {
 
     /**
      * Foods whose energy is not described by the four macros this app tracks.
-     * Beer's calories are mostly ethanol at 7 kcal/g.
+     * Beer's calories are mostly ethanol at 7 kcal/g, as are those of
+     * everything in the [ALCOHOL] category.
      */
     val ENERGY_EXEMPT = setOf("Beer")
+
+    /** The category whose energy is mostly ethanol, so the macros cannot account for it. */
+    const val ALCOHOL = "Alcohol"
 
     /** Every reason this food fails, or an empty list if it is fine. */
     fun problems(food: FoodItem): List<String> {
@@ -93,7 +97,7 @@ object FoodChecks {
 
     /** Relative mismatch, or null where the check does not apply. */
     fun energyDrift(food: FoodItem): Double? {
-        if (food.kcal < 20 || food.name in ENERGY_EXEMPT) return null
+        if (food.kcal < 20 || food.name in ENERGY_EXEMPT || food.category == ALCOHOL) return null
         val implied = impliedKcal(food)
         if (implied <= 0.0) return null
         return abs(food.kcal - implied) / implied

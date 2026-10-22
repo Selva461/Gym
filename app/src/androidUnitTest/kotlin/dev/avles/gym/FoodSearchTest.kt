@@ -69,6 +69,19 @@ class FoodSearchTest {
     }
 
     @Test
+    fun `brands, chains and drinks are found by the name on the pack or the menu`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue("Aavin toned milk" in names("green packet milk"))
+        assertTrue("Parle-G" in names("parle g"))
+        assertTrue("Coca-Cola" in names("coke"))
+        assertTrue("Burger King Whopper" in names("whopper"))
+        assertTrue("Ayala fry" in names("mackerel fry"))
+        assertTrue("Chicken curry, per 100 g" in names("chicken curry by weight"))
+        assertTrue(all.filter { it.category == "Alcohol" }.size >= 15)
+    }
+
+    @Test
     fun `packaged oats and protein foods are found by brand`() {
         val all = SeedData.foods()
         fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
