@@ -58,6 +58,19 @@ class FoodSearchTest {
         assertTrue("Nandu kuzhambu" in names("crab"))
     }
 
+    /** Restaurant orders are asked for the way the menu and the counter say them. */
+    @Test
+    fun `restaurant orders are found the way they are ordered`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue("Grill chicken, half" in names("half grill"))
+        assertTrue("BBQ chicken, full" in names("full bbq"))
+        assertTrue("Tandoori chicken, half" in names("half tandoori"))
+        assertTrue("Garlic chicken" in names("garlic chicken"))
+        assertTrue(names("chilli chicken").containsAll(listOf("Chilli chicken", "Chilli chicken, gravy")))
+        assertTrue("Chicken Schezwan fried rice" in names("szechuan rice"))
+    }
+
     /** Staples are asked for by the Tamil word as often as the English one, and raw or cooked matters. */
     @Test
     fun `a staple is found by its Tamil name, raw apart from cooked`() {
