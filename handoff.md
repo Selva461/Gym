@@ -3,7 +3,7 @@
 **Start here.** A new session should be able to continue from this file alone.
 It is kept current by rule: every commit that changes code, data, the build or
 the plan also updates this file (see `CLAUDE.md`). Last updated with the
-restaurant, meals, bakery, stall, street-food and brand foods (main `1948ef9`).
+protein powder brands and the list of further additions.
 
 ## What this is
 
@@ -49,9 +49,9 @@ release writes return 403); CI does the publishing.
 | | |
 |---|---|
 | Exercises | 486 across 13 muscle groups; 140 with bundled demonstrations |
-| Foods | **1,043 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,104. 26 categories (newest: Meals). |
+| Foods | **1,062 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,123. 26 categories (newest: Meals). Newest file: `SeedFoodsSupplements.kt` (protein powders and gainers by brand, flagged as supplements). |
 | Database | **v13**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`. Exported schemas in `app/schemas/`. |
-| Tests | 242 (`gradle testDebugUnitTest`), none needing a device |
+| Tests | 243 (`gradle testDebugUnitTest`), none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 (CI) |
 
 Features, by screen (README → "What's in it" has the user-facing list):
@@ -127,8 +127,8 @@ members and let `ios.yml` judge it.
 
 Foods live in `data/SeedFoods*.kt`, one `internal object` per batch, each with a
 private `f(name, unit, kcal, p, c, fat, cat, aka = "", fib, sug, sat, na, k, ca,
-fe, mg, zn, va, vc, vd, b12, fol, o3)` and an `all()` that `SeedData.foods()`
-concatenates. Rules the tests hold:
+fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
+`SeedData.foods()` concatenates. Rules the tests hold:
 
 - **kcal is derived**, never typed: `round5(4P + 4(C − fibre) + 2·fibre + 9F)`.
   `FoodChecks` rejects >20% drift; fibre and sugar ≤ carbs; sat fat ≤ fat.
@@ -136,6 +136,8 @@ concatenates. Rules the tests hold:
   seed name equal to a dataset dish moves that dish from imported/declined to
   "already present" and changes `FoodDatasetTest`'s counts (61 / 22 / 39 now).
 - Category `Protein` needs ≥ 5 g protein or ≥ 25% of kcal from protein.
+- Category `Supplement` must have `supp = true` and the reverse; supplements
+  file under the Supplements meal slot whatever meal is picked.
 - Put local and English names in `aka` (comma separated) — search uses them —
   and add a line to `FoodSearchTest` for how the user would type it.
 - Update the count in `SeedDataTest` ("the catalogue is the size the README
@@ -184,9 +186,44 @@ concatenates. Rules the tests hold:
 4. Food requests come in batches by place: done so far are Tamil curries,
    staples, Indo-Chinese and grill counter, meals and restaurant chains,
    bakery, tea stall and juice shop, street and fast food, Kerala/Andhra/
-   Hyderabadi/Arabian, packaged oats and protein foods. Likely next asks:
-   regional sweets by festival, more brands (protein powders, Amul range),
-   home-style Tamil breakfast variants.
+   Hyderabadi/Arabian, packaged oats and protein foods, protein powders.
+
+### Candidate additions (offered to the user; take in this order unless asked)
+
+Foods:
+1. **Aavin and Tamil Nadu dairy**: Aavin milk variants (toned, standardised,
+   full cream), Aavin curd, ghee, paneer, milkshakes, ice creams; Hatsun/Arun.
+2. **Packaged snack and biscuit brands**: Parle-G, Good Day, Marie Gold, Hide &
+   Seek, Bourbon, Britannia bread, Lay's, Kurkure, Bingo, Haldiram's bhujia
+   and namkeens, Too Yumm, Act II popcorn.
+3. **Cool drinks and energy drinks**: Coca-Cola, Pepsi, Thums Up, Sprite, 7Up,
+   Fanta, Mirinda, Bovonto (Tamil Nadu), Red Bull, Monster, Sting, Gatorade,
+   Paper Boat, Real/Tropicana juices.
+4. **Alcohol** (energy mostly from ethanol, so add to `FoodChecks.ENERGY_EXEMPT`):
+   beer variants, whisky, rum, vodka, gin, wine, per peg and per bottle.
+5. **Fish and seafood by species**: seer, mackerel (ayala), sardine, pomfret,
+   tuna, salmon, prawns, crab, squid, each as fry, curry and grill.
+6. **Millet dishes**: thinai pongal, samai upma, varagu and kuthiraivali rice,
+   kambu and ragi variants.
+7. **Home-style breakfast variants**: kara and pidi kozhukattai, adai
+   varieties, idiyappam with kurma or coconut milk, paniyaram varieties.
+8. **Festival foods**: Diwali savouries, Karthigai pori and appam, Ramzan nombu
+   kanji, Christmas plum cake variants, Pongal set.
+9. **More supplements by brand**: pre-workouts, BCAA/EAA, creatine,
+   electrolytes, fish oil, multivitamins (MuscleBlaze, ON, HealthKart, Wellbeing).
+10. **Per-100 g home dishes** for people who weigh cooked food: chicken curry,
+    dal, sambar, rice, chapati dough, egg curry.
+11. **Chain menus with published nutrition**: McDonald's India, KFC, Domino's,
+    Subway, Burger King, Starbucks, A2B (Adyar Ananda Bhavan) sweets.
+
+Features:
+12. Recipe builder: combine foods into a home recipe with servings.
+13. Favourite foods pinned to the top of Fuel.
+14. Grams toggle: log any food by weight as well as by its unit.
+15. Meal reminders (breakfast, lunch, dinner).
+16. Offline barcode scan for the seeded branded foods only (needs EAN codes and
+    a camera seam on both platforms).
+17. Backup and restore (deferred; see item 3 above).
 
 The fitness-parity backlog (items 1–26 from earlier sessions) is complete except
 item 25 (backup/restore, deferred as above).

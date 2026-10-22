@@ -59,6 +59,16 @@ class FoodSearchTest {
     }
 
     @Test
+    fun `protein powders are found by brand and file as supplements`() {
+        val all = SeedData.foods()
+        fun found(q: String) = FoodSearch.search(all, q, limit = 50)
+        assertTrue(found("on whey").any { it.name == "ON Gold Standard whey" })
+        assertTrue(found("biozyme").any { it.name == "MuscleBlaze Biozyme whey" })
+        val brands = listOf("ON Gold Standard whey", "MuscleBlaze Biozyme whey", "Dymatize ISO100", "ON Serious Mass")
+        assertTrue(all.filter { it.name in brands }.let { it.size == 4 && it.all { f -> f.isSupplement } })
+    }
+
+    @Test
     fun `packaged oats and protein foods are found by brand`() {
         val all = SeedData.foods()
         fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
