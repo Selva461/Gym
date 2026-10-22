@@ -58,6 +58,16 @@ class FoodSearchTest {
         assertTrue("Nandu kuzhambu" in names("crab"))
     }
 
+    @Test
+    fun `bakery items are found by their shop names`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue(names("puff").containsAll(listOf("Veg puff", "Egg puff", "Chicken puff")))
+        assertTrue("Coconut bun" in names("dilkush"))
+        assertTrue("Black forest pastry" in names("black forest"))
+        assertTrue("Ellu urundai" in names("sesame ball"))
+    }
+
     /** Meals are ordered by name, the egg counter by its Tamil words. */
     @Test
     fun `meals, eggs and mushroom dishes are found by what people call them`() {
