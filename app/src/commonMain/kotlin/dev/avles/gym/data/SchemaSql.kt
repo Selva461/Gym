@@ -164,6 +164,75 @@ object SchemaSql {
 
     val V8_STATEMENTS = listOf(ADD_EXERCISE_ASSISTED, FLAG_ASSISTED_EXERCISES)
 
+    // ---- v9: tape measurements ----------------------------------------------
+
+    const val CREATE_BODY_MEASUREMENT =
+        "CREATE TABLE IF NOT EXISTS `body_measurement` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`dateEpochDay` INTEGER NOT NULL, " +
+            "`part` TEXT NOT NULL, " +
+            "`cm` REAL NOT NULL)"
+
+    /** Unique on the pair: one figure per part per day. */
+    const val INDEX_BODY_MEASUREMENT_DATE_PART =
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_body_measurement_dateEpochDay_part` " +
+            "ON `body_measurement` (`dateEpochDay`, `part`)"
+
+    val V9_STATEMENTS = listOf(CREATE_BODY_MEASUREMENT, INDEX_BODY_MEASUREMENT_DATE_PART)
+
+    // ---- v10: drop sets, sets to failure, and RPE ---------------------------
+
+    const val ADD_SET_KIND = "ALTER TABLE `set_entry` ADD COLUMN `kind` TEXT NOT NULL DEFAULT ''"
+    const val ADD_SET_RPE = "ALTER TABLE `set_entry` ADD COLUMN `rpe` REAL NOT NULL DEFAULT 0"
+
+    const val EXPECTED_SET_KIND_COLUMN = "`kind` TEXT NOT NULL DEFAULT ''"
+    const val EXPECTED_SET_RPE_COLUMN = "`rpe` REAL NOT NULL DEFAULT 0"
+
+    val V10_STATEMENTS = listOf(ADD_SET_KIND, ADD_SET_RPE)
+
+    // ---- v11: your own notes on a lift --------------------------------------
+
+    const val ADD_EXERCISE_NOTES = "ALTER TABLE `exercise` ADD COLUMN `notes` TEXT NOT NULL DEFAULT ''"
+    const val EXPECTED_EXERCISE_NOTES_COLUMN = "`notes` TEXT NOT NULL DEFAULT ''"
+
+    val V11_STATEMENTS = listOf(ADD_EXERCISE_NOTES)
+
+    // ---- v12: saved meals ---------------------------------------------------
+
+    const val CREATE_SAVED_MEAL =
+        "CREATE TABLE IF NOT EXISTS `saved_meal` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`name` TEXT NOT NULL, " +
+            "`createdAt` INTEGER NOT NULL)"
+
+    const val CREATE_SAVED_MEAL_ITEM =
+        "CREATE TABLE IF NOT EXISTS `saved_meal_item` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`mealId` INTEGER NOT NULL, " +
+            "`foodId` INTEGER NOT NULL, " +
+            "`quantity` REAL NOT NULL)"
+
+    const val INDEX_SAVED_MEAL_ITEM_MEAL =
+        "CREATE INDEX IF NOT EXISTS `index_saved_meal_item_mealId` ON `saved_meal_item` (`mealId`)"
+
+    val V12_STATEMENTS = listOf(CREATE_SAVED_MEAL, CREATE_SAVED_MEAL_ITEM, INDEX_SAVED_MEAL_ITEM_MEAL)
+
+    // ---- v13: cardio ----------------------------------------------------------
+
+    const val CREATE_CARDIO_ENTRY =
+        "CREATE TABLE IF NOT EXISTS `cardio_entry` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`dateEpochDay` INTEGER NOT NULL, " +
+            "`activity` TEXT NOT NULL, " +
+            "`minutes` INTEGER NOT NULL, " +
+            "`distanceKm` REAL NOT NULL, " +
+            "`loggedAt` INTEGER NOT NULL)"
+
+    const val INDEX_CARDIO_ENTRY_DATE =
+        "CREATE INDEX IF NOT EXISTS `index_cardio_entry_dateEpochDay` ON `cardio_entry` (`dateEpochDay`)"
+
+    val V13_STATEMENTS = listOf(CREATE_CARDIO_ENTRY, INDEX_CARDIO_ENTRY_DATE)
+
     /** Every statement the v5 migration runs, in order. */
     val V5_STATEMENTS = listOf(
         CREATE_PROGRESS_PHOTO,

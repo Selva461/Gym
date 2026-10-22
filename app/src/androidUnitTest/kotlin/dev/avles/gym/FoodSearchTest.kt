@@ -58,6 +58,18 @@ class FoodSearchTest {
         assertTrue("Nandu kuzhambu" in names("crab"))
     }
 
+    /** Staples are asked for by the Tamil word as often as the English one, and raw or cooked matters. */
+    @Test
+    fun `a staple is found by its Tamil name, raw apart from cooked`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue("Horse gram, boiled" in names("kollu"))
+        assertTrue("Roasted gram" in names("pottukadalai"))
+        assertTrue("Ragi flour" in names("kezhvaragu"))
+        assertTrue(names("chicken breast").containsAll(listOf("Chicken breast, raw", "Chicken breast, cooked weight")))
+        assertTrue(names("banana").containsAll(listOf("Nendran banana", "Poovan banana", "Red banana")))
+    }
+
     @Test
     fun `blank queries and misses return nothing`() {
         assertTrue(FoodSearch.search(catalogue, "   ").isEmpty())

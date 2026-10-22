@@ -26,9 +26,9 @@ Standing constraints, all deliberate and all enforced by tests:
 |---|---|
 | Platforms | Android (APK, every push) and iOS (unsigned IPA, on `main` or on demand) — both green |
 | Exercises | 486, across 13 muscle groups; 140 with bundled demonstrations |
-| Foods | 614 built in (76 Tamil curries in `SeedFoodsTamil.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
-| Database | v8 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`), migrations 1→…→8, Room 2.7 KMP |
-| Tests | 193, none needing a device |
+| Foods | 706 built in (76 Tamil curries in `SeedFoodsTamil.kt`, 92 staples in `SeedFoodsStaples.kt`) + 61 from the Indian Food Nutrition Dataset v2 |
+| Database | v13 (v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`), migrations 1→…→13, Room 2.7 KMP |
+| Tests | 235, none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 |
 
 This phase, in order:
@@ -190,3 +190,76 @@ Then, in order of value:
   provisioning profile as secrets, `xcodebuild archive` + `-exportArchive`).
 - The two security gaps in `SECURITY.md` (biometric lock, SQLCipher) are still
   open questions for the user.
+
+## Backlog: parity with the big fitness apps
+
+The user asked for the app to match Strong, Hevy, MyFitnessPal and HealthifyMe
+"in everything possible", and for the work to keep going across sessions. Done
+so far: motion and haptics, previous-session chips, plate calculator, session
+clock, rest ±15, lift history and rep-max table, workout summary card, macro
+split bars, water tracker, copy a meal from the day before, target calculator.
+
+Take these top to bottom. Each needs domain logic with tests first, then UI;
+verify with the local harness and `gradle :app:compileDebugKotlinAndroid`
+(Android SDK at /opt/android-sdk; Maven Central rate-limits the sandbox, so
+`~/.gradle/init.d/mirror.gradle.kts` points it at Google's Central mirror)
+before pushing. Strike an item when it lands.
+
+1. ~~**Warm-up sets**~~ (done) from the working weight (bar × 10, 40% × 5, 60% × 3, 80% × 2),
+   rounded to plates, offered under the target card. Pure; no schema.
+2. ~~**Month calendar**~~ (done) on Progress with trained/fuelled marks and rest days. No schema.
+3. ~~**All records** page~~ (done) on Progress: each lift's best set, newest records first.
+   Needs one DAO query over all working sets (read-only, no schema change).
+4. ~~**This week** card~~ (done) on Today: sessions, volume, average protein and calories
+   against target, versus last week. No schema.
+5. ~~**Recent foods**~~ (done) next to the usual suspects: the last distinct foods logged.
+   A DAO query; no schema.
+6. ~~**Fasting timer**~~ (done) (16:8 and the like) on Fuel, start time in DataStore.
+7. ~~**Export to CSV**~~ (done) of sets, food log and weights through the platform share
+   sheet (a new expect/actual seam; no network involved).
+8. ~~**Body measurements**~~ (done) (waist, chest, arms, hips, thighs) with trends, and a
+   US Navy body-fat estimate. Room v9: new table, migration, MigrationSqlTest.
+9. ~~**Set types and RPE**~~ (done) (warm-up exists; add drop set, to failure, RPE 6–10).
+   Room v9/v10 column with a default, migration and test.
+10. ~~**Notes on a lift**~~ (done) that show every time it is picked. Schema column.
+
+Left out on purpose, because they need the network or another app's permission:
+barcode lookup, step counts, Health Connect / HealthKit sync, social feeds.
+
+### Backlog, second wave
+
+11. ~~**Achievements**~~ (done) on Progress: workouts logged (1/10/50/100/250), training
+    runs (7/30 days), total kilos moved (10k/100k/1M), records set, food logged
+    days. Computed from data already stored; no schema.
+12. ~~**Smart rest defaults**~~ (done): a heavy compound (top of range ≤ 6) rests 3 min, an
+    isolation lift (≥ 12) 90 s, the rest the Settings value. No schema.
+13. ~~**1RM calculator**~~ (done) on Progress: weight × reps → estimated max and table.
+14. ~~**Weight goal**~~ (done) in Settings with the trend's weekly rate and a projected date.
+15. ~~**Saved meals**~~ (done): name a meal and log all of it in one tap. Room v12 table.
+
+### Backlog, third wave
+
+16. ~~**Alternatives**~~ (done) for a lift: same muscle, different equipment, for when the
+    machine is taken. From the catalogue; no schema.
+17. ~~**Save a past session as a split**~~ (done) from the session dialog.
+18. ~~**First-run welcome**~~ (done) on Today: set targets (with the calculator) before the
+    first log, instead of silently using the defaults.
+19. ~~**Supersets**~~ (done): pair two lifts so the rest timer waits for the second.
+
+### Backlog, fourth wave
+
+20. ~~**Calories burned**~~ (done) for a session (MET, by duration and body weight) on the
+    workout card and Today, as the food apps add exercise.
+21. ~~**Cardio**~~ (done): log minutes and distance for cardio work (Room v13).
+22. ~~**Quick weigh-in**~~ (done) from Today.
+23. ~~**Water reminders**~~ (done) through the existing notifier, during waking hours.
+
+### Backlog, fifth wave
+
+24. ~~**Quick add**~~ (done): calories and macros without a food.
+25. **Backup and restore** (deferred: Android's encrypted backup already
+    survives a reinstall and the CSV export gets data out; a full restore needs a
+    FileProvider, a document picker on both platforms and a live database swap,
+    which should not ship without an iPhone build to check it): the whole database to a file and back (share sheet
+    out; a document picker in, which needs a new platform seam).
+26. ~~**Tamil labels**~~ (done; tabs, headings, main buttons, macro names) for the main screens, as the Indian diet apps offer.

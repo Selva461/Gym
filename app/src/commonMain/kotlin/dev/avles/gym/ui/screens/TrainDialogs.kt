@@ -1,7 +1,7 @@
 package dev.avles.gym.ui.screens
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,22 +24,27 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.core.Dates
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.SplitPlan
+import dev.avles.gym.domain.SetKinds
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.SessionDetail
+import dev.avles.gym.ui.components.ChipRow
 import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.Hairline
+import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.components.PillRow
+import dev.avles.gym.ui.components.pressable
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
@@ -47,7 +52,6 @@ import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
 import dev.avles.gym.ui.theme.Slate
-import dev.avles.gym.core.Dates
 import kotlin.math.roundToInt
 
 /**
@@ -61,13 +65,15 @@ import kotlin.math.roundToInt
 @Composable
 fun SetEditorDialog(
     row: SetRow,
-    onSave: (Double, Int, Boolean) -> Unit,
+    onSave: (Double, Int, Boolean, String, Double) -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
     var weight by remember(row.setId) { mutableStateOf(Training.formatWeight(row.weightKg)) }
     var reps by remember(row.setId) { mutableStateOf(row.reps.toString()) }
-    var warmup by remember(row.setId) { mutableStateOf(row.isWarmup) }
+    var setType by remember(row.setId) { mutableStateOf(SetKinds.pickerLabel(row.isWarmup, row.kind)) }
+    var rpe by remember(row.setId) { mutableDoubleStateOf(row.rpe) }
+    val warmup = setType == SetKinds.WARMUP_LABEL
 
     // Zero is a real weight on an assisted machine: no help at all.
     val kg = weight.toDoubleOrNull()
@@ -105,11 +111,20 @@ fun SetEditorDialog(
                 }
                 Spacer(Modifier.height(14.dp))
                 PillRow(
-                    options = listOf("Working set", "Warm-up"),
-                    selected = if (warmup) "Warm-up" else "Working set",
+                    options = SetKinds.PICKER.map { it.first },
+                    selected = setType,
                     accent = Brass,
-                    onSelect = { warmup = it == "Warm-up" }
+                    onSelect = { setType = it }
                 )
+                if (!warmup) {
+                    Spacer(Modifier.height(8.dp))
+                    ChipRow(
+                        options = listOf("RPE –") + SetKinds.RPE_CHOICES.map { "RPE " + SetKinds.rpeLabel(it) },
+                        selected = if (rpe > 0) "RPE " + SetKinds.rpeLabel(rpe) else "RPE –",
+                        accent = Brass,
+                        onSelect = { label -> rpe = label.removePrefix("RPE ").toDoubleOrNull() ?: 0.0 }
+                    )
+                }
                 Spacer(Modifier.height(16.dp))
                 TextButton(onClick = onDelete) { Text("Delete this set", color = Coral) }
             }
@@ -121,7 +136,11 @@ fun SetEditorDialog(
                     onSave(
                         weight.toDoubleOrNull() ?: row.weightKg,
                         reps.toIntOrNull() ?: row.reps,
-                        warmup
+                        warmup,
+                        // A warm-up is neither a drop set nor rated: logging clears
+                        // both for it, and editing has to agree.
+                        if (warmup) "" else SetKinds.kindFor(setType),
+                        if (warmup) 0.0 else rpe
                     )
                 }
             ) { Text("Save", color = if (valid) Brass else Faint) }
@@ -145,9 +164,11 @@ fun SessionDetailDialog(
     onReopen: () -> Unit,
     onDeleteSession: () -> Unit,
     onEditSet: (SetRow) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onSaveAsSplit: ((String, List<Long>) -> Unit)? = null
 ) {
     var label by remember(detail.session.id) { mutableStateOf(detail.session.label) }
+    var savedAsSplit by remember(detail.session.id) { mutableStateOf(false) }
     var confirmingDelete by remember(detail.session.id) { mutableStateOf(false) }
 
     val setCount = detail.sets.size
@@ -200,8 +221,7 @@ fun SessionDetailDialog(
                         Row(
                             Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { onEditSet(row) }
+                                .pressable(RoundedCornerShape(8.dp), pressedScale = 0.985f) { onEditSet(row) }
                                 .padding(vertical = 8.dp, horizontal = 4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
@@ -224,6 +244,22 @@ fun SessionDetailDialog(
                                 color = if (row.isWarmup) Mute else Brass
                             )
                         }
+                    }
+                }
+
+                // A session that went well is the best template there is: its lifts,
+                // in the order they were done, become a split to start from next time.
+                val lifts = detail.sets.map { it.exerciseId }.distinct()
+                if (onSaveAsSplit != null && lifts.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(enabled = !savedAsSplit, onClick = {
+                        onSaveAsSplit(label.ifBlank { detail.session.label }, lifts)
+                        savedAsSplit = true
+                    }) {
+                        Text(
+                            if (savedAsSplit) "Saved as a split" else "Save these ${lifts.size} lifts as a split",
+                            color = if (savedAsSplit) Faint else Brass
+                        )
                     }
                 }
 
@@ -377,8 +413,7 @@ fun SplitEditorDialog(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { chosen = chosen + exercise.id }
+                            .pressable(RoundedCornerShape(8.dp), pressedScale = 0.985f) { chosen = chosen + exercise.id }
                             .padding(vertical = 8.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -472,13 +507,15 @@ fun SplitLiftRow(
         // is nothing here worth virtualising.
         plan.exercises.forEach { exercise ->
             val on = exercise.id == selectedId
+            val fill by animateColorAsState(
+                if (on) Brass.copy(alpha = 0.16f) else Raised, Motion.quick(), label = "split-lift"
+            )
             Box(
                 Modifier
                     .fillMaxWidth()
                     .padding(bottom = 6.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (on) Brass.copy(alpha = 0.16f) else Raised)
-                    .clickable { onPick(exercise) }
+                    .pressable(RoundedCornerShape(10.dp), pressedScale = 0.985f) { onPick(exercise) }
+                    .background(fill)
                     .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
                 Text(

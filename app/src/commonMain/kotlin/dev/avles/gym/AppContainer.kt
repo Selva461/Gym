@@ -36,6 +36,7 @@ class AppContainer(
         repository.reconcilePhotoFiles()
         val s = settings.settings.first()
         if (s.remindersOn) notifier.scheduleDailyReminder(s.reminderHour, s.reminderMinute)
+        if (s.waterReminders) notifier.scheduleWaterReminders()
     }
 
     companion object {

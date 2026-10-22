@@ -1,7 +1,14 @@
 package dev.avles.gym.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,9 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -24,45 +31,59 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.avles.gym.core.Dates
+import dev.avles.gym.data.CardioEntry
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.PickedImage
-import dev.avles.gym.data.SeedData
 import dev.avles.gym.data.SessionSummary
 import dev.avles.gym.data.SetRow
 import dev.avles.gym.data.SplitPlan
 import dev.avles.gym.data.WorkoutSession
-import dev.avles.gym.domain.Numbers
+import dev.avles.gym.domain.LiftHistory
+import dev.avles.gym.domain.Plates
+import dev.avles.gym.domain.SetKinds
+import dev.avles.gym.domain.Supersets
 import dev.avles.gym.domain.Training
 import dev.avles.gym.domain.Variations
 import dev.avles.gym.ui.LiftGuidance
 import dev.avles.gym.ui.SessionDetail
 import dev.avles.gym.ui.TrainState
 import dev.avles.gym.ui.components.BigNumber
+import dev.avles.gym.ui.components.ChipRow
 import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
 import dev.avles.gym.ui.components.Hairline
-import dev.avles.gym.ui.components.Meter
-import dev.avles.gym.ui.components.ChipRow
+import dev.avles.gym.ui.components.Haptic
+import dev.avles.gym.ui.components.Motion
+import dev.avles.gym.ui.components.Motion.fadeThrough
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
+import dev.avles.gym.ui.components.pressScale
+import dev.avles.gym.ui.components.pressable
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
-import dev.avles.gym.ui.theme.Coral
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
 import dev.avles.gym.ui.theme.Slate
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 private val AD_HOC_LABELS = listOf("Push", "Pull", "Legs", "Full")
 
@@ -90,49 +111,74 @@ fun TrainScreen(
     onReopenSession: (WorkoutSession) -> Unit,
     onDeleteSession: (Long) -> Unit,
     onFinish: () -> Unit,
-    onLogSet: (Long, Double, Int, Boolean) -> Unit,
-    onEditSet: (Long, Double, Int, Boolean, String) -> Unit,
+    onLogSet: (Long, Double, Int, Boolean, String, Double) -> Unit,
+    onEditSet: (Long, Double, Int, Boolean, String, String, Double) -> Unit,
     onDeleteSet: (Long) -> Unit,
     onSkipRest: () -> Unit,
     onAddExercise: (String, String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAdjustRest: (Int) -> Unit = {},
+    workoutReport: LiftHistory.Report? = null,
+    onDismissReport: () -> Unit = {},
+    liftHistory: (Long) -> Flow<List<SetRow>> = { flowOf(emptyList()) },
+    onSetNotes: (Long, String) -> Unit = { _, _ -> },
+    superset: Supersets.Pair? = null,
+    onStartSuperset: (Long, Long) -> Unit = { _, _ -> },
+    onEndSuperset: () -> Unit = {},
+    cardio: List<CardioEntry> = emptyList(),
+    bodyKg: Double = 0.0,
+    onLogCardio: (String, Int, Double) -> Unit = { _, _, _ -> },
+    onDeleteCardio: (Long) -> Unit = {}
 ) {
     // Hoisted here because a set can be opened from the live session or from a past
     // one inside the session dialog, and both should land on the same editor.
     var editingSet by remember { mutableStateOf<SetRow?>(null) }
 
-    if (state.active == null) {
-        StartSessionPane(
-            state = state,
-            splits = splits,
-            summaries = summaries,
-            onStartFromSplit = onStartFromSplit,
-            onStartBlank = onStartBlank,
-            onSaveSplit = onSaveSplit,
-            onDeleteSplit = onDeleteSplit,
-            onOpenSession = onOpenSession,
-            modifier = modifier
-        )
-    } else {
-        ActiveSessionPane(
-            state = state,
-            restRemaining = restRemaining,
-            prSetId = prSetId,
-            guidance = guidance,
-            activePlan = activePlan,
-            onSelectExercise = onSelectExercise,
-            onSelectVariation = onSelectVariation,
-            exercisePhotos = exercisePhotos,
-            onAttachExercisePhoto = onAttachExercisePhoto,
-            onDetachExercisePhoto = onDetachExercisePhoto,
-            onFinish = onFinish,
-            onLogSet = onLogSet,
-            onEditSetRow = { editingSet = it },
-            onSkipRest = onSkipRest,
-            onAddExercise = onAddExercise,
-            modifier = modifier
-        )
+    // Starting or finishing a session swaps the whole screen; it settles in rather
+    // than cutting, so the change of mode is felt as well as seen.
+    AnimatedContent(targetState = state.active == null, transitionSpec = { fadeThrough() }, label = "train-mode") { idle ->
+        if (idle) {
+            StartSessionPane(
+                state = state,
+                splits = splits,
+                summaries = summaries,
+                onStartFromSplit = onStartFromSplit,
+                onStartBlank = onStartBlank,
+                onSaveSplit = onSaveSplit,
+                onDeleteSplit = onDeleteSplit,
+                onOpenSession = onOpenSession,
+                cardio = { CardioSection(cardio, bodyKg, onLogCardio, onDeleteCardio) },
+                modifier = modifier
+            )
+        } else {
+            ActiveSessionPane(
+                state = state,
+                restRemaining = restRemaining,
+                prSetId = prSetId,
+                guidance = guidance,
+                activePlan = activePlan,
+                onSelectExercise = onSelectExercise,
+                onSelectVariation = onSelectVariation,
+                exercisePhotos = exercisePhotos,
+                onAttachExercisePhoto = onAttachExercisePhoto,
+                onDetachExercisePhoto = onDetachExercisePhoto,
+                onFinish = onFinish,
+                onLogSet = onLogSet,
+                onEditSetRow = { editingSet = it },
+                onSkipRest = onSkipRest,
+                onAdjustRest = onAdjustRest,
+                onAddExercise = onAddExercise,
+                liftHistory = liftHistory,
+                onSetNotes = onSetNotes,
+                superset = superset,
+                onStartSuperset = onStartSuperset,
+                onEndSuperset = onEndSuperset,
+                modifier = modifier
+            )
+        }
     }
+
+    workoutReport?.let { WorkoutReportDialog(it, onDismissReport) }
 
     openSession?.let { detail ->
         SessionDetailDialog(
@@ -142,15 +188,16 @@ fun TrainScreen(
             onReopen = { onReopenSession(detail.session) },
             onDeleteSession = { onDeleteSession(detail.session.id) },
             onEditSet = { editingSet = it },
-            onDismiss = { onOpenSession(null) }
+            onDismiss = { onOpenSession(null) },
+            onSaveAsSplit = { name, ids -> onSaveSplit(0L, name, ids) }
         )
     }
 
     editingSet?.let { row ->
         SetEditorDialog(
             row = row,
-            onSave = { w, r, warm ->
-                onEditSet(row.setId, w, r, warm, row.variation)
+            onSave = { w, r, warm, kind, rpe ->
+                onEditSet(row.setId, w, r, warm, row.variation, kind, rpe)
                 editingSet = null
             },
             onDelete = { onDeleteSet(row.setId); editingSet = null },
@@ -169,6 +216,7 @@ private fun StartSessionPane(
     onSaveSplit: (Long, String, List<Long>) -> Unit,
     onDeleteSplit: (Long) -> Unit,
     onOpenSession: (Long?) -> Unit,
+    cardio: @Composable () -> Unit,
     modifier: Modifier
 ) {
     var editingSplit by remember { mutableStateOf<SplitPlan?>(null) }
@@ -181,14 +229,14 @@ private fun StartSessionPane(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp)
     ) {
         item {
-            Text("Train", style = MaterialTheme.typography.headlineMedium, color = Bone)
+            Text(tr("Train"), style = MaterialTheme.typography.headlineMedium, color = Bone)
             Text(
                 "Start a split and its lifts come with it.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Mute
             )
             Spacer(Modifier.height(20.dp))
-            SectionHeading("Your splits", trailing = "${splits.size}")
+            SectionHeading(tr("Your splits"), trailing = "${splits.size}")
             Spacer(Modifier.height(10.dp))
         }
 
@@ -202,6 +250,7 @@ private fun StartSessionPane(
             // closed the app outright the moment you had one past session.
             items(splits, key = { "split-${it.id}" }) { plan ->
                 SplitCard(
+                    modifier = Modifier.animateItem(),
                     plan = plan,
                     onStart = { onStartFromSplit(plan) },
                     onEdit = { editingSplit = plan }
@@ -220,25 +269,35 @@ private fun StartSessionPane(
                 }
             }
 
-            if (showAdHoc) {
-                Spacer(Modifier.height(8.dp))
-                PillRow(AD_HOC_LABELS, adHocLabel, Brass, { adHocLabel = it })
-                Spacer(Modifier.height(10.dp))
-                Button(
-                    onClick = { onStartBlank(adHocLabel) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Brass.copy(alpha = 0.16f),
-                        contentColor = Brass
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Start $adHocLabel session") }
+            AnimatedVisibility(
+                visible = showAdHoc,
+                enter = expandVertically(Motion.standard()) + fadeIn(Motion.enter()),
+                exit = shrinkVertically(Motion.standard()) + fadeOut(Motion.quick())
+            ) {
+                Column {
+                    Spacer(Modifier.height(8.dp))
+                    PillRow(AD_HOC_LABELS, adHocLabel, Brass, { adHocLabel = it })
+                    Spacer(Modifier.height(10.dp))
+                    Button(
+                        onClick = { onStartBlank(adHocLabel) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Brass.copy(alpha = 0.16f),
+                            contentColor = Brass
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Start $adHocLabel session") }
+                }
             }
 
             Spacer(Modifier.height(28.dp))
             Hairline()
             Spacer(Modifier.height(22.dp))
+            cardio()
+            Spacer(Modifier.height(18.dp))
+            Hairline()
+            Spacer(Modifier.height(22.dp))
             SectionHeading(
-                "Recent sessions",
+                tr("Recent sessions"),
                 trailing = if (state.recent.isEmpty()) null else "tap to edit"
             )
             Spacer(Modifier.height(10.dp))
@@ -260,7 +319,7 @@ private fun StartSessionPane(
                     trailing = minutes?.let { "$it min" } ?: "open",
                     accent = Brass,
                     onClick = { onOpenSession(session.id) },
-                    modifier = Modifier.padding(bottom = 6.dp)
+                    modifier = Modifier.animateItem().padding(bottom = 6.dp)
                 )
             }
         }
@@ -288,9 +347,9 @@ private fun StartSessionPane(
 }
 
 @Composable
-private fun SplitCard(plan: SplitPlan, onStart: () -> Unit, onEdit: () -> Unit) {
+private fun SplitCard(plan: SplitPlan, onStart: () -> Unit, onEdit: () -> Unit, modifier: Modifier = Modifier) {
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp)
             .clip(RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp))
@@ -301,7 +360,7 @@ private fun SplitCard(plan: SplitPlan, onStart: () -> Unit, onEdit: () -> Unit) 
         Column(
             Modifier
                 .weight(1f)
-                .clickable { onStart() }
+                .pressable(haptic = Haptic.CONFIRM, onClick = onStart)
                 .padding(start = 12.dp, top = 12.dp, bottom = 12.dp)
         ) {
             Text(plan.name, style = MaterialTheme.typography.bodyLarge, color = Bone)
@@ -334,23 +393,45 @@ private fun ActiveSessionPane(
     onAttachExercisePhoto: (Long, PickedImage) -> Unit,
     onDetachExercisePhoto: (Long) -> Unit,
     onFinish: () -> Unit,
-    onLogSet: (Long, Double, Int, Boolean) -> Unit,
+    onLogSet: (Long, Double, Int, Boolean, String, Double) -> Unit,
     onEditSetRow: (SetRow) -> Unit,
     onSkipRest: () -> Unit,
+    onAdjustRest: (Int) -> Unit,
     onAddExercise: (String, String) -> Unit,
+    liftHistory: (Long) -> Flow<List<SetRow>>,
+    onSetNotes: (Long, String) -> Unit,
+    superset: Supersets.Pair?,
+    onStartSuperset: (Long, Long) -> Unit,
+    onEndSuperset: () -> Unit,
     modifier: Modifier
 ) {
     val session = state.active ?: return
     val selectedExercise = guidance?.exercise
     var weight by remember { mutableStateOf("") }
     var reps by remember { mutableStateOf("") }
-    var warmup by remember { mutableStateOf(false) }
+    var setType by remember { mutableStateOf(SetKinds.WORKING_LABEL) }
+    var rpe by remember { mutableDoubleStateOf(0.0) }
+    val warmup = setType == SetKinds.WARMUP_LABEL
     var showPicker by remember { mutableStateOf(false) }
     var showNewExercise by remember { mutableStateOf(false) }
     var showingReference by remember { mutableStateOf<Exercise?>(null) }
+    var showingHistory by remember { mutableStateOf<Exercise?>(null) }
+    var showPlates by remember { mutableStateOf(false) }
+    var editingNote by remember { mutableStateOf<Exercise?>(null) }
+    var swapping by remember { mutableStateOf<Exercise?>(null) }
+    var pairing by remember { mutableStateOf<Exercise?>(null) }
 
     val volume = Training.volume(state.sets)
     val working = state.sets.count { !it.isWarmup }
+    val haptics = LocalHapticFeedback.current
+    // A new record gets a second, stronger buzz after the confirm of logging it, and
+    // its row glows. Only a record set while this pane is open: the one already on
+    // screen when you come back to the tab is old news and stays quiet.
+    val recordOnArrival = remember { prSetId }
+    val freshRecord = prSetId?.takeIf { it != recordOnArrival }
+    LaunchedEffect(freshRecord) {
+        if (freshRecord != null) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -368,13 +449,16 @@ private fun ActiveSessionPane(
                         style = MaterialTheme.typography.headlineMedium,
                         color = Bone
                     )
-                    Text(
-                        "$working working sets",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Mute
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "$working working sets  ·  ",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Mute
+                        )
+                        SessionClock(session.startedAt)
+                    }
                 }
-                TextButton(onClick = onFinish) { Text("Finish", color = Brass) }
+                TextButton(onClick = onFinish) { Text(tr("Finish"), color = Brass) }
             }
 
             Spacer(Modifier.height(20.dp))
@@ -385,14 +469,46 @@ private fun ActiveSessionPane(
                 accent = Brass
             )
 
-            if (restRemaining != null) {
-                Spacer(Modifier.height(16.dp))
-                RestBanner(restRemaining, onSkipRest)
+            AnimatedVisibility(
+                visible = restRemaining != null,
+                enter = expandVertically(Motion.standard()) + fadeIn(Motion.enter()),
+                exit = shrinkVertically(Motion.standard()) + fadeOut(Motion.quick())
+            ) {
+                // Holds the last value while the banner folds away, so it never
+                // collapses showing a blank clock.
+                val last = remember { IntArray(1) }
+                if (restRemaining != null) last[0] = restRemaining
+                Column {
+                    Spacer(Modifier.height(16.dp))
+                    RestBanner(restRemaining ?: last[0], onSkipRest, onAdjustRest)
+                }
             }
 
             Spacer(Modifier.height(22.dp))
             Hairline()
             Spacer(Modifier.height(20.dp))
+
+            if (superset != null) {
+                val names = state.exercises.associate { it.id to it.name }
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Brass.copy(alpha = 0.12f))
+                        .padding(start = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Superset: ${names[superset.first] ?: "?"} + ${names[superset.second] ?: "?"}. " +
+                            "Rest comes after the second.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Brass,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = onEndSuperset) { Text("End", color = Brass) }
+                }
+                Spacer(Modifier.height(12.dp))
+            }
 
             // The split's own lifts, which is the whole point of having started from
             // one: no searching a catalogue of eighty-odd between two sets.
@@ -408,9 +524,8 @@ private fun ActiveSessionPane(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
+                    .pressable(RoundedCornerShape(14.dp), pressedScale = 0.985f) { showPicker = true }
                     .background(Slate)
-                    .clickable { showPicker = true }
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
                 Text(
@@ -419,20 +534,48 @@ private fun ActiveSessionPane(
                     color = if (selectedExercise == null) Faint else Bone
                 )
             }
+            selectedExercise?.notes?.takeIf { it.isNotBlank() }?.let { note ->
+                Text(
+                    note,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Mute,
+                    modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                )
+            }
 
             if (guidance != null) {
                 Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     TextButton(onClick = { showingReference = selectedExercise }) {
                         Text("How to do it", color = Brass, style = MaterialTheme.typography.labelSmall)
                     }
-                    guidance.guide?.let {
-                        Text(
-                            it.summary,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Faint
-                        )
+                    TextButton(onClick = { showingHistory = selectedExercise }) {
+                        Text("History", color = Brass, style = MaterialTheme.typography.labelSmall)
                     }
+                    TextButton(onClick = { editingNote = selectedExercise }) {
+                        Text("Note", color = Brass, style = MaterialTheme.typography.labelSmall)
+                    }
+                    TextButton(onClick = { swapping = selectedExercise }) {
+                        Text("Swap", color = Brass, style = MaterialTheme.typography.labelSmall)
+                    }
+                    if (superset == null) {
+                        TextButton(onClick = { pairing = selectedExercise }) {
+                            Text("Superset", color = Brass, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+                // On its own line now that four actions share the row above, which
+                // would otherwise squeeze it to one word per line on a narrow phone.
+                guidance.guide?.let {
+                    Text(
+                        it.summary,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Faint,
+                        modifier = Modifier.padding(start = 12.dp)
+                    )
                 }
 
                 // Grip and stance live directly under the lift because they have to be
@@ -453,6 +596,14 @@ private fun ActiveSessionPane(
                         weight = Training.formatWeight(w)
                         reps = r.toString()
                     }
+                )
+                LastTimeRow(
+                    sets = guidance.lastTime,
+                    onUse = { set ->
+                        weight = Training.formatWeight(set.weightKg)
+                        reps = set.reps.toString()
+                    },
+                    modifier = Modifier.padding(top = 12.dp)
                 )
             }
 
@@ -476,6 +627,13 @@ private fun ActiveSessionPane(
                 )
             }
 
+            val bar = guidance?.guide?.equipment?.let(Plates::barFor)
+            if (selectedExercise != null && !selectedExercise.isAssisted && bar != null) {
+                TextButton(onClick = { showPlates = true }) {
+                    Text("What plates?", color = Brass, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+
             if (selectedExercise?.isAssisted == true) {
                 Spacer(Modifier.height(6.dp))
                 Text(
@@ -488,11 +646,21 @@ private fun ActiveSessionPane(
 
             Spacer(Modifier.height(12.dp))
             PillRow(
-                options = listOf("Working set", "Warm-up"),
-                selected = if (warmup) "Warm-up" else "Working set",
+                options = SetKinds.PICKER.map { it.first },
+                selected = setType,
                 accent = Brass,
-                onSelect = { warmup = it == "Warm-up" }
+                onSelect = { setType = it }
             )
+            // How hard it felt, for those who track it. Optional: "–" logs no RPE.
+            if (!warmup) {
+                Spacer(Modifier.height(8.dp))
+                ChipRow(
+                    options = listOf("RPE –") + SetKinds.RPE_CHOICES.map { "RPE " + SetKinds.rpeLabel(it) },
+                    selected = if (rpe > 0) "RPE " + SetKinds.rpeLabel(rpe) else "RPE –",
+                    accent = Brass,
+                    onSelect = { label -> rpe = label.removePrefix("RPE ").toDoubleOrNull() ?: 0.0 }
+                )
+            }
 
             Spacer(Modifier.height(12.dp))
             // Zero is a real weight on an assisted machine: no help at all.
@@ -500,26 +668,31 @@ private fun ActiveSessionPane(
             val canLog = selectedExercise != null &&
                 kg != null && (kg > 0 || (kg == 0.0 && selectedExercise.isAssisted)) &&
                 (reps.toIntOrNull() ?: 0) > 0
+            val logPress = remember { MutableInteractionSource() }
             Button(
                 onClick = {
                     val ex = selectedExercise ?: return@Button
+                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                     onLogSet(
                         ex.id,
                         weight.toDoubleOrNull() ?: 0.0,
                         reps.toIntOrNull() ?: 0,
-                        warmup
+                        warmup,
+                        SetKinds.kindFor(setType),
+                        if (warmup) 0.0 else rpe
                     )
                     reps = ""
                 },
                 enabled = canLog,
+                interactionSource = logPress,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Brass,
                     contentColor = Slate,
                     disabledContainerColor = Raised,
                     disabledContentColor = Faint
                 ),
-                modifier = Modifier.fillMaxWidth().height(52.dp)
-            ) { Text("Log set", style = MaterialTheme.typography.labelLarge) }
+                modifier = Modifier.fillMaxWidth().height(52.dp).pressScale(logPress)
+            ) { Text(tr("Log set"), style = MaterialTheme.typography.labelLarge) }
 
             Spacer(Modifier.height(26.dp))
             Hairline()
@@ -537,12 +710,14 @@ private fun ActiveSessionPane(
                     title = row.exerciseName + if (isPr) "  best yet" else "",
                     detail = listOfNotNull(
                         if (row.isWarmup) "warm-up" else "set ${row.setIndex}",
-                        Variations.label(row.variation).takeIf { it.isNotBlank() }
+                        Variations.label(row.variation).takeIf { it.isNotBlank() },
+                        SetKinds.describe(row).takeIf { it.isNotBlank() }
                     ).joinToString("  ·  "),
                     trailing = Training.formatSet(row),
                     accent = if (row.isWarmup) Mute else Brass,
+                    highlight = row.setId == freshRecord,
                     onClick = { onEditSetRow(row) },
-                    modifier = Modifier.padding(bottom = 6.dp)
+                    modifier = Modifier.animateItem().padding(bottom = 6.dp)
                 )
             }
             item {
@@ -572,6 +747,46 @@ private fun ActiveSessionPane(
         )
     }
 
+    showingHistory?.let { exercise ->
+        val history by remember(exercise.id) { liftHistory(exercise.id) }
+            .collectAsStateWithLifecycle(emptyList())
+        LiftHistoryDialog(exercise, history, onDismiss = { showingHistory = null })
+    }
+
+    pairing?.let { first ->
+        ExercisePicker(
+            exercises = state.exercises.filter { it.id != first.id },
+            onPick = { second -> onStartSuperset(first.id, second.id); pairing = null },
+            onAddNew = { pairing = null; showNewExercise = true },
+            onDismiss = { pairing = null }
+        )
+    }
+
+    swapping?.let { exercise ->
+        SwapLiftDialog(
+            target = exercise,
+            catalogue = state.exercises,
+            onPick = { onSelectExercise(it.id); swapping = null },
+            onDismiss = { swapping = null }
+        )
+    }
+
+    editingNote?.let { exercise ->
+        LiftNoteDialog(
+            exercise = exercise,
+            onSave = { onSetNotes(exercise.id, it); editingNote = null },
+            onDismiss = { editingNote = null }
+        )
+    }
+
+    if (showPlates) {
+        PlateCalculatorDialog(
+            initialKg = weight.toDoubleOrNull(),
+            initialBarKg = guidance?.guide?.equipment?.let(Plates::barFor) ?: Plates.OLYMPIC_BAR_KG,
+            onDismiss = { showPlates = false }
+        )
+    }
+
     showingReference?.let { exercise ->
         ExerciseReferenceDialog(
             exercise = exercise,
@@ -580,127 +795,5 @@ private fun ActiveSessionPane(
             onAttachPhoto = { uri -> onAttachExercisePhoto(exercise.id, uri) },
             onRemovePhoto = { onDetachExercisePhoto(exercise.id) }
         )
-    }
-}
-
-/**
- * The target for this lift, read off your own history.
- *
- * Tapping it fills the weight and reps fields, because the whole point is to remove
- * a decision from the thirty seconds between two sets — if it takes typing, it is
- * no faster than remembering.
- */
-@Composable
-private fun TargetCard(guidance: LiftGuidance, onUseTarget: (Double, Int) -> Unit) {
-    val rec = guidance.recommendation
-
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(Brass.copy(alpha = 0.10f))
-            .padding(16.dp)
-    ) {
-        if (rec == null) {
-            Text(
-                "No history on this lift yet",
-                style = MaterialTheme.typography.labelMedium,
-                color = Mute
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "Log one working set and a target appears here from the next session on. " +
-                    "The app will not guess a starting weight for you.",
-                style = MaterialTheme.typography.labelSmall,
-                color = Faint
-            )
-            return@Column
-        }
-
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                if (rec.isStepUp) "Step up" else "Next target",
-                style = MaterialTheme.typography.labelMedium,
-                color = if (rec.isStepUp) Brass else Mute
-            )
-            if (rec.isStalled) {
-                Text("stalling", style = MaterialTheme.typography.labelSmall, color = Coral)
-            }
-        }
-
-        Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                rec.headline,
-                style = MaterialTheme.typography.displaySmall,
-                color = Brass
-            )
-            Spacer(Modifier.weight(1f))
-            TextButton(onClick = { onUseTarget(rec.weightKg, rec.reps) }) {
-                Text("Use", color = Brass, style = MaterialTheme.typography.labelLarge)
-            }
-        }
-
-        Text(
-            rec.rationale,
-            style = MaterialTheme.typography.labelSmall,
-            color = Mute
-        )
-
-        val leastHelp = guidance.leastHelp
-        if (guidance.bestE1rm > 0 || leastHelp != null) {
-            Spacer(Modifier.height(14.dp))
-            Hairline()
-            Spacer(Modifier.height(12.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    if (leastHelp != null) "least help ${Training.formatWeight(leastHelp)} kg"
-                    else "estimated max ${Training.formatWeight(guidance.bestE1rm)} kg",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Mute
-                )
-                Text(
-                    when {
-                        leastHelp == null -> "next ${Training.formatWeight(guidance.nextMilestone)} kg"
-                        leastHelp <= 0.0 -> "next: the unassisted lift"
-                        else -> "next ${Training.formatWeight(guidance.nextMilestone)} kg help"
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Brass
-                )
-            }
-            Spacer(Modifier.height(6.dp))
-            Meter(progress = guidance.milestoneProgress, accent = Brass, height = 4)
-        }
-    }
-}
-
-@Composable
-private fun RestBanner(secondsLeft: Int, onSkip: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Brass.copy(alpha = 0.12f))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                Numbers.clock(secondsLeft),
-                style = MaterialTheme.typography.displaySmall,
-                color = Brass
-            )
-            Text("resting", style = MaterialTheme.typography.labelSmall, color = Mute)
-        }
-        TextButton(onClick = onSkip) { Text("Skip rest", color = Brass) }
     }
 }

@@ -98,9 +98,11 @@ interface GymDao {
     // including its loggedAt, just to change a weight.
     @Query(
         "UPDATE set_entry SET weightKg = :weightKg, reps = :reps, isWarmup = :isWarmup, " +
-            "variation = :variation WHERE id = :id"
+            "variation = :variation, kind = :kind, rpe = :rpe WHERE id = :id"
     )
-    suspend fun editSet(id: Long, weightKg: Double, reps: Int, isWarmup: Boolean, variation: String)
+    suspend fun editSet(
+        id: Long, weightKg: Double, reps: Int, isWarmup: Boolean, variation: String, kind: String, rpe: Double
+    )
 
     @Query("SELECT * FROM workout_session WHERE id = :id")
     suspend fun sessionById(id: Long): WorkoutSession?
@@ -131,7 +133,8 @@ interface GymDao {
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
                s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-               s.variation AS variation, e.isAssisted AS isAssisted
+               s.variation AS variation, e.isAssisted AS isAssisted,
+               s.kind AS kind, s.rpe AS rpe
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.sessionId = :sessionId
@@ -145,7 +148,8 @@ interface GymDao {
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
                s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-               s.variation AS variation, e.isAssisted AS isAssisted
+               s.variation AS variation, e.isAssisted AS isAssisted,
+               s.kind AS kind, s.rpe AS rpe
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.exerciseId = :exerciseId AND s.isWarmup = 0
@@ -218,6 +222,26 @@ interface GymDao {
     )
     fun foodLogFor(day: Long): Flow<List<FoodLogRow>>
 
+    /** The whole food log, oldest first, for export. Read once, not observed. */
+    @Query(
+        """
+        SELECT l.id AS logId, l.dateEpochDay AS dateEpochDay, l.meal AS meal,
+               l.quantity AS quantity, l.loggedAt AS loggedAt,
+               f.id AS foodId, f.name AS name, f.unitLabel AS unitLabel,
+               f.kcal AS kcal, f.proteinG AS proteinG, f.carbsG AS carbsG, f.fatG AS fatG,
+               f.isSupplement AS isSupplement,
+               f.fiberG AS fiberG, f.sugarG AS sugarG, f.satFatG AS satFatG,
+               f.sodiumMg AS sodiumMg, f.potassiumMg AS potassiumMg, f.calciumMg AS calciumMg,
+               f.ironMg AS ironMg, f.magnesiumMg AS magnesiumMg, f.zincMg AS zincMg,
+               f.vitAMcg AS vitAMcg, f.vitCMg AS vitCMg, f.vitDMcg AS vitDMcg,
+               f.vitB12Mcg AS vitB12Mcg, f.folateMcg AS folateMcg, f.omega3G AS omega3G
+        FROM food_log l
+        JOIN food_item f ON f.id = l.foodId
+        ORDER BY l.dateEpochDay ASC, l.loggedAt ASC
+        """
+    )
+    suspend fun allFoodLog(): List<FoodLogRow>
+
     // f.* rather than a hand-written column list: FoodItem now carries fifteen embedded
     // micronutrient columns, and spelling them out here would mean this query silently
     // going stale every time one is added.
@@ -232,7 +256,26 @@ interface GymDao {
     )
     fun mostLoggedFoods(limit: Int): Flow<List<FoodItem>>
 
-    @Query("SELECT DISTINCT dateEpochDay FROM food_log ORDER BY dateEpochDay DESC")
+    /** The foods logged most recently, each once: the "recent" tab of every food diary. */
+    @Query(
+        """
+        SELECT f.* FROM food_log l
+        JOIN food_item f ON f.id = l.foodId
+        WHERE l.meal != :exceptMeal
+        GROUP BY f.id
+        ORDER BY MAX(l.loggedAt) DESC
+        LIMIT :limit
+        """
+    )
+    fun recentFoods(limit: Int, exceptMeal: String): Flow<List<FoodItem>>
+
+    // Water is logged as food_log rows in its own slot, but a day with only water
+    // on it is not a day of food logged: it would add a "fuelled" dot, a zero-calorie
+    // day to every average and a day to the food achievements.
+    @Query(
+        "SELECT DISTINCT dateEpochDay FROM food_log WHERE meal != '" + Meals.WATER + "' " +
+            "ORDER BY dateEpochDay DESC"
+    )
     fun allLoggedFoodDays(): Flow<List<Long>>
 
     // ---------- Splits ----------
@@ -338,7 +381,8 @@ interface GymDao {
         SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
                e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
                s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
-               s.variation AS variation, e.isAssisted AS isAssisted
+               s.variation AS variation, e.isAssisted AS isAssisted,
+               s.kind AS kind, s.rpe AS rpe
         FROM set_entry s
         JOIN exercise e ON e.id = s.exerciseId
         WHERE s.isWarmup = 0
@@ -361,6 +405,7 @@ interface GymDao {
                SUM(f.proteinG * l.quantity) AS proteinG
         FROM food_log l
         JOIN food_item f ON f.id = l.foodId
+        WHERE l.meal != '""" + Meals.WATER + """'
         GROUP BY l.dateEpochDay
         """
     )
@@ -369,4 +414,76 @@ interface GymDao {
     /** Which day each session belongs to, for counting a training week. */
     @Query("SELECT id, dateEpochDay FROM workout_session")
     fun sessionDays(): Flow<List<SessionDay>>
+
+    // ---- Tape measurements ----
+
+    /** Replaces on the (day, part) unique index, so re-measuring a day overwrites it. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertMeasurements(rows: List<BodyMeasurement>)
+
+    @Query("SELECT * FROM body_measurement ORDER BY dateEpochDay ASC")
+    fun measurements(): Flow<List<BodyMeasurement>>
+
+
+    @Query("UPDATE exercise SET notes = :notes WHERE id = :id")
+    suspend fun setExerciseNotes(id: Long, notes: String)
+
+    // ---- Saved meals ----
+
+    @Insert
+    suspend fun insertSavedMeal(meal: SavedMeal): Long
+
+    @Insert
+    suspend fun insertSavedMealItems(items: List<SavedMealItem>)
+
+    @Query(
+        """
+        SELECT m.id AS mealId, m.name AS mealName, i.foodId AS foodId, f.name AS foodName,
+               i.quantity AS quantity, f.kcal AS kcal, f.proteinG AS proteinG
+        FROM saved_meal m
+        JOIN saved_meal_item i ON i.mealId = m.id
+        JOIN food_item f ON f.id = i.foodId
+        ORDER BY m.createdAt DESC, i.id ASC
+        """
+    )
+    fun savedMealRows(): Flow<List<SavedMealRow>>
+
+    @Query("DELETE FROM saved_meal_item WHERE mealId = :mealId")
+    suspend fun deleteSavedMealItems(mealId: Long)
+
+    @Query("DELETE FROM saved_meal WHERE id = :mealId")
+    suspend fun deleteSavedMeal(mealId: Long)
+
+    /** Every set, warm-ups included, oldest first: the export is the whole log. */
+    @Query(
+        """
+        SELECT s.id AS setId, s.sessionId AS sessionId, s.exerciseId AS exerciseId,
+               e.name AS exerciseName, s.setIndex AS setIndex, s.weightKg AS weightKg,
+               s.reps AS reps, s.isWarmup AS isWarmup, s.loggedAt AS loggedAt,
+               s.variation AS variation, e.isAssisted AS isAssisted,
+               s.kind AS kind, s.rpe AS rpe
+        FROM set_entry s
+        JOIN exercise e ON e.id = s.exerciseId
+        ORDER BY s.loggedAt ASC
+        """
+    )
+    suspend fun everySet(): List<SetRow>
+
+    // ---- Cardio ----
+
+    @Insert
+    suspend fun insertCardio(entry: CardioEntry): Long
+
+    @Query("DELETE FROM cardio_entry WHERE id = :id")
+    suspend fun deleteCardio(id: Long)
+
+    @Query("SELECT * FROM cardio_entry WHERE dateEpochDay = :day ORDER BY loggedAt ASC")
+    fun cardioOn(day: Long): Flow<List<CardioEntry>>
+
+    /** Every cardio entry, oldest first, for what other apps may read. */
+    @Query("SELECT * FROM cardio_entry ORDER BY loggedAt ASC")
+    suspend fun allCardio(): List<CardioEntry>
+
+    @Query("SELECT * FROM body_weight ORDER BY dateEpochDay ASC")
+    suspend fun allWeights(): List<BodyWeight>
 }

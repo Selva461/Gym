@@ -60,6 +60,24 @@ class IosNotifier : Notifier {
         center.removePendingNotificationRequestsWithIdentifiers(listOf(DAILY))
     }
 
+    override fun scheduleWaterReminders() {
+        WATER_HOURS.forEach { hour ->
+            val time = NSDateComponents()
+            time.hour = hour.toLong()
+            time.minute = 0
+            post(
+                id = "$WATER$hour",
+                title = "Water",
+                body = "A glass now. Tap + on the water card once you have.",
+                trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(time, repeats = true)
+            )
+        }
+    }
+
+    override fun cancelWaterReminders() {
+        center.removePendingNotificationRequestsWithIdentifiers(WATER_HOURS.map { "$WATER$it" })
+    }
+
     /** Posting under an identifier already pending replaces it, which is what both callers want. */
     private fun post(id: String, title: String, body: String, trigger: UNNotificationTrigger) {
         val content = UNMutableNotificationContent()
@@ -75,5 +93,7 @@ class IosNotifier : Notifier {
     private companion object {
         const val REST = "rest"
         const val DAILY = "daily"
+        const val WATER = "water-"
+        val WATER_HOURS = listOf(10, 12, 14, 16, 18, 20)
     }
 }

@@ -105,7 +105,12 @@ data class Exercise(
      * for it — see [dev.avles.gym.domain.Assistance]. Set from the name when a lift
      * is created.
      */
-    @ColumnInfo(defaultValue = "0") val isAssisted: Boolean = false
+    @ColumnInfo(defaultValue = "0") val isAssisted: Boolean = false,
+    /**
+     * Your own note on the lift — seat on 4, pins at the third hole, left shoulder
+     * dislikes a wide grip — shown every time it is picked. Empty until written.
+     */
+    @ColumnInfo(defaultValue = "''") val notes: String = ""
 )
 
 @Entity(tableName = "workout_session", indices = [Index("dateEpochDay")])
@@ -198,7 +203,15 @@ data class SetEntry(
      * asks for it. Without the annotation the migration and Room's expectation differ
      * by that clause, and Room throws on launch for everyone upgrading with data.
      */
-    @ColumnInfo(defaultValue = "''") val variation: String = ""
+    @ColumnInfo(defaultValue = "''") val variation: String = "",
+    /**
+     * What kind of working set this was beyond a straight one: "drop" or "failure",
+     * from [dev.avles.gym.domain.SetKinds]. Empty is a straight set, which is every
+     * set logged before v10.
+     */
+    @ColumnInfo(defaultValue = "''") val kind: String = "",
+    /** Rate of perceived exertion, 6 to 10 in halves; zero when not given. */
+    @ColumnInfo(defaultValue = "0") val rpe: Double = 0.0
 )
 
 @Entity(tableName = "food_item")
@@ -295,7 +308,9 @@ data class SetRow(
      */
     val variation: String = "",
     /** Copied from the exercise, so rules that read a set know which way its weight points. */
-    val isAssisted: Boolean = false
+    val isAssisted: Boolean = false,
+    val kind: String = "",
+    val rpe: Double = 0.0
 )
 
 data class DayVolume(val dateEpochDay: Long, val volume: Double)
@@ -314,6 +329,13 @@ object Meals {
      * inside a meal makes both the meal's numbers and the supplement's harder to read.
      */
     const val SUPPLEMENT = "Supplements"
+
+    /**
+     * Water, logged a glass at a time as the seeded "Water" food. Its own slot, kept
+     * out of [ALL] and [PICKABLE], so glasses are counted on the water card and never
+     * listed among the meals.
+     */
+    const val WATER = "Water"
 
     /** Every slot a day's log can be grouped under. */
     val ALL = listOf(BREAKFAST, LUNCH, SNACK, DINNER, SUPPLEMENT)
@@ -412,3 +434,73 @@ data class SessionDay(val id: Long, val dateEpochDay: Long)
 
 /** A day's eating, summed in SQL. Days with nothing logged simply do not appear. */
 data class DayMacroRow(val dateEpochDay: Long, val kcal: Double, val proteinG: Double)
+
+/**
+ * One tape measurement: a body part on a day, in centimetres. Unique on the pair,
+ * so measuring the waist twice in a day keeps the later figure rather than two.
+ * [part] is a name from [dev.avles.gym.domain.Measurements.PARTS], stored as text
+ * so adding a site later is data, not a migration.
+ */
+@Entity(
+    tableName = "body_measurement",
+    indices = [Index(value = ["dateEpochDay", "part"], unique = true)]
+)
+data class BodyMeasurement(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val dateEpochDay: Long,
+    val part: String,
+    val cm: Double
+)
+
+/**
+ * A meal kept for logging again in one tap, the "saved meals" of the food apps:
+ * the same idli, sambar and coffee most mornings. Its foods are [SavedMealItem]s.
+ */
+@Entity(tableName = "saved_meal")
+data class SavedMeal(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val createdAt: Long
+)
+
+/** One food in a saved meal, with how many of its unit. */
+@Entity(tableName = "saved_meal_item", indices = [Index("mealId")])
+data class SavedMealItem(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val mealId: Long,
+    val foodId: Long,
+    val quantity: Double
+)
+
+/** A saved meal's food joined to its numbers, one row per food. */
+data class SavedMealRow(
+    val mealId: Long,
+    val mealName: String,
+    val foodId: Long,
+    val foodName: String,
+    val quantity: Double,
+    val kcal: Double,
+    val proteinG: Double
+)
+
+/**
+ * A cardio session: an activity, how long, optionally how far. Its own table rather
+ * than sets, because minutes and kilometres are not kilos and reps, and squeezing
+ * them into those columns would put a 5 km run into every volume total.
+ */
+@Entity(tableName = "cardio_entry", indices = [Index("dateEpochDay")])
+data class CardioEntry(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val dateEpochDay: Long,
+    val activity: String,
+    val minutes: Int,
+    val distanceKm: Double = 0.0,
+    val loggedAt: Long
+)
+
+/** What [GymRepository.sharedTraining] hands to another app. */
+data class SharedTraining(
+    val sets: List<SetRow>,
+    val cardio: List<CardioEntry>,
+    val weights: List<BodyWeight>
+)

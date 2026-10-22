@@ -23,9 +23,13 @@ import kotlinx.coroutines.IO
         SplitExercise::class,
         ProgressPhoto::class,
         ExercisePhoto::class,
-        DayMarker::class
+        DayMarker::class,
+        BodyMeasurement::class,
+        SavedMeal::class,
+        SavedMealItem::class,
+        CardioEntry::class
     ],
-    version = 8,
+    version = 13,
     exportSchema = true
 )
 @ConstructedBy(GymDatabaseConstructor::class)
@@ -157,9 +161,52 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v8 → v9: a table for tape measurements. New and empty, so nothing already
+         * logged is touched.
+         */
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(connection: SQLiteConnection) {
+                SchemaSql.V9_STATEMENTS.forEach { connection.execSQL(it) }
+            }
+        }
+
+        /**
+         * v9 → v10: a set's kind (drop set, to failure) and its RPE. Two columns with
+         * defaults that say "a straight set, effort not recorded", which is exactly
+         * what every set logged before this was.
+         */
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(connection: SQLiteConnection) {
+                SchemaSql.V10_STATEMENTS.forEach { connection.execSQL(it) }
+            }
+        }
+
+        /** v10 → v11: a note on each lift, empty for every lift that has none. */
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(connection: SQLiteConnection) {
+                SchemaSql.V11_STATEMENTS.forEach { connection.execSQL(it) }
+            }
+        }
+
+        /** v11 → v12: saved meals, two new tables. Nothing existing is touched. */
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(connection: SQLiteConnection) {
+                SchemaSql.V12_STATEMENTS.forEach { connection.execSQL(it) }
+            }
+        }
+
+        /** v12 → v13: a table for cardio. Nothing existing is touched. */
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(connection: SQLiteConnection) {
+                SchemaSql.V13_STATEMENTS.forEach { connection.execSQL(it) }
+            }
+        }
+
         val MIGRATIONS = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
-            MIGRATION_7_8
+            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
+            MIGRATION_11_12, MIGRATION_12_13
         )
 
         /** The file name, the same on both platforms; only the directory differs. */

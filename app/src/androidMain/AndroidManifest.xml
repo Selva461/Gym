@@ -15,6 +15,16 @@
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
+    <!-- What SelfUp asks for to read the training log. Dangerous, so Android puts the
+         question to the user instead of granting it to any app that declares it, and
+         it can be revoked from system settings. Prefixed with the application id so
+         the debug and release builds each define their own. -->
+    <permission
+        android:name="${applicationId}.permission.READ_TRAINING"
+        android:description="@string/permission_read_training_description"
+        android:label="@string/permission_read_training_label"
+        android:protectionLevel="dangerous" />
+
     <application
         android:name=".GymApp"
         android:allowBackup="true"
@@ -54,6 +64,14 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <!-- Read-only training log for SelfUp. Exported because another app reads it;
+             guarded by READ_TRAINING, which only the user can grant. -->
+        <provider
+            android:name=".share.TrainingProvider"
+            android:authorities="${applicationId}.training"
+            android:exported="true"
+            android:permission="${applicationId}.permission.READ_TRAINING" />
 
     </application>
 </manifest>

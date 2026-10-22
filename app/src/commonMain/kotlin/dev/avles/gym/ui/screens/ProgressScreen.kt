@@ -1,5 +1,6 @@
 package dev.avles.gym.ui.screens
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,21 +25,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.core.Dates
+import dev.avles.gym.domain.Achievements
 import dev.avles.gym.domain.Consistency
 import dev.avles.gym.domain.Training
+import dev.avles.gym.domain.WeightGoal
 import dev.avles.gym.ui.ProgressState
-import dev.avles.gym.ui.components.BigNumber
+import dev.avles.gym.ui.components.AchievementsCard
 import dev.avles.gym.ui.components.BarStrip
+import dev.avles.gym.ui.components.BigNumber
 import dev.avles.gym.ui.components.Hairline
+import dev.avles.gym.ui.components.MonthCalendar
 import dev.avles.gym.ui.components.SectionHeading
 import dev.avles.gym.ui.components.TrendChart
+import dev.avles.gym.ui.components.pressScale
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Sage
 import dev.avles.gym.ui.theme.Slate
-import dev.avles.gym.core.Dates
 import kotlin.math.abs
 
 @Composable
@@ -48,9 +55,15 @@ fun ProgressScreen(
     onOpenPhotos: () -> Unit,
     onOpenGoal: () -> Unit,
     onOpenPatterns: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenRecords: () -> Unit = {},
+    onOpenMeasurements: () -> Unit = {},
+    liftsWithRecords: Int = 0,
+    goalWeightKg: Double = 0.0,
+    restDays: Set<Long> = emptySet()
 ) {
     var logging by remember { mutableStateOf(false) }
+    var oneRepMax by remember { mutableStateOf(false) }
     val today = Dates.todayEpochDay()
 
     val weights = state.weights
@@ -72,7 +85,7 @@ fun ProgressScreen(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp)
     ) {
         item {
-            Text("Progress", style = MaterialTheme.typography.headlineMedium, color = Bone)
+            Text(tr("Progress"), style = MaterialTheme.typography.headlineMedium, color = Bone)
             Text(
                 "The slow numbers. Read these monthly, not daily.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -99,6 +112,24 @@ fun ProgressScreen(
                 )
             }
             androidx.compose.material3.TextButton(
+                onClick = onOpenMeasurements,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) {
+                Text("Measurements and body fat", color = Brass, style = MaterialTheme.typography.bodyMedium)
+            }
+            androidx.compose.material3.TextButton(
+                onClick = { oneRepMax = true },
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) {
+                Text("One-rep max calculator", color = Brass, style = MaterialTheme.typography.bodyMedium)
+            }
+            androidx.compose.material3.TextButton(
+                onClick = onOpenRecords,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) {
+                Text("Personal records", color = Brass, style = MaterialTheme.typography.bodyMedium)
+            }
+            androidx.compose.material3.TextButton(
                 onClick = onOpenPatterns,
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
             ) {
@@ -111,7 +142,7 @@ fun ProgressScreen(
             Spacer(Modifier.height(16.dp))
 
             SectionHeading(
-                "Body weight",
+                tr("Body weight"),
                 trailing = latest?.let { "last ${Training.formatWeight(it.weightKg)} kg" }
             )
             Spacer(Modifier.height(14.dp))
@@ -134,6 +165,23 @@ fun ProgressScreen(
                     color = Faint
                 )
             }
+            if (latest != null && goalWeightKg > 0) {
+                val rate = WeightGoal.weeklyRate(weights, today)
+                val days = WeightGoal.daysToGoal(latest.weightKg, goalWeightKg, rate)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Goal ${Training.formatWeight(goalWeightKg)} kg · " + when {
+                        days == 0 -> "reached"
+                        rate == null -> "three weigh-ins this month give a projected date"
+                        days == null -> "the four-week trend is heading the other way " +
+                            "(${if (rate >= 0) "+" else "−"}${Training.formatWeight(abs(rate))} kg a week)"
+                        else -> "${if (rate < 0) "losing" else "gaining"} ${Training.formatWeight(abs(rate))} kg a week, " +
+                            "about ${Dates.dayAndMonth(Dates.ofEpochDay(today + days))}"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Mute
+                )
+            }
             Spacer(Modifier.height(14.dp))
             TrendChart(
                 values = weights.map { it.weightKg },
@@ -141,13 +189,15 @@ fun ProgressScreen(
                 emptyMessage = "Record a second weight and the trend appears."
             )
             Spacer(Modifier.height(12.dp))
+            val recordPress = remember { MutableInteractionSource() }
             Button(
                 onClick = { logging = true },
+                interactionSource = recordPress,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Sage.copy(alpha = 0.14f),
                     contentColor = Sage
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().pressScale(recordPress)
             ) { Text("Record today's weight") }
 
             Spacer(Modifier.height(28.dp))
@@ -168,7 +218,7 @@ fun ProgressScreen(
             Hairline()
             Spacer(Modifier.height(22.dp))
 
-            SectionHeading("Consistency")
+            SectionHeading(tr("Consistency"))
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 BigNumber(
@@ -205,8 +255,32 @@ fun ProgressScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = Faint
             )
+            Spacer(Modifier.height(26.dp))
+            Hairline()
+            Spacer(Modifier.height(22.dp))
+            AchievementsCard(
+                Achievements.Totals(
+                    daysTrained = state.trained.size,
+                    longestRun = Consistency.longestStreak(state.trained),
+                    kilosMoved = state.volume.sumOf { it.volume },
+                    liftsWithRecords = liftsWithRecords,
+                    daysFoodLogged = state.fuelled.size
+                )
+            )
+            Spacer(Modifier.height(26.dp))
+            Hairline()
+            Spacer(Modifier.height(22.dp))
+            MonthCalendar(trained = state.trained, fuelled = state.fuelled, restDays = restDays)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Brass is a training day, grey a planned rest, the green mark food logged.",
+                style = MaterialTheme.typography.labelSmall,
+                color = Faint
+            )
         }
     }
+
+    if (oneRepMax) OneRepMaxDialog(onDismiss = { oneRepMax = false })
 
     if (logging) {
         WeightDialog(
@@ -218,7 +292,7 @@ fun ProgressScreen(
 }
 
 @Composable
-private fun WeightDialog(
+internal fun WeightDialog(
     suggestion: Double?,
     onSave: (Double) -> Unit,
     onDismiss: () -> Unit

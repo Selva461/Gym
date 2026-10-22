@@ -202,7 +202,9 @@ class GymRepository(
         weightKg: Double,
         reps: Int,
         isWarmup: Boolean,
-        variation: String = ""
+        variation: String = "",
+        kind: String = "",
+        rpe: Double = 0.0
     ) = dao.insertSet(
         SetEntry(
             sessionId = sessionId,
@@ -212,7 +214,9 @@ class GymRepository(
             reps = reps,
             isWarmup = isWarmup,
             loggedAt = Dates.nowMillis(),
-            variation = variation.trim()
+            variation = variation.trim(),
+            kind = kind,
+            rpe = rpe
         )
     )
 
@@ -225,10 +229,16 @@ class GymRepository(
         weightKg: Double,
         reps: Int,
         isWarmup: Boolean,
-        variation: String = ""
+        variation: String = "",
+        kind: String = "",
+        rpe: Double = 0.0
     ) {
-        if (weightKg > 0 && reps > 0) dao.editSet(setId, weightKg, reps, isWarmup, variation.trim())
+        // Zero is a real weight: no help at all on an assisted machine, which logging
+        // already allows. Editing refused it, so such a set could not be corrected.
+        if (weightKg >= 0 && reps > 0) dao.editSet(setId, weightKg, reps, isWarmup, variation.trim(), kind, rpe)
     }
+
+    suspend fun setExerciseNotes(id: Long, notes: String) = dao.setExerciseNotes(id, notes.trim())
 
     suspend fun addExercise(name: String, muscleGroup: String): Long =
         dao.insertExercise(
@@ -246,7 +256,38 @@ class GymRepository(
     val loggedFoodDays: Flow<List<Long>> = dao.allLoggedFoodDays()
 
     fun quickPicks(limit: Int = 8): Flow<List<FoodItem>> = dao.mostLoggedFoods(limit)
+    fun recentFoods(limit: Int = 10): Flow<List<FoodItem>> = dao.recentFoods(limit, Meals.WATER)
     fun foodLogFor(day: LocalDate): Flow<List<FoodLogRow>> = dao.foodLogFor(day.epochDay)
+    suspend fun allFoodLog(): List<FoodLogRow> = dao.allFoodLog()
+
+    val savedMealRows: Flow<List<SavedMealRow>> = dao.savedMealRows()
+
+    fun cardioOn(day: LocalDate): Flow<List<CardioEntry>> = dao.cardioOn(day.epochDay)
+
+    suspend fun logCardio(day: LocalDate, activity: String, minutes: Int, distanceKm: Double) {
+        if (minutes > 0) {
+            dao.insertCardio(
+                CardioEntry(
+                    dateEpochDay = day.epochDay, activity = activity, minutes = minutes,
+                    distanceKm = distanceKm.coerceAtLeast(0.0), loggedAt = Dates.nowMillis()
+                )
+            )
+        }
+    }
+
+    suspend fun deleteCardio(id: Long) = dao.deleteCardio(id)
+
+    /** Keeps [rows] as a meal called [name]. Nothing is saved for an empty meal. */
+    suspend fun saveMeal(name: String, rows: List<FoodLogRow>) {
+        if (rows.isEmpty() || name.isBlank()) return
+        val id = dao.insertSavedMeal(SavedMeal(name = name.trim(), createdAt = Dates.nowMillis()))
+        dao.insertSavedMealItems(rows.map { SavedMealItem(mealId = id, foodId = it.foodId, quantity = it.quantity) })
+    }
+
+    suspend fun deleteSavedMeal(mealId: Long) {
+        dao.deleteSavedMealItems(mealId)
+        dao.deleteSavedMeal(mealId)
+    }
 
     suspend fun logFood(day: LocalDate, foodId: Long, meal: String, quantity: Double) =
         dao.insertFoodLog(
@@ -270,6 +311,15 @@ class GymRepository(
     // ---------- Body ----------
 
     val weights: Flow<List<BodyWeight>> = dao.weights()
+
+    val measurements: Flow<List<BodyMeasurement>> = dao.measurements()
+
+    /** One day's tape figures. Parts left out keep whatever that day already had. */
+    suspend fun saveMeasurements(day: Long, cmByPart: Map<String, Double>) {
+        // Only the parts entered are written; REPLACE on the (day, part) index
+        // overwrites a part measured earlier the same day and leaves the others.
+        dao.upsertMeasurements(cmByPart.filterValues { it > 0 }.map { (part, cm) -> BodyMeasurement(dateEpochDay = day, part = part, cm = cm) })
+    }
     val latestWeight: Flow<BodyWeight?> = dao.latestWeight()
 
     suspend fun recordWeight(day: LocalDate, kg: Double, note: String = "") =
@@ -348,6 +398,19 @@ class GymRepository(
     // ---------- Rest and missed days ----------
 
     val allSets: Flow<List<SetRow>> = dao.allWorkingSets()
+
+    /** Every set including warm-ups, for the CSV export. */
+    suspend fun everySet(): List<SetRow> = dao.everySet()
+
+    /**
+     * The read-only slice of the log that SelfUp is allowed to see once the user
+     * grants it: working sets, cardio and weigh-ins. No food, no photos, no notes.
+     */
+    suspend fun sharedTraining(): SharedTraining = SharedTraining(
+        sets = dao.everySet().filterNot { it.isWarmup },
+        cardio = dao.allCardio(),
+        weights = dao.allWeights()
+    )
     val dailyMacros: Flow<List<DayMacroRow>> = dao.dailyMacros()
     val dayMarkers: Flow<List<DayMarker>> = dao.dayMarkers()
     val sessionDays: Flow<List<SessionDay>> = dao.sessionDays()

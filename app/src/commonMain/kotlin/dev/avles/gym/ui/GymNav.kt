@@ -1,9 +1,17 @@
 package dev.avles.gym.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -13,23 +21,36 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.CompositionLocalProvider
+import dev.avles.gym.core.Dates
+import dev.avles.gym.ui.i18n.LocalLanguage
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.core.epochDay
+import dev.avles.gym.data.DayKinds
+import dev.avles.gym.domain.Weekly
+import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.screens.CoachScreen
 import dev.avles.gym.ui.screens.FuelScreen
 import dev.avles.gym.ui.screens.PatternsScreen
 import dev.avles.gym.ui.screens.PhotosScreen
+import dev.avles.gym.ui.screens.MeasurementsScreen
 import dev.avles.gym.ui.screens.ProgressScreen
+import dev.avles.gym.ui.screens.RecordsScreen
 import dev.avles.gym.ui.screens.SettingsScreen
 import dev.avles.gym.ui.screens.TodayScreen
 import dev.avles.gym.ui.screens.TrainScreen
@@ -55,6 +76,19 @@ private val DESTINATIONS = listOf(
     Destination("settings", "Settings", Mute)
 )
 
+private val TABS = DESTINATIONS.map { it.route }.toSet()
+
+/**
+ * Tabs fade through each other: they are siblings, so neither should look like it
+ * sits on top. Screens opened from a tab (photos, goal, patterns) slide in from
+ * the side and back out the way they came, because those do sit on top.
+ */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isPush(): Boolean =
+    targetState.destination.route !in TABS && initialState.destination.route in TABS
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isPop(): Boolean =
+    initialState.destination.route !in TABS && targetState.destination.route in TABS
+
 @Composable
 fun GymNav(vm: GymViewModel) {
     val navController = rememberNavController()
@@ -68,6 +102,8 @@ fun GymNav(vm: GymViewModel) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val quickPicks by vm.quickPicks.collectAsStateWithLifecycle()
     val foods by vm.foods.collectAsStateWithLifecycle()
+    val recentFoods by vm.recentFoods.collectAsStateWithLifecycle()
+    val savedMeals by vm.savedMeals.collectAsStateWithLifecycle()
     val rest by vm.restRemaining.collectAsStateWithLifecycle()
     val prSetId by vm.lastPrSetId.collectAsStateWithLifecycle()
     val guidance by vm.guidance.collectAsStateWithLifecycle()
@@ -79,6 +115,13 @@ fun GymNav(vm: GymViewModel) {
     val markers by vm.dayMarkers.collectAsStateWithLifecycle()
     val coach by vm.coachState.collectAsStateWithLifecycle()
     val patterns by vm.patternState.collectAsStateWithLifecycle()
+    val workoutReport by vm.workoutReport.collectAsStateWithLifecycle()
+    val records by vm.records.collectAsStateWithLifecycle()
+    val superset by vm.superset.collectAsStateWithLifecycle()
+    val needsWelcome by vm.needsWelcome.collectAsStateWithLifecycle()
+    val cardio by vm.cardio.collectAsStateWithLifecycle()
+
+    val haptics = LocalHapticFeedback.current
 
     fun go(route: String) {
         navController.navigate(route) {
@@ -88,26 +131,38 @@ fun GymNav(vm: GymViewModel) {
         }
     }
 
+    CompositionLocalProvider(LocalLanguage provides settings.language) {
     Scaffold(
         containerColor = Ink,
         bottomBar = {
             NavigationBar(containerColor = Ink, tonalElevation = 0.dp) {
                 DESTINATIONS.forEach { destination ->
                     val selected = currentRoute?.hierarchy?.any { it.route == destination.route } == true
+                    // The dot stretches into a short bar when its tab is chosen, so the
+                    // selection travels visibly instead of jumping between items.
+                    val tabWidth by animateDpAsState(if (selected) 18.dp else 5.dp, Motion.press(), label = "tab-width")
+                    val tabHeight by animateDpAsState(if (selected) 6.dp else 5.dp, Motion.press(), label = "tab-height")
+                    val dot by animateColorAsState(
+                        if (selected) destination.accent else Faint, Motion.quick(), label = "tab-colour"
+                    )
                     NavigationBarItem(
                         selected = selected,
-                        onClick = { go(destination.route) },
+                        onClick = {
+                            if (!selected) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                            go(destination.route)
+                        },
                         icon = {
                             Box(
                                 Modifier
-                                    .size(if (selected) 7.dp else 5.dp)
+                                    .width(tabWidth)
+                                    .height(tabHeight)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(if (selected) destination.accent else Faint)
+                                    .background(dot)
                             )
                         },
                         label = {
                             Text(
-                                destination.label,
+                                tr(destination.label),
                                 style = MaterialTheme.typography.labelSmall
                             )
                         },
@@ -124,17 +179,55 @@ fun GymNav(vm: GymViewModel) {
         NavHost(
             navController = navController,
             startDestination = "today",
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(padding),
+            enterTransition = {
+                when {
+                    isPush() -> slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start, Motion.standard()
+                    ) + fadeIn(Motion.enter())
+                    else -> fadeIn(Motion.enter()) + scaleIn(Motion.enter(), initialScale = 0.98f)
+                }
+            },
+            exitTransition = {
+                if (isPush()) fadeOut(Motion.quick()) + scaleOut(Motion.quick(), targetScale = 0.98f)
+                else fadeOut(Motion.quick())
+            },
+            popEnterTransition = {
+                fadeIn(Motion.enter()) + scaleIn(Motion.enter(), initialScale = 0.98f)
+            },
+            popExitTransition = {
+                if (isPop()) slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.End, Motion.standard()
+                ) + fadeOut(Motion.standard())
+                else fadeOut(Motion.quick())
+            }
         ) {
             composable("today") {
+                val week = remember(progress, patterns) {
+                    Weekly.compare(
+                        today = Dates.todayEpochDay(),
+                        trained = progress.trained,
+                        volumeByDay = progress.volume.associate { it.dateEpochDay to it.volume },
+                        protein = patterns.protein,
+                        kcal = patterns.kcal
+                    )
+                }
                 TodayScreen(
+                    week = week,
+                    latestWeightKg = progress.weights.maxByOrNull { it.dateEpochDay }?.weightKg,
+                    onWelcomeTargets = { vm.applyWelcomeTargets(it) },
+                    onDismissWelcome = { vm.dismissWelcome() },
+                    showWelcome = needsWelcome,
+                    onRecordWeight = vm::recordWeight,
                     day = day,
                     dots = dots,
                     onSelectDate = vm::selectDate,
                     onGoTrain = { go("train") },
                     onGoFuel = { go("fuel") },
                     dayKind = markers.firstOrNull { it.dateEpochDay == day.date.epochDay }?.kind,
-                    onMarkDay = { kind -> vm.markDay(day.date.epochDay, kind) }
+                    onMarkDay = { kind -> vm.markDay(day.date.epochDay, kind) },
+                    onAddWater = vm::addWater,
+                    onRemoveWater = { vm.removeWater() }
                 )
             }
             composable("train") {
@@ -161,15 +254,27 @@ fun GymNav(vm: GymViewModel) {
                     onReopenSession = vm::reopenSession,
                     onDeleteSession = vm::deleteSession,
                     onFinish = vm::finishSession,
-                    onLogSet = { exerciseId, weight, reps, warmup ->
-                        vm.logSet(exerciseId, weight, reps, warmup)
+                    onLogSet = { exerciseId, weight, reps, warmup, kind, rpe ->
+                        vm.logSet(exerciseId, weight, reps, warmup, kind = kind, rpe = rpe)
                     },
-                    onEditSet = { setId, weight, reps, warmup, variation ->
-                        vm.editSet(setId, weight, reps, warmup, variation)
+                    onEditSet = { setId, weight, reps, warmup, variation, kind, rpe ->
+                        vm.editSet(setId, weight, reps, warmup, variation, kind, rpe)
                     },
                     onDeleteSet = vm::deleteSet,
                     onSkipRest = vm::cancelRest,
-                    onAddExercise = vm::addExercise
+                    onAddExercise = vm::addExercise,
+                    onAdjustRest = vm::adjustRest,
+                    workoutReport = workoutReport,
+                    onDismissReport = vm::dismissWorkoutReport,
+                    liftHistory = vm::liftHistory,
+                    onSetNotes = { id, notes -> vm.setExerciseNotes(id, notes) },
+                    superset = superset,
+                    onStartSuperset = vm::startSuperset,
+                    onEndSuperset = vm::endSuperset,
+                    cardio = cardio,
+                    bodyKg = progress.weights.maxByOrNull { it.dateEpochDay }?.weightKg ?: 0.0,
+                    onLogCardio = { a, m, km -> vm.logCardio(a, m, km) },
+                    onDeleteCardio = { vm.deleteCardio(it) }
                 )
             }
             composable("fuel") {
@@ -180,7 +285,18 @@ fun GymNav(vm: GymViewModel) {
                     onLog = { foodId, meal, qty -> vm.logFood(foodId, meal, qty) },
                     onRemove = vm::removeFoodLog,
                     onEditEntry = { logId, qty, slot -> vm.editFoodLog(logId, qty, slot) },
-                    onSaveFood = vm::saveFood
+                    onSaveFood = vm::saveFood,
+                    onAddWater = vm::addWater,
+                    onRemoveWater = { vm.removeWater() },
+                    onCopyMeal = { meal, done -> vm.copyMealFromDayBefore(meal, done) },
+                    recentFoods = recentFoods,
+                    onStartFast = { vm.startFast(it) },
+                    onEndFast = { vm.endFast() },
+                    savedMeals = savedMeals,
+                    onLogSavedMeal = { m, slot -> vm.logSavedMeal(m, slot) },
+                    onDeleteSavedMeal = { vm.deleteSavedMeal(it) },
+                    onSaveMeal = { name, slot -> vm.saveMeal(name, slot) },
+                    onQuickAdd = { k, p, c, f, slot -> vm.quickAdd(k, p, c, f, slot) }
                 )
             }
             composable("progress") {
@@ -189,12 +305,29 @@ fun GymNav(vm: GymViewModel) {
                     onRecordWeight = vm::recordWeight,
                     onOpenPhotos = { go("photos") },
                     onOpenGoal = { go("goal") },
-                    onOpenPatterns = { go("patterns") }
+                    onOpenPatterns = { go("patterns") },
+                    onOpenRecords = { go("records") },
+                    onOpenMeasurements = { go("measurements") },
+                    liftsWithRecords = records.size,
+                    goalWeightKg = settings.goalWeightKg,
+                    restDays = markers.filter { it.kind == DayKinds.REST }.map { it.dateEpochDay }.toSet()
                 )
             }
             // Not a sixth tab. Photos are about your body over time, which is what
             // Progress already is, and a five-item bar is already at the point where
             // the labels start truncating.
+            composable("measurements") {
+                val measurements by vm.measurements.collectAsStateWithLifecycle()
+                MeasurementsScreen(
+                    measurements = measurements,
+                    settings = settings,
+                    onSave = { vm.saveMeasurements(it) },
+                    onSaveBody = { h, f -> vm.saveBody(h, f) }
+                )
+            }
+            composable("records") {
+                RecordsScreen(records = records, exercises = train.exercises, liftHistory = vm::liftHistory)
+            }
             composable("patterns") {
                 PatternsScreen(state = patterns)
             }
@@ -218,8 +351,14 @@ fun GymNav(vm: GymViewModel) {
             }
 
             composable("settings") {
-                SettingsScreen(settings = settings, onSave = vm::saveSettings)
+                SettingsScreen(
+                    settings = settings,
+                    onSave = { vm.saveSettings(it) },
+                    latestWeightKg = progress.weights.maxByOrNull { it.dateEpochDay }?.weightKg,
+                    onExport = { kind, share -> vm.export(kind, share) }
+                )
             }
         }
+    }
     }
 }

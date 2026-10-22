@@ -79,7 +79,7 @@ private class PickerDelegate(
     }
 }
 
-private fun topViewController(): UIViewController? {
+internal fun topViewController(): UIViewController? {
     var top = UIApplication.sharedApplication.keyWindow?.rootViewController
     while (top?.presentedViewController != null) top = top.presentedViewController
     return top

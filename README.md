@@ -89,13 +89,35 @@ excluded from iCloud backup, as they are left out of Android's cloud backup.
 ## What's in it
 
 ```
-Today      protein first, calories second, a week strip with a dot per logged day
-Train      split → lift → kg × reps, a target for every lift, rest timer, records
-           tap "How to do it" for a muscle map and how the movement works
-Fuel       search or browse 675 foods by name or local name, macros and 15 micronutrients
-Progress   weight trend, 14-day volume, streaks, and progress photos
-Settings   your targets, rest length, nightly reminder
+Today      protein first, then calories, carbs and fat against targets, water, a week strip
+Train      split → lift → kg × reps, a target for every lift with its warm-up ramp, last
+           time's sets one tap away, plate calculator, drop sets, sets to failure and RPE,
+           a note per lift, swaps and supersets, rest that fits the lift and can be
+           stretched, a live session clock, cardio with pace and burn, a per-lift history
+           with a rep-max table, and a summary card with records and calories at the end
+Fuel       search or browse 767 foods by name or local name, macros and 15 micronutrients,
+           recent and usual foods, saved meals, quick add, water with reminders, a
+           fasting timer, and "same breakfast as yesterday" in one tap
+Progress   weight trend and goal date, 14-day volume, streaks, achievements, a month
+           calendar, personal records, a one-rep max calculator, tape measurements with
+           a body-fat estimate, and progress photos
+Settings   your targets (or work them out from your body), water and weight goals, rest,
+           reminder, and your data exported as CSV through the share sheet
 ```
+
+**What the big apps do, offline.** The habits Strong, Hevy, MyFitnessPal and
+HealthifyMe have taught people are here: the previous session's sets as tappable
+chips under the lift; what plates go on each side of a 20, 15, 10 or 7.5 kg bar; a
+rest timer with −15 and +15; a ticking session clock; a lift's page with its
+best set, estimated-max chart, heaviest set, most reps, best session and what you
+should manage for one to ten reps; and a "workout done" card with time, sets,
+volume and the records beaten. On the food side: carbohydrate and fat targets
+that follow from your calorie and protein ones (fat a quarter of calories,
+carbohydrate the rest), a water tracker, copying a meal from the day before, and a
+Mifflin-St Jeor calculator that fills in your targets from weight, height, age and
+how much you train. What they do that needs the internet or another app's
+permission, barcode lookup and step counts, is left out on purpose: this app has
+no network permission at all.
 
 **486 lifts**, each with its own rep range and increment, filed under thirteen
 real muscle groups rather than three buckets:
@@ -160,7 +182,7 @@ screen, in order, one tap each. That is the whole point: not picking from a list
 of 486 between two sets. Splits are editable, reorderable and deletable, and
 deleting one leaves every session already run from it untouched.
 
-**614 built-in foods in 25 categories.** South Indian cooking gets the detail it deserves —
+**706 built-in foods in 25 categories.** South Indian cooking gets the detail it deserves —
 twenty-four dosa varieties (masala, Mysore masala, ghee roast, paper, rava, set,
 neer, kal, karam, ragi, kambu, thinai, oats, pesarattu, adai and the rest), seven
 kinds of idli, forty-three tiffin items (pongal, upma, uttapam, kuzhi paniyaram,
@@ -184,6 +206,23 @@ kari, paya, kudal, Pallipalayam chicken, nandu and eral kuzhambu, karuvadu).
 Each carries its English names too, so "brinjal", "drumstick" or "horse gram"
 finds it. Their calories are computed from their macros rather than typed, so
 none can disagree with itself.
+
+**Staples, for people who weigh.** Chicken breast and thigh, mutton, seer fish,
+sardine and prawns each come raw and cooked per 100 g, because cooking drives
+out water and the same piece is a third denser afterwards. Flour, rava, poha,
+vermicelli, raw rice, dry soya chunks and idli batter are there by weight, as
+they are measured before cooking. Bananas by name (nendran, poovan, red,
+rasthali), boiled legumes with nothing added (kollu, karamani, pachai payaru,
+chickpeas, rajma), the tubers (senai, seppankizhangu, maravalli) and the
+tea-stall and bakery snacks: bread omelette, veg puff, rusk, pottukadalai,
+boiled peanuts. Tamil names are aliases, so "kollu" or "nellikai" finds them.
+
+**It answers back.** Everything you tap gives slightly under the finger and springs
+back, and picking something ticks the phone's haptics while committing something
+(logging a set or a food, saving settings) gives a firmer confirm. A new record
+buzzes twice and lights its row. Numbers roll up or down to their new value, meters
+fill in, tabs fade through each other and pushed screens slide in from the side.
+Every animation is under a third of a second, because it runs between sets.
 
 **Juices are their own category**, not filed under Drinks. A glass of sugarcane
 juice is 180 kcal of almost pure sugar; a tender coconut is 46. Among the teas and
@@ -291,7 +330,8 @@ app/src/commonMain/   everything that is the same on both phones — nearly all 
                       Indian dataset importer, DataStore settings
   domain/             pure Kotlin — macro and micronutrient maths, 1RM and records,
                       streaks, progression, food checks and search. All unit tested.
-  ui/                 one ViewModel, the screens, a small set of shared components
+  ui/                 one ViewModel, the screens, a small set of shared components;
+                      components/Motion.kt holds every curve, the press and the haptics
   core/               the log, the clock and calendar
   composeResources/   exercise demonstrations and the food dataset, bundled
 app/src/androidMain/  Android: GymApp, MainActivity, notifications, photo store

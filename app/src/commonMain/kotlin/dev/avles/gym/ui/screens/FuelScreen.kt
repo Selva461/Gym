@@ -1,7 +1,7 @@
 package dev.avles.gym.ui.screens
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.avles.gym.core.Dates
@@ -45,15 +46,22 @@ import dev.avles.gym.domain.FoodEdits
 import dev.avles.gym.domain.FoodSearch
 import dev.avles.gym.domain.MacroMath
 import dev.avles.gym.domain.Numbers
+import dev.avles.gym.domain.SavedMeals
 import dev.avles.gym.domain.Training
 import dev.avles.gym.ui.DayState
+import dev.avles.gym.ui.components.Chip
 import dev.avles.gym.ui.components.EmptyNote
 import dev.avles.gym.ui.components.EntryRow
+import dev.avles.gym.ui.components.FastingCard
 import dev.avles.gym.ui.components.Hairline
-import dev.avles.gym.ui.components.Meter
+import dev.avles.gym.ui.components.MacroBars
+import dev.avles.gym.ui.components.Motion
 import dev.avles.gym.ui.components.NutrientPanel
 import dev.avles.gym.ui.components.PillRow
 import dev.avles.gym.ui.components.SectionHeading
+import dev.avles.gym.ui.components.WaterCard
+import dev.avles.gym.ui.components.pressable
+import dev.avles.gym.ui.i18n.tr
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
@@ -73,7 +81,18 @@ fun FuelScreen(
     onRemove: (Long) -> Unit,
     onEditEntry: (Long, Double, String) -> Unit,
     onSaveFood: (FoodItem) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAddWater: () -> Unit = {},
+    onRemoveWater: () -> Unit = {},
+    onCopyMeal: (String, (Int) -> Unit) -> Unit = { _, _ -> },
+    recentFoods: List<FoodItem> = emptyList(),
+    onStartFast: (Int) -> Unit = {},
+    onEndFast: () -> Unit = {},
+    savedMeals: List<SavedMeals.Meal> = emptyList(),
+    onLogSavedMeal: (SavedMeals.Meal, String) -> Unit = { _, _ -> },
+    onDeleteSavedMeal: (Long) -> Unit = {},
+    onSaveMeal: (String, String) -> Unit = { _, _ -> },
+    onQuickAdd: (Double, Double, Double, Double, String) -> Unit = { _, _, _, _, _ -> }
 ) {
     var meal by remember { mutableStateOf(defaultMealForNow()) }
     var query by remember { mutableStateOf("") }
@@ -83,6 +102,9 @@ fun FuelScreen(
     var creating by remember { mutableStateOf(false) }
     var nutrientsOpen by remember { mutableStateOf(false) }
     var editingEntry by remember { mutableStateOf<FoodLogRow?>(null) }
+    var copyNote by remember { mutableStateOf<String?>(null) }
+    val foodRows = day.rows.filter { it.meal != Meals.WATER }
+    val glasses = day.rows.filter { it.meal == Meals.WATER }.sumOf { it.quantity }.roundToInt()
 
     val categories = remember(catalogue) {
         catalogue.map { it.category }.distinct().sorted()
@@ -105,7 +127,7 @@ fun FuelScreen(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp)
     ) {
         item {
-            Text("Fuel", style = MaterialTheme.typography.headlineMedium, color = Bone)
+            Text(tr("Fuel"), style = MaterialTheme.typography.headlineMedium, color = Bone)
             Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
                 Text(
                     "${day.totals.proteinG.roundToInt()} g protein",
@@ -119,18 +141,29 @@ fun FuelScreen(
                 )
             }
             Spacer(Modifier.height(12.dp))
-            Meter(
-                progress = MacroMath.ratio(day.totals.proteinG, day.settings.proteinTargetG),
-                accent = Sage
-            )
+            MacroBars(day.totals, day.settings.kcalTarget, day.settings.proteinTargetG)
+            Spacer(Modifier.height(18.dp))
+            WaterCard(glasses, day.settings.waterGlasses, onAddWater, onRemoveWater)
             Spacer(Modifier.height(20.dp))
-            PillRow(Meals.PICKABLE, meal, Sage, { meal = it })
+            PillRow(Meals.PICKABLE, meal, Sage, { meal = it; copyNote = null })
+            // The same breakfast most mornings is the commonest food diary there is.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = {
+                    onCopyMeal(meal) { n ->
+                        copyNote = if (n == 0) "Nothing was logged for ${meal.lowercase()} the day before."
+                        else "Copied $n ${if (n == 1) "entry" else "entries"}. Tap one below to change it."
+                    }
+                }) {
+                    Text("Same ${meal.lowercase()} as the day before", color = Sage, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+            copyNote?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = Faint) }
             Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                label = { Text("Search food") },
+                label = { Text(tr("Search food")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -141,20 +174,7 @@ fun FuelScreen(
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(categories, key = { it }) { name ->
                     val on = category == name
-                    Box(
-                        Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (on) Sage.copy(alpha = 0.18f) else Raised)
-                            .clickable { category = if (on) null else name }
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            name,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (on) Sage else Mute,
-                            maxLines = 1
-                        )
-                    }
+                    Chip(name, isOn = on, accent = Sage) { category = if (on) null else name }
                 }
             }
             Spacer(Modifier.height(14.dp))
@@ -180,38 +200,26 @@ fun FuelScreen(
         } else if (query.isBlank() && category == null) {
             item {
                 SectionHeading(
-                    "Usual suspects",
+                    tr("Usual suspects"),
                     trailing = if (quickPicks.isEmpty()) "builds as you log" else null
                 )
                 Spacer(Modifier.height(10.dp))
                 if (quickPicks.isEmpty()) {
                     EmptyNote("Search, or pick a category above. What you log most will surface here.")
                 } else {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(quickPicks, key = { "quick-${it.id}" }) { food ->
-                            Box(
-                                Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Raised)
-                                    .clickable { pending = food }
-                                    .padding(horizontal = 14.dp, vertical = 10.dp)
-                            ) {
-                                Column {
-                                    Text(
-                                        food.name,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = Bone
-                                    )
-                                    Text(
-                                        "${food.proteinG.roundToInt()} g protein",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Sage
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    FoodChipRow(quickPicks, "quick") { pending = it }
                 }
+                // Recent is what you had this week; usual is what you have most. The
+                // food apps keep both because the answer differs on any day that
+                // is not like the others.
+                val recent = recentFoods.filter { r -> quickPicks.none { it.id == r.id } }
+                if (recent.isNotEmpty()) {
+                    Spacer(Modifier.height(16.dp))
+                    SectionHeading(tr("Recent"))
+                    Spacer(Modifier.height(10.dp))
+                    FoodChipRow(recent, "recent") { pending = it }
+                }
+                SavedMealsRow(savedMeals, meal, { onLogSavedMeal(it, meal) }, onDeleteSavedMeal)
                 Spacer(Modifier.height(20.dp))
             }
         } else {
@@ -219,8 +227,11 @@ fun FuelScreen(
         }
 
         item {
-            TextButton(onClick = { creating = true }) {
-                Text("Add a food to the catalogue", color = Sage)
+            Row {
+                TextButton(onClick = { creating = true }) {
+                    Text("Add a food to the catalogue", color = Sage)
+                }
+                QuickAddButton(meal) { k, p, c, f -> onQuickAdd(k, p, c, f, meal) }
             }
             Spacer(Modifier.height(10.dp))
             Hairline()
@@ -231,6 +242,10 @@ fun FuelScreen(
                 onToggle = { nutrientsOpen = !nutrientsOpen },
                 anythingLogged = day.rows.isNotEmpty()
             )
+            Spacer(Modifier.height(18.dp))
+            Hairline()
+            Spacer(Modifier.height(18.dp))
+            FastingCard(day.settings.fastStartedAt, day.settings.fastHours, onStartFast, onEndFast)
             Spacer(Modifier.height(18.dp))
             Hairline()
             Spacer(Modifier.height(18.dp))
@@ -255,14 +270,17 @@ fun FuelScreen(
                         trailing = "${(row.proteinG * row.quantity).roundToInt()} p",
                         accent = if (row.isSupplement) Brass else Sage,
                         onClick = { editingEntry = row },
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        modifier = Modifier.animateItem().padding(bottom = 6.dp)
                     )
+                }
+                if (slot != Meals.SUPPLEMENT) {
+                    item { SaveMealButton(slot) { name -> onSaveMeal(name, slot) } }
                 }
                 item { Spacer(Modifier.height(16.dp)) }
             }
         }
 
-        if (day.rows.isEmpty()) {
+        if (foodRows.isEmpty()) {
             item { EmptyNote("Nothing logged for this day yet.") }
         } else {
             item {
@@ -284,12 +302,14 @@ fun FuelScreen(
         )
     }
 
+    val haptics = LocalHapticFeedback.current
     pending?.let { food ->
         QuantityDialog(
             food = food,
             meal = Meals.slotFor(food.isSupplement, meal),
             onConfirm = { qty ->
                 onLog(food.id, Meals.slotFor(food.isSupplement, meal), qty)
+                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                 pending = null
             },
             onDismiss = { pending = null }
@@ -356,21 +376,7 @@ private fun FoodEntryEditorDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("0.5", "1", "1.5", "2").forEach { preset ->
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Raised)
-                                .clickable { qty = preset }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(preset, style = MaterialTheme.typography.labelMedium, color = Bone)
-                        }
-                    }
-                }
+                PresetRow(qty) { qty = it }
                 if (!row.isSupplement) {
                     Spacer(Modifier.height(14.dp))
                     PillRow(Meals.PICKABLE, slot, Sage, { slot = it })
@@ -400,9 +406,8 @@ private fun FoodPickRow(food: FoodItem, onTap: () -> Unit, onEdit: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .pressable(RoundedCornerShape(10.dp), pressedScale = 0.985f, onClick = onTap)
             .background(Slate)
-            .clickable { onTap() }
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -458,21 +463,7 @@ private fun QuantityDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(14.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("0.5", "1", "1.5", "2").forEach { preset ->
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Raised)
-                                .clickable { qty = preset }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(preset, style = MaterialTheme.typography.labelMedium, color = Bone)
-                        }
-                    }
-                }
+                PresetRow(qty) { qty = it }
                 Spacer(Modifier.height(14.dp))
                 Text(
                     "${(food.proteinG * parsed).roundToInt()} g protein, " +
@@ -718,4 +709,55 @@ private fun defaultMealForNow(): String = when (Dates.hourNow()) {
     in 11..15 -> Meals.LUNCH
     in 16..19 -> Meals.SNACK
     else -> Meals.DINNER
+}
+
+/**
+ * Half, one, one and a half, two. The one matching what is typed lights up, so a
+ * preset reads as the current choice rather than a button that did something.
+ */
+@Composable
+private fun PresetRow(current: String, onPick: (String) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("0.5", "1", "1.5", "2").forEach { preset ->
+            val on = current.toDoubleOrNull() == preset.toDouble()
+            val fill by animateColorAsState(
+                if (on) Sage.copy(alpha = 0.18f) else Raised, Motion.quick(), label = "preset"
+            )
+            Box(
+                Modifier
+                    .weight(1f)
+                    .pressable(RoundedCornerShape(8.dp)) { onPick(preset) }
+                    .background(fill)
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(preset, style = MaterialTheme.typography.labelMedium, color = if (on) Sage else Bone)
+            }
+        }
+    }
+}
+
+/** A scrolling row of foods to log with one tap, each showing its protein. */
+@Composable
+private fun FoodChipRow(foods: List<FoodItem>, keyPrefix: String, onPick: (FoodItem) -> Unit) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(foods, key = { "$keyPrefix-${it.id}" }) { food ->
+            Box(
+                Modifier
+                    .animateItem()
+                    .pressable(RoundedCornerShape(10.dp)) { onPick(food) }
+                    .background(Raised)
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
+            ) {
+                Column {
+                    Text(food.name, style = MaterialTheme.typography.labelMedium, color = Bone)
+                    Text(
+                        "${food.proteinG.roundToInt()} g protein",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Sage
+                    )
+                }
+            }
+        }
+    }
 }

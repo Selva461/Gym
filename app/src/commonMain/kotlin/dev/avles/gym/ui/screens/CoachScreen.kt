@@ -133,7 +133,7 @@ fun CoachScreen(
                 Spacer(Modifier.height(10.dp))
             }
             items(state.suggestions, key = { "sugg-${it.exercise.id}-${it.forMuscle.name}" }) {
-                Column(Modifier.padding(bottom = 10.dp)) {
+                Column(Modifier.animateItem().padding(bottom = 10.dp)) {
                     Text(it.exercise.name, style = MaterialTheme.typography.bodyMedium, color = Bone)
                     Text(it.reason, style = MaterialTheme.typography.labelSmall, color = Faint)
                 }

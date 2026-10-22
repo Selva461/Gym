@@ -34,7 +34,7 @@ class MigrationSqlTest {
          * Kept in step with @Database(version = ...) by hand, and asserted below so
          * the two cannot drift apart silently.
          */
-        const val DB_VERSION = 8
+        const val DB_VERSION = 13
     }
 
     /**
@@ -274,6 +274,50 @@ class MigrationSqlTest {
         assertTrue(SchemaSql.ADD_EXERCISE_ASSISTED.endsWith(SchemaSql.EXPECTED_EXERCISE_ASSISTED_COLUMN))
         assertTrue(SchemaSql.FLAG_ASSISTED_EXERCISES.contains("'%assisted%'"))
         assertEquals(listOf(SchemaSql.ADD_EXERCISE_ASSISTED, SchemaSql.FLAG_ASSISTED_EXERCISES), SchemaSql.V8_STATEMENTS)
+    }
+
+    @Test
+    fun `the cardio table is created exactly as Room expects it`() {
+        assertEquals(expectedCreateSql("cardio_entry"), SchemaSql.CREATE_CARDIO_ENTRY)
+        assertEquals(expectedIndexSql("cardio_entry", "index_cardio_entry_dateEpochDay"), SchemaSql.INDEX_CARDIO_ENTRY_DATE)
+    }
+
+    @Test
+    fun `the saved meal tables are created exactly as Room expects them`() {
+        assertEquals(expectedCreateSql("saved_meal"), SchemaSql.CREATE_SAVED_MEAL)
+        assertEquals(expectedCreateSql("saved_meal_item"), SchemaSql.CREATE_SAVED_MEAL_ITEM)
+        assertEquals(expectedIndexSql("saved_meal_item", "index_saved_meal_item_mealId"), SchemaSql.INDEX_SAVED_MEAL_ITEM_MEAL)
+    }
+
+    @Test
+    fun `the lift notes column carries the same default on both sides`() {
+        val create = expectedCreateSql("exercise")
+        assertTrue("exercise lacks ${SchemaSql.EXPECTED_EXERCISE_NOTES_COLUMN}: $create", create.contains(SchemaSql.EXPECTED_EXERCISE_NOTES_COLUMN))
+        assertTrue(SchemaSql.ADD_EXERCISE_NOTES.endsWith(SchemaSql.EXPECTED_EXERCISE_NOTES_COLUMN))
+    }
+
+    /** Version 10 adds a set's kind and RPE, both with defaults so old sets stay valid. */
+    @Test
+    fun `the set kind and RPE columns carry the same default on both sides`() {
+        val create = expectedCreateSql("set_entry")
+        assertTrue("set_entry lacks ${SchemaSql.EXPECTED_SET_KIND_COLUMN}: $create", create.contains(SchemaSql.EXPECTED_SET_KIND_COLUMN))
+        assertTrue("set_entry lacks ${SchemaSql.EXPECTED_SET_RPE_COLUMN}: $create", create.contains(SchemaSql.EXPECTED_SET_RPE_COLUMN))
+        assertTrue(SchemaSql.ADD_SET_KIND.endsWith(SchemaSql.EXPECTED_SET_KIND_COLUMN))
+        assertTrue(SchemaSql.ADD_SET_RPE.endsWith(SchemaSql.EXPECTED_SET_RPE_COLUMN))
+    }
+
+    /** Version 9 adds the tape-measurement table, unique on the day and the part. */
+    @Test
+    fun `the body measurement table is created exactly as Room expects it`() {
+        assertEquals(expectedCreateSql("body_measurement"), SchemaSql.CREATE_BODY_MEASUREMENT)
+        assertEquals(
+            expectedIndexSql("body_measurement", "index_body_measurement_dateEpochDay_part"),
+            SchemaSql.INDEX_BODY_MEASUREMENT_DATE_PART
+        )
+        assertEquals(
+            listOf(SchemaSql.CREATE_BODY_MEASUREMENT, SchemaSql.INDEX_BODY_MEASUREMENT_DATE_PART),
+            SchemaSql.V9_STATEMENTS
+        )
     }
 
     @Test

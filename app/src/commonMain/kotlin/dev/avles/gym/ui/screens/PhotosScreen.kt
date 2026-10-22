@@ -25,6 +25,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.core.Dates
+import dev.avles.gym.core.epochDay
 import dev.avles.gym.data.PickedImage
 import dev.avles.gym.domain.Photos
 import dev.avles.gym.ui.PhotoRow
@@ -39,8 +41,6 @@ import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Coral
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
-import dev.avles.gym.core.Dates
-import dev.avles.gym.core.epochDay
 import kotlinx.datetime.LocalDate
 
 /**
@@ -134,8 +134,10 @@ fun PhotosScreen(
             }
         } else {
             items(state.photos, key = { "photo-${it.photo.id}" }) { row ->
-                PhotoCard(row, onClick = { editing = row })
-                Spacer(Modifier.height(12.dp))
+                Column(Modifier.animateItem()) {
+                    PhotoCard(row, onClick = { editing = row })
+                    Spacer(Modifier.height(12.dp))
+                }
             }
             item {
                 Spacer(Modifier.height(4.dp))

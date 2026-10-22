@@ -1,7 +1,7 @@
 package dev.avles.gym.ui.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,18 +14,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.core.Dates
+import dev.avles.gym.core.epochDay
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
 import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Raised
 import dev.avles.gym.ui.theme.Sage
-import dev.avles.gym.core.Dates
-import dev.avles.gym.core.epochDay
 import kotlinx.datetime.LocalDate
 
 /**
@@ -53,13 +55,15 @@ fun WeekStrip(
             val day = Dates.ofEpochDay(epoch)
             val isSelected = day == selected
             val isFuture = day > today
+            val fill by animateColorAsState(
+                if (isSelected) Raised else Color.Transparent, Motion.quick(), label = "week-day"
+            )
 
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) Raised else androidx.compose.ui.graphics.Color.Transparent)
-                    .clickable(enabled = !isFuture) { onSelect(day) }
+                    .pressable(RoundedCornerShape(12.dp), enabled = !isFuture) { onSelect(day) }
+                    .background(fill)
                     .padding(vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
