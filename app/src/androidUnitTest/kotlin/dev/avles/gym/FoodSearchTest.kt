@@ -59,6 +59,17 @@ class FoodSearchTest {
     }
 
     @Test
+    fun `street and fast food are found as they are ordered`() {
+        val all = SeedData.foods()
+        fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
+        assertTrue("Crispy chicken burger" in names("zinger"))
+        assertTrue("Instant noodles" in names("maggi"))
+        assertTrue("Chicken mandi" in names("kuzhimandhi"))
+        assertTrue("Burma atho" in names("atho"))
+        assertTrue(names("pizza").containsAll(listOf("Veg pizza", "Chicken pizza", "Margherita pizza")))
+    }
+
+    @Test
     fun `tea stall and juice shop orders are found as they are asked for`() {
         val all = SeedData.foods()
         fun names(q: String) = FoodSearch.search(all, q, limit = 50).map { it.name }
