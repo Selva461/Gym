@@ -90,12 +90,14 @@ excluded from iCloud backup, as they are left out of Android's cloud backup.
 
 ```
 Today      protein first, then calories, carbs and fat against targets, water, a week strip
+Learn      every lift searchable by name or muscle, a 3D demonstrator you can turn
+           360 degrees walking through it step by step, male or female, and the guide
 Train      split → lift → kg × reps, a target for every lift with its warm-up ramp, last
            time's sets one tap away, plate calculator, drop sets, sets to failure and RPE,
            a note per lift, swaps and supersets, rest that fits the lift and can be
            stretched, a live session clock, cardio with pace and burn, a per-lift history
            with a rep-max table, and a summary card with records and calories at the end
-Fuel       search or browse 1,309 foods by name or local name, macros and 15 micronutrients,
+Fuel       search or browse 1,374 foods by name or local name, macros and 15 micronutrients,
            favourites, recent and usual foods, saved meals, home recipes by the serving,
            logging by grams, quick add, water and meal reminders, a fasting timer, and
            "same breakfast as yesterday" in one tap
@@ -138,24 +140,26 @@ cross-body), eight with dumbbells, seven with a barbell or EZ bar, three on a
 machine, six bodyweight. Whatever is free, there is a way to train the muscle you
 came for.
 
-**A demonstration on 140 of them.** The reference sheet animates between the start
-and the finish of the movement — which is what almost every exercise GIF is once you
-strip the tweening, at a tenth of the size. The pictures are public domain (Free
-Exercise DB, Unlicense); the commercial animations people usually mean are somebody's
-product and this app will not ship those. Only lifts with a confident name match get
-one: "Barbell row" scores 0.82 against "Upright Barbell Row" and they are different
-exercises, so anything less than certain shows the muscle map instead of the wrong
-movement. Bundled in the APK at about 3.6 MB, because the app has no network
-permission and never will.
+**A 3D demonstrator on every one of them.** A person (a man or a woman of
+ordinary, healthy build in plain gym clothes, your choice, saved) does the lift on
+equipment drawn in the same style: set-up, grip, start position, the rep slowly, the
+rep with the beginner's points, then the full movement. Drag to turn it all the way
+round, pinch to zoom, double-tap to reset. All 486 lifts have one, and so does a lift
+you invent tomorrow: the movement is worked out from the same pattern and equipment
+as the written guide, so the two always describe the same thing. Nothing is
+downloaded or licensed; the body is sculpted and animated in code on the phone.
+
+**Learn**, the new tab, is where to look a lift up: search by name or by muscle
+("glutes" finds hip thrusts), open one, and the demonstrator walks through it step by
+step with the guide underneath. The reference sheet in a session plays the full
+movement.
 
 **A reference on every lift.** Tap "How to do it" under the lift for a body
 diagram with the worked muscles shaded, how to set up, how the movement goes, the
 two words to hold in your head mid-set, and what usually goes wrong. It is derived
 from the lift itself rather than written out four hundred times, so a lift you
-invent tomorrow has one the moment you name it. There are no downloaded
-animations: the app has no network permission, those GIFs are somebody's licensed
-product, and four hundred of them would be several hundred megabytes. The map is
-drawn in code instead — vectors, kilobytes, sharp at any size.
+invent tomorrow has one the moment you name it. The map is drawn in code —
+vectors, kilobytes, sharp at any size.
 
 **Grip and stance are logged per set.** A close-grip bench and a wide-grip bench
 keep separate histories and separate records, because sharing one means twelve
@@ -184,7 +188,7 @@ screen, in order, one tap each. That is the whole point: not picking from a list
 of 486 between two sets. Splits are editable, reorderable and deletable, and
 deleting one leaves every session already run from it untouched.
 
-**1,248 built-in foods in 27 categories.** South Indian cooking gets the detail it deserves —
+**1,313 built-in foods in 27 categories.** South Indian cooking gets the detail it deserves —
 twenty-four dosa varieties (masala, Mysore masala, ghee roast, paper, rava, set,
 neer, kal, karam, ragi, kambu, thinai, oats, pesarattu, adai and the rest), seven
 kinds of idli, forty-three tiffin items (pongal, upma, uttapam, kuzhi paniyaram,
