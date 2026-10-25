@@ -95,7 +95,7 @@ Train      split → lift → kg × reps, a target for every lift with its warm-
            a note per lift, swaps and supersets, rest that fits the lift and can be
            stretched, a live session clock, cardio with pace and burn, a per-lift history
            with a rep-max table, and a summary card with records and calories at the end
-Fuel       search or browse 1,309 foods by name or local name, macros and 15 micronutrients,
+Fuel       search or browse 1,374 foods by name or local name, macros and 15 micronutrients,
            favourites, recent and usual foods, saved meals, home recipes by the serving,
            logging by grams, quick add, water and meal reminders, a fasting timer, and
            "same breakfast as yesterday" in one tap
@@ -138,14 +138,14 @@ cross-body), eight with dumbbells, seven with a barbell or EZ bar, three on a
 machine, six bodyweight. Whatever is free, there is a way to train the muscle you
 came for.
 
-**A demonstration on 140 of them.** The reference sheet animates between the start
+**A demonstration on 273 of them.** The reference sheet animates between the start
 and the finish of the movement — which is what almost every exercise GIF is once you
 strip the tweening, at a tenth of the size. The pictures are public domain (Free
 Exercise DB, Unlicense); the commercial animations people usually mean are somebody's
 product and this app will not ship those. Only lifts with a confident name match get
 one: "Barbell row" scores 0.82 against "Upright Barbell Row" and they are different
 exercises, so anything less than certain shows the muscle map instead of the wrong
-movement. Bundled in the APK at about 3.6 MB, because the app has no network
+movement. Bundled in the APK at about 6.4 MB, because the app has no network
 permission and never will.
 
 **A reference on every lift.** Tap "How to do it" under the lift for a body
@@ -184,7 +184,7 @@ screen, in order, one tap each. That is the whole point: not picking from a list
 of 486 between two sets. Splits are editable, reorderable and deletable, and
 deleting one leaves every session already run from it untouched.
 
-**1,248 built-in foods in 27 categories.** South Indian cooking gets the detail it deserves —
+**1,313 built-in foods in 27 categories.** South Indian cooking gets the detail it deserves —
 twenty-four dosa varieties (masala, Mysore masala, ghee roast, paper, rava, set,
 neer, kal, karam, ragi, kambu, thinai, oats, pesarattu, adai and the rest), seven
 kinds of idli, forty-three tiffin items (pongal, upma, uttapam, kuzhi paniyaram,

@@ -3,7 +3,7 @@
 **Start here.** A new session should be able to continue from this file alone.
 It is kept current by rule: every commit that changes code, data, the build or
 the plan also updates this file (see `CLAUDE.md`). Last updated with the
-protein powder brands and the list of further additions.
+second demo-matching pass (273 of 486 lifts) and `SeedFoodsKitchen.kt` (65 foods).
 
 ## What this is
 
@@ -32,7 +32,7 @@ Standing constraints, all enforced by tests:
 | | |
 |---|---|
 | Source of truth | `main`. Work happens on a `claude/...` branch, then merges to `main`. |
-| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). Another session used `claude/project-thread-dhxbg7`, merged as PR #1. |
+| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). Other sessions used `claude/project-thread-dhxbg7` (merged as PR #1) and `claude/project-thread-0bjsg1` (demos pass 2 + kitchen foods). |
 | Android CI | `.github/workflows/android.yml` on **every push and PR, any branch**: unit tests, lint, `assembleDebug`, then **replaces the APK on the `latest-debug` release**. So the APK link always holds the last green push, from whichever branch. Also commits exported Room schemas back with `[skip ci]`. |
 | APK link (never changes) | https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk |
 | iOS CI | `.github/workflows/ios.yml` on push to `main` or manual dispatch only (a Mac minute costs 10×). Unsigned IPA to the `latest-ios` release: https://github.com/Selva461/Gym/releases/download/latest-ios/gym-unsigned.ipa, sideloaded with Sideloadly or AltStore (re-sign every 7 days on a free Apple ID). |
@@ -48,10 +48,10 @@ release writes return 403); CI does the publishing.
 
 | | |
 |---|---|
-| Exercises | 486 across 13 muscle groups; 140 with bundled demonstrations |
-| Foods | **1,248 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,309. 27 categories (newest: Alcohol). Newest file: `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
+| Exercises | 486 across 13 muscle groups; **273 with bundled demonstrations** (257 stems, ~6.4 MB; some lifts share a stem) |
+| Foods | **1,313 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,374. 27 categories (newest: Alcohol). Newest file: `SeedFoodsKitchen.kt` (65: raw dals, flours, rice and millets, raw chicken and fish per 100 g; thuvaiyal and podi, keerai, Chettinad sweets, nungu and seasonal fruit, panakam, paneer bhurji, meal maker curry, Karnataka dishes). Before it `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
 | Database | **v13**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`. Exported schemas in `app/schemas/`. |
-| Tests | 247 (`gradle testDebugUnitTest`), none needing a device |
+| Tests | 251 (`gradle testDebugUnitTest`), none needing a device; `ExerciseDemosTest` checks every demo key is a lift and every stem has both frames |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 (CI) |
 
 Features, by screen (README → "What's in it" has the user-facing list):
@@ -88,7 +88,10 @@ dataset importer, settings), `domain/` (pure logic, all unit tested),
 
 ## Working in a fresh session
 
-The container starts without an Android SDK. These worked on 2026-10-22:
+The container starts without an Android SDK. These worked on 2026-10-22. On
+2026-10-25 the project's built-in cloud environment **blocked `dl.google.com`**, so
+no SDK could be installed and the push was verified by CI only; the user can allow
+that host under Project settings → Cloud environment → Network access.
 
 ```sh
 # Android SDK (dl.google.com is reachable now)
@@ -182,6 +185,18 @@ fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
   not an import.
 
 ## Open items and next steps
+
+0. **Exercise demos** (asked 2026-10-25: "GIFs for every workout"). Web GIFs are
+   licensed products and stay out (CREDITS.md). Pass 2 matched 133 more lifts to
+   Free Exercise DB by hand, every pair of frames looked at against the name, so
+   273 of 486 have one; the rest have no public-domain picture that is the same
+   movement. A decision card asked the user to choose: (a) public domain plus
+   original animated figures drawn in code per movement pattern for the other
+   213, (b) public domain only, (c) the user buys a licence. Recommended (a).
+   How pass 2 was made: download `dist/exercises.json` from
+   github.com/yuhonas/free-exercise-db, map name to DB name by hand, fetch
+   `exercises/<id>/0.jpg` and `1.jpg`, resize to 420 px wide, WebP q72, stem =
+   slug of the first app name using that DB entry, then regenerate `BY_NAME`.
 
 1. **iOS billing** (user action): fix GitHub billing, then re-run `ios.yml` and
    fix whatever the never-compiled iOS code turns up.

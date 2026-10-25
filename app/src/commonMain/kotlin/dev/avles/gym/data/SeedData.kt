@@ -86,7 +86,7 @@ object SeedData {
         SeedFoodsMore.all() + SeedFoodsTamil.all() + SeedFoodsStaples.all() +
         SeedFoodsRestaurant.all() + SeedFoodsMenus.all() + SeedFoodsBakery.all() +
         SeedFoodsStalls.all() + SeedFoodsStreet.all() + SeedFoodsBrands.all() +
-        SeedFoodsSupplements.all() + SeedFoodsWeek.all()
+        SeedFoodsSupplements.all() + SeedFoodsWeek.all() + SeedFoodsKitchen.all()
 
     /** Dosa, properly. Each one is a different food and the numbers say so. */
     private fun dosa(): List<FoodItem> = listOf(

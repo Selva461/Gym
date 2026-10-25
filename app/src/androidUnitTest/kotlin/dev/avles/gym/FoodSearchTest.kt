@@ -157,6 +157,11 @@ class FoodSearchTest {
         assertTrue("Ragi flour" in names("kezhvaragu"))
         assertTrue(names("chicken breast").containsAll(listOf("Chicken breast, raw", "Chicken breast, cooked weight")))
         assertTrue(names("banana").containsAll(listOf("Nendran banana", "Poovan banana", "Red banana")))
+        assertTrue("Toor dal, raw" in names("thuvaram paruppu"))
+        assertTrue("Rice flour" in names("arisi maavu"))
+        assertTrue(names("kollu").containsAll(listOf("Horse gram, boiled", "Horse gram, raw")))
+        assertTrue("Nungu" in names("ice apple"))
+        assertTrue("Paruppu thuvaiyal" in names("thogayal"))
     }
 
     @Test

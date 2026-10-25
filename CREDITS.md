@@ -12,7 +12,8 @@ people usually have in mind — GymVisual and similar — are somebody's product
 under licence, and this project will not ship those however convenient it would be.
 Public domain work it can ship, and does.
 
-140 of the 394 catalogue lifts have one. Matching was done on name and a match was
+273 of the 486 catalogue lifts have one (140 from the first pass, 133 added in a
+second pass where every pair of frames was looked at against the lift's name). Matching was done on name and a match was
 only accepted when the equipment, the angle, the grip and the movement noun all
 agreed, because a near-miss here is not a cosmetic problem: "Barbell row" scores
 0.82 against "Upright Barbell Row" and they are different exercises working
