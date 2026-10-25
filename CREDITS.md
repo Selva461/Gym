@@ -1,5 +1,15 @@
 # Credits
 
+## 3D demonstrator
+
+Original to this project, no third-party assets: the body is a set of shapes
+sculpted in code (`anim/Sculpt.kt`), turned into a mesh on the phone, dressed by
+vertex colour and animated by the movement library in `anim/Moves*.kt`. No model,
+texture, motion capture or animation was downloaded or licensed.
+
+The two-frame photographs below are still bundled but no longer shown, since the
+demonstrator covers every lift; they can be removed to save about 6.4 MB.
+
 ## Exercise demonstration images
 
 The bundled demonstrations in `app/src/main/assets/demo/` come from the

@@ -2,8 +2,8 @@
 
 **Start here.** A new session should be able to continue from this file alone.
 It is kept current by rule: every commit that changes code, data, the build or
-the plan also updates this file (see `CLAUDE.md`). Last updated with the
-second demo-matching pass (273 of 486 lifts) and `SeedFoodsKitchen.kt` (65 foods).
+the plan also updates this file (see `CLAUDE.md`). Last updated with the 3D
+demonstrator (all 486 lifts, male and female avatars) and the Learn tab.
 
 ## What this is
 
@@ -32,7 +32,7 @@ Standing constraints, all enforced by tests:
 | | |
 |---|---|
 | Source of truth | `main`. Work happens on a `claude/...` branch, then merges to `main`. |
-| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). Other sessions used `claude/project-thread-dhxbg7` (merged as PR #1) and `claude/project-thread-0bjsg1` (demos pass 2 + kitchen foods). |
+| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). Other sessions used `claude/project-thread-dhxbg7` (merged as PR #1) and `claude/project-thread-0bjsg1` (demos pass 2 + kitchen foods, then the 3D demonstrator and Learn tab, not yet merged). |
 | Android CI | `.github/workflows/android.yml` on **every push and PR, any branch**: unit tests, lint, `assembleDebug`, then **replaces the APK on the `latest-debug` release**. So the APK link always holds the last green push, from whichever branch. Also commits exported Room schemas back with `[skip ci]`. |
 | APK link (never changes) | https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk |
 | iOS CI | `.github/workflows/ios.yml` on push to `main` or manual dispatch only (a Mac minute costs 10×). Unsigned IPA to the `latest-ios` release: https://github.com/Selva461/Gym/releases/download/latest-ios/gym-unsigned.ipa, sideloaded with Sideloadly or AltStore (re-sign every 7 days on a free Apple ID). |
@@ -48,10 +48,10 @@ release writes return 403); CI does the publishing.
 
 | | |
 |---|---|
-| Exercises | 486 across 13 muscle groups; **273 with bundled demonstrations** (257 stems, ~6.4 MB; some lifts share a stem) |
+| Exercises | 486 across 13 muscle groups; **every one has a 3D demonstrator** (`anim/`, see below). The 273 two-frame photo demos (~6.4 MB) are still bundled but no longer shown |
 | Foods | **1,313 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,374. 27 categories (newest: Alcohol). Newest file: `SeedFoodsKitchen.kt` (65: raw dals, flours, rice and millets, raw chicken and fish per 100 g; thuvaiyal and podi, keerai, Chettinad sweets, nungu and seasonal fruit, panakam, paneer bhurji, meal maker curry, Karnataka dishes). Before it `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
 | Database | **v13**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`. Exported schemas in `app/schemas/`. |
-| Tests | 251 (`gradle testDebugUnitTest`), none needing a device; `ExerciseDemosTest` checks every demo key is a lift and every stem has both frames |
+| Tests | 260 (`gradle testDebugUnitTest`), none needing a device; `DemonstratorTest` checks every lift has a motion whose every pose is reachable, above the floor and keeps limb lengths, and that both avatars build and render; `ExerciseDemosTest` still checks the old photo stems |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 (CI) |
 
 Features, by screen (README → "What's in it" has the user-facing list):
@@ -63,6 +63,13 @@ Features, by screen (README → "What's in it" has the user-facing list):
   drop, failure) and RPE, notes per lift, swap (alternatives), supersets, rest
   timer that fits the lift (±15 s), session clock, lift history with rep-max
   table, workout summary card with records and calories, cardio log.
+- **Learn** (tab added 2026-10-25): search every lift by name, group, equipment or
+  muscle; a lift's page has the 3D demonstrator (drag to turn 360°, pinch to
+  zoom, double-tap to reset) walking through set up, grip, start position, the
+  rep slowly, beginner's points, full movement (auto-advances while playing),
+  a Male/Female switch saved as `GymSettings.demoAvatarId`, then the written
+  guide (`ExerciseGuideSections`, shared with the session reference dialog,
+  which plays the full movement).
 - **Fuel**: search/browse with Tamil aliases, favourites (star in the quantity
   dialog, stored as ids in settings), recent and usual foods, saved meals, quick
   add, recipe builder (`RecipeBuilder.kt` + `domain/Recipes.kt`: a custom food in
@@ -83,8 +90,48 @@ Features, by screen (README → "What's in it" has the user-facing list):
 Code map: `app/src/commonMain/kotlin/dev/avles/gym/` → `data/` (Room, seeds,
 dataset importer, settings), `domain/` (pure logic, all unit tested),
 `ui/` (one ViewModel `GymViewModel.kt` (at the 800-line cap: move pure logic to `domain/` before adding) + `UiState.kt`, `GymNav.kt`, `screens/`,
-`components/` with `Motion.kt` for every animation and haptic, `i18n/`),
+`components/` with `Motion.kt` for every animation and haptic and `Figure3D.kt`
+for the demonstrator, `i18n/`), `anim/` (the demonstrator engine, below),
 `core/` (dates, log). Platform seams in `androidMain` / `iosMain`.
+
+## The 3D demonstrator (`anim/`)
+
+Pure Kotlin, no Compose or Android imports (ArchitectureTest enforces it), so it
+runs off the main thread and in JVM tests.
+
+- **Coordinates**: metres, Y up, floor y = 0, the figure faces +Z, its left is +X.
+- **Rig.kt**: `Body` proportions; `Pose` (pelvis, pitch/roll/twist, hand and foot
+  targets, elbow/knee poles); `Skeleton.solve` does two-bone IK and keeps the feet
+  on the floor.
+- **Avatar.kt**: an avatar is data (`Shape`, `Hair`, `Outfit`, skin). Presets
+  `MALE`, `FEMALE` (ordinary healthy builds, no six-packs, faceless, plain gym
+  clothes: the user's call, 2026-10-25). `Shape.validated()` clamps every value, so a
+  future custom-avatar screen cannot produce a broken mesh. `Avatar.chosen(id, isFemale)`
+  resolves the saved choice.
+- **Sculpt.kt / BodyMesh.kt**: the body is SDF blobs per bone, meshed by surface
+  nets (~11k vertices, ~0.5 s on a laptop JVM, cached per avatar, build it off the
+  main thread with `BodyMesh.of`; `ready()` while drawing), skinned with linear
+  blend skinning over 13 bones, coloured by `Wardrobe`.
+- **Render.kt**: `Prim`s → `Draw` paint commands sorted back to front, with an
+  orbit `Camera`. `Figure3D.kt` paints them (skin as `Vertices` batches; flat
+  triangles on Android < 10, where the hardware canvas cannot draw vertices).
+- **Moves*.kt**: the movement library. `Moves.of(spec)` dispatches on the guide's
+  pattern, then names pick the variation; `Demos.of(exercise)` is the entry point
+  from the catalogue. `MoveKit.kt` has the shared vocabulary (`Kit.steps` for the six
+  steps, `Kit.flow` for multi-position reps, `Kit.hangY`/`pelvisToReach` for reach).
+- **Rule**: a new seeded lift needs its movement in the same commit. Usually its
+  pattern's default is right; if not, add a keyword branch in the right `Moves*.kt`.
+  `DemonstratorTest` must stay green.
+
+How the 486 were checked: a throwaway JVM harness (not in the repo) compiled `anim/`
+plus `ExerciseGuide.kt` and the seed files with a stub `Exercise`, solved every pose
+(the same checks `DemonstratorTest` now makes), and rendered two-pose thumbnails of
+every lift with Java2D for eyeballing, 12 per sheet. Every sheet was looked at; lifts
+that showed the wrong movement were fixed (face pull, cable high row, pike push-up,
+Z press, reverse hyper, glute-ham raise, cable RDL, seated good morning, muscle-up,
+dumbbell squeeze press, glute-bridge arms). Rebuilding it takes ten minutes:
+`kotlin("jvm")` project whose `sourceSets.main` adds `anim/` and those files, a
+`paint()` that maps each `Draw` to a `Graphics2D` fill.
 
 ## Working in a fresh session
 
@@ -186,7 +233,17 @@ fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
 
 ## Open items and next steps
 
-0. **Exercise demos** (asked 2026-10-25: "GIFs for every workout"). Web GIFs are
+0. **3D demonstrator** (asked 2026-10-25: "forget the GIFs, a 3D character I can
+   turn 360 degrees, male and female, step by step, a section to search any
+   exercise"). Done, see the section above. Not yet seen on a phone: the first CI
+   build of it is the first compile (no SDK in the session). Next: watch for frame
+   rate on a cheap phone (frames are computed on `Dispatchers.Default`, capped at
+   ~30 fps while playing, nothing recomputed while paused); delete the unused
+   photo demos (`composeResources/files/demo/`, `ExerciseDemos.kt`,
+   `ExerciseDemo.kt`, `ExerciseDemosTest`, CREDITS section) once the user is happy;
+   custom avatars (a screen editing `Shape`/`Outfit`, saved as data) when asked.
+   Older history of the photo demos follows.
+   **Exercise demos** (asked 2026-10-25: "GIFs for every workout"). Web GIFs are
    licensed products and stay out (CREDITS.md). Pass 2 matched 133 more lifts to
    Free Exercise DB by hand, every pair of frames looked at against the name, so
    273 of 486 have one; the rest have no public-domain picture that is the same

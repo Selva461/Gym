@@ -21,7 +21,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -44,7 +47,12 @@ import dev.avles.gym.core.epochDay
 import dev.avles.gym.data.DayKinds
 import dev.avles.gym.domain.Weekly
 import dev.avles.gym.ui.components.Motion
+import dev.avles.gym.anim.Avatar
+import dev.avles.gym.ui.components.EmptyNote
+import dev.avles.gym.ui.components.LocalDemoAvatar
 import dev.avles.gym.ui.screens.CoachScreen
+import dev.avles.gym.ui.screens.LearnDetailScreen
+import dev.avles.gym.ui.screens.LearnScreen
 import dev.avles.gym.ui.screens.FuelScreen
 import dev.avles.gym.ui.screens.PatternsScreen
 import dev.avles.gym.ui.screens.PhotosScreen
@@ -62,7 +70,7 @@ import dev.avles.gym.ui.theme.Mute
 import dev.avles.gym.ui.theme.Sage
 
 /**
- * Five destinations, each with a dot in its own accent rather than an icon.
+ * Six destinations, each with a dot in its own accent rather than an icon.
  * Two colours already mean training and food everywhere else in the app, so the
  * bar can lean on that instead of introducing a second visual language of glyphs.
  */
@@ -71,6 +79,7 @@ private data class Destination(val route: String, val label: String, val accent:
 private val DESTINATIONS = listOf(
     Destination("today", "Today", Bone),
     Destination("train", "Train", Brass),
+    Destination("learn", "Learn", Brass),
     Destination("fuel", "Fuel", Sage),
     Destination("progress", "Progress", Mute),
     Destination("settings", "Settings", Mute)
@@ -131,7 +140,14 @@ fun GymNav(vm: GymViewModel) {
         }
     }
 
-    CompositionLocalProvider(LocalLanguage provides settings.language) {
+    // The lift opened from Learn. Kept here rather than in the route so a custom lift
+    // with any name opens the same way, and survives rotation with the back stack.
+    var learning by rememberSaveable { mutableStateOf<Long?>(null) }
+
+    CompositionLocalProvider(
+        LocalLanguage provides settings.language,
+        LocalDemoAvatar provides Avatar.chosen(settings.demoAvatarId, settings.isFemale)
+    ) {
     Scaffold(
         containerColor = Ink,
         bottomBar = {
@@ -277,6 +293,27 @@ fun GymNav(vm: GymViewModel) {
                     onDeleteCardio = { vm.deleteCardio(it) }
                 )
             }
+            composable("learn") {
+                LearnScreen(
+                    exercises = train.exercises,
+                    onOpen = { exercise ->
+                        learning = exercise.id
+                        navController.navigate("learn-lift") { launchSingleTop = true }
+                    }
+                )
+            }
+            composable("learn-lift") {
+                val exercise = train.exercises.firstOrNull { it.id == learning }
+                if (exercise == null) {
+                    EmptyNote("That lift is no longer in the catalogue.", Modifier.padding(horizontal = 20.dp))
+                } else {
+                    LearnDetailScreen(
+                        exercise = exercise,
+                        avatar = LocalDemoAvatar.current,
+                        onChooseAvatar = { chosen -> vm.chooseDemoAvatar(chosen.id) }
+                    )
+                }
+            }
             composable("fuel") {
                 FuelScreen(
                     day = day,
@@ -315,8 +352,8 @@ fun GymNav(vm: GymViewModel) {
                     restDays = markers.filter { it.kind == DayKinds.REST }.map { it.dateEpochDay }.toSet()
                 )
             }
-            // Not a sixth tab. Photos are about your body over time, which is what
-            // Progress already is, and a five-item bar is already at the point where
+            // Not another tab. Photos are about your body over time, which is what
+            // Progress already is, and a six-item bar is already at the point where
             // the labels start truncating.
             composable("measurements") {
                 val measurements by vm.measurements.collectAsStateWithLifecycle()

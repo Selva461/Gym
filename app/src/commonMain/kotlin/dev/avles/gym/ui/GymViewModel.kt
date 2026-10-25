@@ -698,10 +698,11 @@ class GymViewModel(
 
     /** Stars or unstars a food; starred ones are pinned at the top of Fuel. */
     fun toggleFavourite(foodId: Long) = viewModelScope.launch {
-        val s = settingsStore.settings.first()
-        val ids = if (foodId in s.favouriteFoodIds) s.favouriteFoodIds - foodId else s.favouriteFoodIds + foodId
-        settingsStore.save(s.copy(favouriteFoodIds = ids))
+        settingsStore.update { s -> s.copy(favouriteFoodIds = if (foodId in s.favouriteFoodIds) s.favouriteFoodIds - foodId else s.favouriteFoodIds + foodId) }
     }
+
+    /** Who demonstrates lifts in Learn and in a session's reference. */
+    fun chooseDemoAvatar(id: String) = viewModelScope.launch { settingsStore.update { it.copy(demoAvatarId = id) } }
 
     // ---------- Body and settings ----------
 

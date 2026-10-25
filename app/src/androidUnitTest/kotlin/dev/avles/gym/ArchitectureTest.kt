@@ -84,6 +84,18 @@ class ArchitectureTest {
             because = "Dependencies point inward. Storage cannot know what a screen is."
         ),
         Rule(
+            inPackage = "anim",
+            mustNotReference = "import dev.avles.gym.ui",
+            because = "The demonstrator engine is pure geometry. Screens use it; it never " +
+                "knows they exist, which is what lets it run off the main thread and in tests."
+        ),
+        Rule(
+            inPackage = "anim",
+            mustNotReference = "import androidx",
+            because = "No Compose, no Android in the engine: it turns poses into paint " +
+                "commands and a canvas paints them. That split keeps it the same on iOS."
+        ),
+        Rule(
             inPackage = "ui",
             mustNotReference = "import androidx.room",
             because = "Screens read state from the view model, never the database. Without " +
