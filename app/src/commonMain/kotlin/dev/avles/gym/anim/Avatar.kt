@@ -1,5 +1,7 @@
 package dev.avles.gym.anim
 
+import dev.avles.gym.domain.anatomy.BodyBuild
+
 /**
  * One demonstrator: body shape, hair, clothes and skin, as plain data.
  *
@@ -20,7 +22,9 @@ data class Avatar(
     val shape: Shape,
     val hair: Hair,
     val outfit: Outfit,
-    val skin: Int
+    val skin: Int,
+    /** Proportions for the 2D muscle map, so it matches the demonstrator. */
+    val anatomy: BodyBuild = BodyBuild.MALE
 ) {
     companion object {
         /** A man of ordinary build who trains a couple of times a week. */
@@ -43,7 +47,8 @@ data class Avatar(
             ),
             hair = Hair(HairStyle.PONYTAIL, 0xFF3B2A21.toInt()),
             outfit = Outfit(TopStyle.TANK, 0xFF3F7F86.toInt(), BottomStyle.LEGGINGS, 0xFF2A2D38.toInt()),
-            skin = 0xFFC9977A.toInt()
+            skin = 0xFFC9977A.toInt(),
+            anatomy = BodyBuild.FEMALE
         )
 
         val PRESETS: List<Avatar> = listOf(MALE, FEMALE)

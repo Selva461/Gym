@@ -2,8 +2,9 @@
 
 **Start here.** A new session should be able to continue from this file alone.
 It is kept current by rule: every commit that changes code, data, the build or
-the plan also updates this file (see `CLAUDE.md`). Last updated with the 3D
-demonstrator (all 486 lifts, male and female avatars) and the Learn tab.
+the plan also updates this file (see `CLAUDE.md`). Last updated with the
+anatomical muscle map (front/back, male and female), on top of the 3D
+demonstrator and the Learn tab.
 
 ## What this is
 
@@ -32,7 +33,7 @@ Standing constraints, all enforced by tests:
 | | |
 |---|---|
 | Source of truth | `main`. Work happens on a `claude/...` branch, then merges to `main`. |
-| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). Other sessions used `claude/project-thread-dhxbg7` (merged as PR #1) and `claude/project-thread-0bjsg1` (demos pass 2 + kitchen foods, then the 3D demonstrator and Learn tab, not yet merged). |
+| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). Other sessions used `claude/project-thread-dhxbg7` (merged as PR #1) and `claude/project-thread-0bjsg1` (demos pass 2 + kitchen foods, then the 3D demonstrator and Learn tab, not yet merged). `claude/project-thread-qfq2m3` branches from `0bjsg1` and adds the anatomical muscle map; its PR to `main` therefore carries `0bjsg1`'s commits too. |
 | Android CI | `.github/workflows/android.yml` on **every push and PR, any branch**: unit tests, lint, `assembleDebug`, then **replaces the APK on the `latest-debug` release**. So the APK link always holds the last green push, from whichever branch. Also commits exported Room schemas back with `[skip ci]`. |
 | APK link (never changes) | https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk |
 | iOS CI | `.github/workflows/ios.yml` on push to `main` or manual dispatch only (a Mac minute costs 10×). Unsigned IPA to the `latest-ios` release: https://github.com/Selva461/Gym/releases/download/latest-ios/gym-unsigned.ipa, sideloaded with Sideloadly or AltStore (re-sign every 7 days on a free Apple ID). |
@@ -51,7 +52,7 @@ release writes return 403); CI does the publishing.
 | Exercises | 486 across 13 muscle groups; **every one has a 3D demonstrator** (`anim/`, see below). The 273 two-frame photo demos (~6.4 MB) are still bundled but no longer shown |
 | Foods | **1,313 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,374. 27 categories (newest: Alcohol). Newest file: `SeedFoodsKitchen.kt` (65: raw dals, flours, rice and millets, raw chicken and fish per 100 g; thuvaiyal and podi, keerai, Chettinad sweets, nungu and seasonal fruit, panakam, paneer bhurji, meal maker curry, Karnataka dishes). Before it `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
 | Database | **v13**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`. Exported schemas in `app/schemas/`. |
-| Tests | 260 (`gradle testDebugUnitTest`), none needing a device; `DemonstratorTest` checks every lift has a motion whose every pose is reachable, above the floor and keeps limb lengths, and that both avatars build and render; `ExerciseDemosTest` still checks the old photo stems |
+| Tests | 266 (`gradle testDebugUnitTest`), none needing a device; `MuscleMapTest` checks every `Muscle` and every muscle any seeded lift works has a region, that both views of both builds are mirror symmetric and in bounds; `DemonstratorTest` checks every lift has a motion whose every pose is reachable, above the floor and keeps limb lengths, and that both avatars build and render; `ExerciseDemosTest` still checks the old photo stems |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 (CI) |
 
 Features, by screen (README → "What's in it" has the user-facing list):
@@ -132,6 +133,29 @@ Z press, reverse hyper, glute-ham raise, cable RDL, seated good morning, muscle-
 dumbbell squeeze press, glute-bridge arms). Rebuilding it takes ten minutes:
 `kotlin("jvm")` project whose `sourceSets.main` adds `anim/` and those files, a
 `paint()` that maps each `Draw` to a `Graphics2D` fill.
+
+## The muscle map (`domain/anatomy/`)
+
+The front/back body diagram on every lift's guide (`ui/components/MuscleMap.kt`).
+Replaced the old rounded-rectangle patches on 2026-10-25 after the user called them
+crude and not even symmetric.
+
+- **Geometry is pure data** in `domain/anatomy/`: `AtlasBase.kt` (silhouette, shared
+  by both views), `AtlasFront.kt`, `AtlasBack.kt`. Points are on the viewer's left
+  half of a 200 × 420 box (midline x = 100) and mirrored, so symmetry is by
+  construction. `pair()` draws a shape on both sides, `span()` joins a half to its
+  mirror (abs, traps, torso), `detail()` is anatomy with no `Muscle` (tibialis,
+  rotator cuff): drawn, never lit. Several regions may share a `Muscle` (three
+  quads, three ab segments, two triceps heads). List order is draw order.
+- **`BodyAtlas.figure(view, build)`** mirrors, warps and smooths (closed Catmull-Rom
+  → cubics) and caches. `BodyBuild` is data: a width profile over height for trunk
+  and legs, a factor for arms and head, clamped to 0.7–1.3. `Avatar.anatomy` picks
+  it, so the map follows the demonstrator the user chose; a custom avatar gets a map
+  by giving it a `BodyBuild`.
+- **Adding a muscle**: add it to `Muscle`, add its region(s), `MuscleMapTest` fails
+  until you do. Preview without building: `python3 tools/muscle-map-preview.py
+  out.svg DELT_FRONT +TRICEPS` (reads the same Kotlin tables; render the SVG with
+  Playwright or any browser).
 
 ## Working in a fresh session
 

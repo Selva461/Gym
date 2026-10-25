@@ -33,6 +33,7 @@ import dev.avles.gym.domain.Variations
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.Figure3D
 import dev.avles.gym.ui.components.LocalDemoAvatar
+import dev.avles.gym.domain.anatomy.BodyBuild
 import dev.avles.gym.ui.components.MuscleMap
 import dev.avles.gym.ui.components.PhotoImage
 import dev.avles.gym.ui.components.rememberImagePicker
@@ -161,11 +162,12 @@ fun ExerciseReferenceDialog(
  * dialog in a session and the lift's page in Learn, so both always say the same.
  */
 @Composable
-fun ExerciseGuideSections(guide: ExerciseGuide) {
+fun ExerciseGuideSections(guide: ExerciseGuide, build: BodyBuild = LocalDemoAvatar.current.anatomy) {
     MuscleMap(
         primary = guide.primary,
         secondary = guide.secondary,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        build = build
     )
 
     ReferenceSection("Set up", guide.setup)

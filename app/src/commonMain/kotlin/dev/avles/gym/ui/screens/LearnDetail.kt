@@ -144,7 +144,7 @@ fun LearnDetailScreen(
         }
 
         Spacer(Modifier.height(8.dp))
-        ExerciseGuideSections(guide)
+        ExerciseGuideSections(guide, build = avatar.anatomy)
         Spacer(Modifier.height(28.dp))
     }
 }
