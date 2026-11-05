@@ -31,7 +31,6 @@ import dev.avles.gym.domain.Physique
 import dev.avles.gym.domain.Physiques
 import dev.avles.gym.domain.Energy
 import dev.avles.gym.domain.ExerciseGuide
-import dev.avles.gym.domain.Export
 import dev.avles.gym.domain.LiftHistory
 import dev.avles.gym.domain.Photos
 import dev.avles.gym.domain.Progression
@@ -731,15 +730,11 @@ class GymViewModel(
         SETS("Gym: every set"), FOOD("Gym: food log"), WEIGHTS("Gym: body weight")
     }
 
-    /** Builds the CSV off the database and hands it to [share] on the main thread. */
-    fun export(kind: ExportKind, share: (String, String) -> Unit) = viewModelScope.launch {
-        val text = when (kind) {
-            ExportKind.SETS -> Export.sets(repo.everySet())
-            ExportKind.FOOD -> Export.food(repo.allFoodLog())
-            ExportKind.WEIGHTS -> Export.weights(repo.weights.first())
-        }
-        share(kind.subject, text)
-    }
+    private val exporter = Exporter(repo, settingsStore)
+
+    /** Builds the text off the main thread; [share] gets (subject or file name, text) on it. */
+    fun export(kind: ExportKind, share: (String, String) -> Unit) = viewModelScope.launch { share(kind.subject, exporter.csv(kind)) }
+    fun exportForAi(share: (String, String) -> Unit) = viewModelScope.launch { exporter.forAi().let { share(it.first, it.second) } }
 
     // ---------- First run ----------
 

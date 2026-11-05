@@ -14,3 +14,10 @@ internal actual fun rememberTextSharer(): (subject: String, text: String) -> Uni
         top?.presentViewController(sheet, animated = true, completion = null)
     }
 }
+
+/** iOS shares the text itself; the activity sheet has no size cap that matters here. */
+@Composable
+internal actual fun rememberFileSharer(): (fileName: String, text: String) -> Unit {
+    val share = rememberTextSharer()
+    return remember(share) { { name, text -> share(name, text) } }
+}

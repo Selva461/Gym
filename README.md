@@ -103,7 +103,8 @@ Progress   weight trend and goal date, 14-day volume, streaks, achievements, a m
            calendar, personal records, a one-rep max calculator, tape measurements with
            a body-fat estimate, and progress photos
 Settings   your targets (or work them out from your body), water and weight goals, rest,
-           reminders, your data exported as CSV through the share sheet, and a
+           reminders, your data exported as CSV through the share sheet or as one file written
+           for an AI assistant to read (prompt included), and a
            whole-log backup file you can restore (Android)
 ```
 

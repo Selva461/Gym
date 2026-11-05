@@ -32,6 +32,12 @@ object Dates {
     fun epochDayOf(millis: Long): Long =
         Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.currentSystemDefault()).date.epochDay
 
+    /** "07:05", the local wall-clock time of a timestamp, 24-hour. */
+    fun clockOf(millis: Long): String {
+        val t = Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.currentSystemDefault())
+        return "${t.hour.toString().padStart(2, '0')}:${t.minute.toString().padStart(2, '0')}"
+    }
+
     /** "Thursday". English on purpose: every other word in the app is. */
     fun dayName(date: LocalDate): String = titleCase(date.dayOfWeek.name)
 

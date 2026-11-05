@@ -486,4 +486,8 @@ interface GymDao {
 
     @Query("SELECT * FROM body_weight ORDER BY dateEpochDay ASC")
     suspend fun allWeights(): List<BodyWeight>
+
+    /** Every session, oldest first, for the full export. */
+    @Query("SELECT * FROM workout_session ORDER BY startedAt ASC")
+    suspend fun allSessions(): List<WorkoutSession>
 }

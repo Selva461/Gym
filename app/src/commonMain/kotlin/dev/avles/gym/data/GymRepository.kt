@@ -3,6 +3,7 @@ package dev.avles.gym.data
 import dev.avles.gym.core.GymLog
 import dev.avles.gym.domain.Assistance
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import dev.avles.gym.core.Dates
 import dev.avles.gym.core.epochDay
 import kotlinx.datetime.LocalDate
@@ -411,6 +412,30 @@ class GymRepository(
         cardio = dao.allCardio(),
         weights = dao.allWeights()
     )
+    /** Everything entered, for the "for AI" export. Reads once; nothing is written. */
+    suspend fun fullLog(settings: GymSettings): FullLog {
+        val foods = dao.foods().first()
+        val byId = foods.associateBy { it.id }
+        return FullLog(
+            settings = settings,
+            favouriteFoodNames = settings.favouriteFoodIds.mapNotNull { byId[it]?.name }.sorted(),
+            exercises = dao.allExercisesOnce(),
+            exercisePhotoIds = dao.exercisePhotos().first().map { it.exerciseId }.toSet(),
+            splits = dao.splits().first(),
+            splitExercises = dao.splitExercises().first(),
+            sessions = dao.allSessions(),
+            sets = dao.everySet(),
+            cardio = dao.allCardio(),
+            food = dao.allFoodLog(),
+            customFoods = foods.filter { it.isCustom },
+            savedMeals = dao.savedMealRows().first(),
+            weights = dao.allWeights(),
+            measurements = dao.measurements().first(),
+            dayMarkers = dao.dayMarkers().first(),
+            progressPhotos = dao.progressPhotos().first()
+        )
+    }
+
     val dailyMacros: Flow<List<DayMacroRow>> = dao.dailyMacros()
     val dayMarkers: Flow<List<DayMarker>> = dao.dayMarkers()
     val sessionDays: Flow<List<SessionDay>> = dao.sessionDays()

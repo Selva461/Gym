@@ -357,7 +357,8 @@ fun GymNav(vm: GymViewModel) {
                     settings = settings,
                     onSave = { vm.saveSettings(it) },
                     latestWeightKg = progress.weights.maxByOrNull { it.dateEpochDay }?.weightKg,
-                    onExport = { kind, share -> vm.export(kind, share) }
+                    onExport = { kind, share -> vm.export(kind, share) },
+                    onExportForAi = { share -> vm.exportForAi(share) }
                 )
             }
         }

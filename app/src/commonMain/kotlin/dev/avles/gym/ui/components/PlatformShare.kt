@@ -9,3 +9,12 @@ import androidx.compose.runtime.Composable
  */
 @Composable
 internal expect fun rememberTextSharer(): (subject: String, text: String) -> Unit
+
+/**
+ * The share sheet for a whole file, for exports too large to pass as text (Android
+ * caps an intent's extras at about 1 MB, which a year of logs passes). Returns the
+ * function that writes [text] to a file called fileName and offers it. Where a
+ * platform has no file route it shares the text instead.
+ */
+@Composable
+internal expect fun rememberFileSharer(): (fileName: String, text: String) -> Unit

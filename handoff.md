@@ -3,7 +3,7 @@
 **Start here.** A new session should be able to continue from this file alone.
 It is kept current by rule: every commit that changes code, data, the build or
 the plan also updates this file (see `CLAUDE.md`). Last updated with the
-protein powder brands and the list of further additions.
+protein powder brands and the list of further additions, then the "Export everything for AI" file.
 
 ## What this is
 
@@ -32,7 +32,7 @@ Standing constraints, all enforced by tests:
 | | |
 |---|---|
 | Source of truth | `main`. Work happens on a `claude/...` branch, then merges to `main`. |
-| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). Another session used `claude/project-thread-dhxbg7`, merged as PR #1. |
+| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). The AI export was built on `claude/project-thread-gzz3wl`. Another session used `claude/project-thread-dhxbg7`, merged as PR #1. |
 | Android CI | `.github/workflows/android.yml` on **every push and PR, any branch**: unit tests, lint, `assembleDebug`, then **replaces the APK on the `latest-debug` release**. So the APK link always holds the last green push, from whichever branch. Also commits exported Room schemas back with `[skip ci]`. |
 | APK link (never changes) | https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk |
 | iOS CI | `.github/workflows/ios.yml` on push to `main` or manual dispatch only (a Mac minute costs 10×). Unsigned IPA to the `latest-ios` release: https://github.com/Selva461/Gym/releases/download/latest-ios/gym-unsigned.ipa, sideloaded with Sideloadly or AltStore (re-sign every 7 days on a free Apple ID). |
@@ -51,7 +51,7 @@ release writes return 403); CI does the publishing.
 | Exercises | 486 across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | **1,248 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,309. 27 categories (newest: Alcohol). Newest file: `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
 | Database | **v13**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`. Exported schemas in `app/schemas/`. |
-| Tests | 247 (`gradle testDebugUnitTest`), none needing a device |
+| Tests | 253 (`gradle testDebugUnitTest`), none needing a device |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 (CI) |
 
 Features, by screen (README → "What's in it" has the user-facing list):
@@ -75,7 +75,14 @@ Features, by screen (README → "What's in it" has the user-facing list):
 - **Settings**: targets (with a Mifflin-St Jeor calculator), water and weight
   goals, rest rules, reminders (nightly, water, meals at
   `Notifier.MEAL_TIMES`), backup/restore file (Android), CSV export (sets, food,
-  weight), language (English / தமிழ் for tabs, headings, main buttons).
+  weight), **Export everything for AI** (Settings → Your data, first button): one
+  Markdown file `gym-log-for-ai-<date>.md` with a prompt explaining every field,
+  summaries (daily nutrition vs target, sessions, strength per lift) and every table
+  as CSV (`domain/AiExport.kt`, read via `GymRepository.fullLog` into `data/FullLog.kt`,
+  formatted off-main in `ui/Exporter.kt`). Android shares it as a file through a
+  non-exported `FileProvider` limited to `cache/exports/` (`res/xml/file_paths.xml`);
+  iOS shares the text. **Any new table the user can enter must be added to `FullLog`
+  and `AiExport.build`** (the user asked that everything they enter is in the export). Language (English / தமிழ் for tabs, headings, main buttons).
 - **Other session's addition** (`e512b0d`): `share/TrainingProvider.kt`, a
   read-only content provider letting the user's "SelfUp" app read working sets,
   cardio and weigh-ins behind a dangerous `READ_TRAINING` permission.
@@ -88,7 +95,9 @@ dataset importer, settings), `domain/` (pure logic, all unit tested),
 
 ## Working in a fresh session
 
-The container starts without an Android SDK. These worked on 2026-10-22:
+The container starts without an Android SDK. These worked on 2026-10-22 (on
+2026-11-05 `dl.google.com` returned 403 through the proxy, so that session could not
+build locally and relied on Android CI to compile and test):
 
 ```sh
 # Android SDK (dl.google.com is reachable now)

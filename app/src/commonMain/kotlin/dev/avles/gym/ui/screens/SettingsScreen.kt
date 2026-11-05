@@ -43,6 +43,7 @@ import dev.avles.gym.domain.Training
 import dev.avles.gym.notify.Notifier
 import dev.avles.gym.ui.GymViewModel
 import dev.avles.gym.ui.components.rememberBackupActions
+import dev.avles.gym.ui.components.rememberFileSharer
 import dev.avles.gym.ui.components.rememberTextSharer
 import dev.avles.gym.ui.components.Hairline
 import dev.avles.gym.ui.components.Motion.fadeThrough
@@ -64,9 +65,11 @@ fun SettingsScreen(
     onSave: (GymSettings) -> Unit,
     modifier: Modifier = Modifier,
     latestWeightKg: Double? = null,
-    onExport: (GymViewModel.ExportKind, (String, String) -> Unit) -> Unit = { _, _ -> }
+    onExport: (GymViewModel.ExportKind, (String, String) -> Unit) -> Unit = { _, _ -> },
+    onExportForAi: ((String, String) -> Unit) -> Unit = {}
 ) {
     val share = rememberTextSharer()
+    val shareFile = rememberFileSharer()
     var protein by remember(settings) { mutableStateOf(settings.proteinTargetG.roundToInt().toString()) }
     var kcal by remember(settings) { mutableStateOf(settings.kcalTarget.roundToInt().toString()) }
     var rest by remember(settings) { mutableStateOf(settings.restSeconds.toString()) }
@@ -289,7 +292,15 @@ fun SettingsScreen(
         SectionHeading(tr("Your data"), accent = Sage)
         Spacer(Modifier.height(6.dp))
         Text(
-            "As spreadsheets (CSV), through the share sheet: save them to Files or Drive, " +
+            "Everything you have logged in one file, with a note at the top telling an AI " +
+                "(Claude, ChatGPT) what each part means. Share it to the AI app, or save it and upload it.",
+            style = MaterialTheme.typography.labelSmall,
+            color = Faint
+        )
+        TextButton(onClick = { onExportForAi(shareFile) }) { Text("Export everything for AI", color = Sage) }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Or as spreadsheets (CSV), through the share sheet: save them to Files or Drive, " +
                 "or send them to yourself. Nothing leaves the phone unless you pick where it goes.",
             style = MaterialTheme.typography.labelSmall,
             color = Faint
