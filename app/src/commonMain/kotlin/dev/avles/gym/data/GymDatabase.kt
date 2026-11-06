@@ -27,15 +27,21 @@ import kotlinx.coroutines.IO
         BodyMeasurement::class,
         SavedMeal::class,
         SavedMealItem::class,
-        CardioEntry::class
+        CardioEntry::class,
+        PlanDay::class,
+        PlanLift::class,
+        PlanFood::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = true
 )
 @ConstructedBy(GymDatabaseConstructor::class)
 abstract class GymDatabase : RoomDatabase() {
 
     abstract fun dao(): GymDao
+
+    /** The week plan's tables, kept apart from the log's DAO (see [PlanRepository]). */
+    abstract fun planDao(): PlanDao
 
     companion object {
 
@@ -203,10 +209,17 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /** v13 → v14: three tables for the week plan. Nothing existing is touched. */
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(connection: SQLiteConnection) {
+                SchemaSql.V14_STATEMENTS.forEach { connection.execSQL(it) }
+            }
+        }
+
         val MIGRATIONS = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
             MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
-            MIGRATION_11_12, MIGRATION_12_13
+            MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14
         )
 
         /** The file name, the same on both platforms; only the directory differs. */

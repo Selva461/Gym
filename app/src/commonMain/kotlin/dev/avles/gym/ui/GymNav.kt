@@ -54,6 +54,12 @@ import dev.avles.gym.ui.screens.RecordsScreen
 import dev.avles.gym.ui.screens.SettingsScreen
 import dev.avles.gym.ui.screens.TodayScreen
 import dev.avles.gym.ui.screens.TrainScreen
+import dev.avles.gym.ui.screens.TodayPlanCard
+import dev.avles.gym.ui.screens.PlanImportDialog
+import dev.avles.gym.ui.screens.WeekPlanScreen
+import dev.avles.gym.ui.components.rememberPlanFileActions
+import dev.avles.gym.domain.plan.PlanTemplate
+import androidx.compose.runtime.LaunchedEffect
 import dev.avles.gym.ui.theme.Bone
 import dev.avles.gym.ui.theme.Brass
 import dev.avles.gym.ui.theme.Faint
@@ -90,7 +96,7 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.isPop(): Boolean =
     initialState.destination.route !in TABS && targetState.destination.route in TABS
 
 @Composable
-fun GymNav(vm: GymViewModel) {
+fun GymNav(vm: GymViewModel, planVm: PlanViewModel) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination
@@ -120,6 +126,10 @@ fun GymNav(vm: GymViewModel) {
     val superset by vm.superset.collectAsStateWithLifecycle()
     val needsWelcome by vm.needsWelcome.collectAsStateWithLifecycle()
     val cardio by vm.cardio.collectAsStateWithLifecycle()
+    val dayPlan by planVm.dayPlan.collectAsStateWithLifecycle()
+    val unitById = remember(foods) { foods.associate { it.id to it.unitLabel } }
+    val unitOf: (Long?) -> String? = { id -> id?.let { unitById[it] } }
+    LaunchedEffect(day.date) { planVm.showDay(day.date) }
 
     val haptics = LocalHapticFeedback.current
 
@@ -227,8 +237,42 @@ fun GymNav(vm: GymViewModel) {
                     dayKind = markers.firstOrNull { it.dateEpochDay == day.date.epochDay }?.kind,
                     onMarkDay = { kind -> vm.markDay(day.date.epochDay, kind) },
                     onAddWater = vm::addWater,
-                    onRemoveWater = { vm.removeWater() }
+                    onRemoveWater = { vm.removeWater() },
+                    planCard = {
+                        TodayPlanCard(
+                            plan = dayPlan?.takeIf { it.dateEpochDay == day.date.epochDay },
+                            isToday = day.date == Dates.today(),
+                            trainedToday = day.sessions.isNotEmpty(),
+                            logged = day.rows,
+                            unitOf = unitOf,
+                            onOpenWeek = { go("plan") },
+                            onStartWorkout = { label -> vm.startSession(label); go("train") },
+                            onLogFoods = { planVm.logPlanned(it) }
+                        )
+                    }
                 )
+            }
+            // The week plan: a calendar of the imported plan, opened from Today and Settings.
+            composable("plan") {
+                val weekStart by planVm.weekStart.collectAsStateWithLifecycle()
+                val week by planVm.week.collectAsStateWithLifecycle()
+                val importState by planVm.importState.collectAsStateWithLifecycle()
+                val files = rememberPlanFileActions(
+                    templateName = { PlanTemplate.fileName(Dates.today()) },
+                    templateBytes = { planVm.templateBytes() },
+                    onPicked = { bytes, error -> planVm.onFile(bytes, error) },
+                    onMessage = { planVm.note(it) }
+                )
+                WeekPlanScreen(
+                    weekStart = weekStart,
+                    week = week,
+                    files = files,
+                    unitOf = unitOf,
+                    onShiftWeek = planVm::shiftWeek,
+                    onThisWeek = planVm::thisWeek,
+                    onClearWeek = { planVm.clearWeek() }
+                )
+                PlanImportDialog(importState, onConfirm = planVm::confirmImport, onDismiss = planVm::dismissImport)
             }
             composable("train") {
                 TrainScreen(
@@ -358,7 +402,8 @@ fun GymNav(vm: GymViewModel) {
                     onSave = { vm.saveSettings(it) },
                     latestWeightKg = progress.weights.maxByOrNull { it.dateEpochDay }?.weightKg,
                     onExport = { kind, share -> vm.export(kind, share) },
-                    onExportForAi = { share -> vm.exportForAi(share) }
+                    onExportForAi = { share -> vm.exportForAi(share) },
+                    onOpenWeekPlan = { go("plan") }
                 )
             }
         }

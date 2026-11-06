@@ -5,6 +5,7 @@ import dev.avles.gym.data.FoodLogRow
 import dev.avles.gym.data.FullLog
 import dev.avles.gym.data.Meals
 import dev.avles.gym.data.SetRow
+import dev.avles.gym.domain.plan.PlanValues
 import kotlinx.datetime.LocalDate
 
 /**
@@ -44,6 +45,9 @@ object AiExport {
         table("Workout splits (planned days)", splits(log))
         table("My foods and recipes (custom, per one unit)", customFoods(log))
         table("Saved meals", Export.csv(listOf("meal", "food", "quantity", "kcal per unit", "protein g per unit"), log.savedMeals.map { listOf(it.mealName, it.foodName, Plates.label(it.quantity), Numbers.fixed(it.kcal, 0), Numbers.fixed(it.proteinG, 1)) }))
+        table("Week plan: days (imported from the plan spreadsheet; planned, not done)", Export.csv(listOf("date", "focus", "workout time", "notes"), log.planDays.sortedBy { it.dateEpochDay }.map { listOf(iso(it.dateEpochDay), it.focus, it.workoutTime, it.notes) }))
+        table("Week plan: exercises", Export.csv(listOf("date", "order", "exercise", "planned", "in app catalogue", "notes"), log.planLifts.sortedWith(compareBy({ it.dateEpochDay }, { it.position })).map { listOf(iso(it.dateEpochDay), (it.position + 1).toString(), it.exerciseName, PlanValues.liftLine(it.sets, it.repsLow, it.repsHigh, it.holdSeconds, it.weightKg, it.restSeconds), yesNo(it.exerciseId != null), it.notes) }))
+        table("Week plan: meals", Export.csv(listOf("date", "meal", "time", "food", "quantity", "kcal", "protein g", "in app catalogue", "notes"), log.planFoods.sortedWith(compareBy({ it.dateEpochDay }, { it.position })).map { listOf(iso(it.dateEpochDay), it.meal, it.time, it.foodName, Plates.label(it.quantity), Numbers.fixed(it.kcal, 0), Numbers.fixed(it.proteinG, 1), yesNo(it.foodId != null), it.notes) }))
         table("Progress photos (pictures not included)", Export.csv(listOf("date", "label", "note"), log.progressPhotos.sortedBy { it.dateEpochDay }.map { listOf(iso(it.dateEpochDay), it.label, it.note) }))
     }
 
@@ -107,6 +111,10 @@ object AiExport {
         |- **Exercises**: `rep range` is the target I set for progression; `step kg` is how much
         |  the app adds when I hit the top of the range. Notes are my own cues.
         |- **Splits**: my planned workout days and the exercises in each, in order.
+        |- **Week plan**: a plan I imported from the app's Excel template (often written by an AI).
+        |  It is what I meant to do, not what I did; compare it with Sets and Food log. `planned`
+        |  is sets x reps (or seconds for a hold, AMRAP = as many as possible), kg and rest.
+        |  Meal kcal and protein are for the whole quantity.
         |""".trimMargin()
 
     private fun profile(log: FullLog): String {

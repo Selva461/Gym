@@ -6,6 +6,7 @@ import dev.avles.gym.data.FoodDataset
 import dev.avles.gym.data.GymDatabase
 import dev.avles.gym.data.GymRepository
 import dev.avles.gym.data.PhotoStore
+import dev.avles.gym.data.PlanRepository
 import dev.avles.gym.data.SettingsStore
 import dev.avles.gym.notify.Notifier
 import dev.avles.gym.resources.Res
@@ -26,7 +27,9 @@ class AppContainer(
     val database: GymDatabase,
     val repository: GymRepository,
     val settings: SettingsStore,
-    val notifier: Notifier
+    val notifier: Notifier,
+    /** The week plan imported from a spreadsheet; its own tables, never part of the log. */
+    val plans: PlanRepository = PlanRepository(database)
 ) {
 
     /**

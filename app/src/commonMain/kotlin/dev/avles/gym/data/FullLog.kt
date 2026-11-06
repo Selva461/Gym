@@ -24,5 +24,9 @@ data class FullLog(
     val weights: List<BodyWeight>,
     val measurements: List<BodyMeasurement>,
     val dayMarkers: List<DayMarker>,
-    val progressPhotos: List<ProgressPhoto>
+    val progressPhotos: List<ProgressPhoto>,
+    /** The imported week plan (see PlanRepository): what was planned, not what was done. */
+    val planDays: List<PlanDay> = emptyList(),
+    val planLifts: List<PlanLift> = emptyList(),
+    val planFoods: List<PlanFood> = emptyList()
 )

@@ -10,6 +10,9 @@ import dev.avles.gym.data.FoodLogRow
 import dev.avles.gym.data.FullLog
 import dev.avles.gym.data.GymSettings
 import dev.avles.gym.data.Meals
+import dev.avles.gym.data.PlanDay
+import dev.avles.gym.data.PlanFood
+import dev.avles.gym.data.PlanLift
 import dev.avles.gym.data.ProgressPhoto
 import dev.avles.gym.data.SavedMealRow
 import dev.avles.gym.data.SetRow
@@ -116,5 +119,19 @@ class AiExportTest {
         val out = AiExport.build(empty, today)
         assertTrue(out.contains("nothing logged yet"))
         assertTrue(out.contains("(nothing logged)"))
+    }
+
+    @Test
+    fun `the imported week plan travels too, marked as planned`() {
+        val planned = log.copy(
+            planDays = listOf(PlanDay(dateEpochDay = epochDay + 2, focus = "Push", workoutTime = "18:30")),
+            planLifts = listOf(PlanLift(dateEpochDay = epochDay + 2, position = 0, exerciseName = "Barbell bench press", exerciseId = 4, sets = 4, repsLow = 6, repsHigh = 8, weightKg = 50.0, restSeconds = 150)),
+            planFoods = listOf(PlanFood(dateEpochDay = epochDay + 2, position = 0, meal = Meals.BREAKFAST, foodName = "Idli", foodId = 2, quantity = 4.0, kcal = 232.0, proteinG = 8.0))
+        )
+        val out = AiExport.build(planned, today)
+        assertTrue(out.contains("## Week plan: days"))
+        assertTrue(out.contains("2026-11-05,Push,18:30"))
+        assertTrue(out.contains("Barbell bench press,4 x 6-8 · 50 kg · rest 2:30,yes"))
+        assertTrue(out.contains("2026-11-05,Breakfast,,Idli,4,232,8.0,yes"))
     }
 }

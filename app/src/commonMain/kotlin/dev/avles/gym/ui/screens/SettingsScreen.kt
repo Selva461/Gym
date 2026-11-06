@@ -66,7 +66,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     latestWeightKg: Double? = null,
     onExport: (GymViewModel.ExportKind, (String, String) -> Unit) -> Unit = { _, _ -> },
-    onExportForAi: ((String, String) -> Unit) -> Unit = {}
+    onExportForAi: ((String, String) -> Unit) -> Unit = {},
+    onOpenWeekPlan: () -> Unit = {}
 ) {
     val share = rememberTextSharer()
     val shareFile = rememberFileSharer()
@@ -298,6 +299,14 @@ fun SettingsScreen(
             color = Faint
         )
         TextButton(onClick = { onExportForAi(shareFile) }) { Text("Export everything for AI", color = Sage) }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "The other way round: get an Excel template, let an AI plan your week's training and meals in it, " +
+                "and import it. Today then shows what to train and eat, and the week plan shows each day's split.",
+            style = MaterialTheme.typography.labelSmall,
+            color = Faint
+        )
+        TextButton(onClick = onOpenWeekPlan) { Text("Week plan: import from Excel", color = Sage) }
         Spacer(Modifier.height(6.dp))
         Text(
             "Or as spreadsheets (CSV), through the share sheet: save them to Files or Drive, " +

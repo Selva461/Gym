@@ -3,7 +3,8 @@
 **Start here.** A new session should be able to continue from this file alone.
 It is kept current by rule: every commit that changes code, data, the build or
 the plan also updates this file (see `CLAUDE.md`). Last updated with the
-protein powder brands and the list of further additions, then the "Export everything for AI" file.
+protein powder brands and the list of further additions, then the "Export everything for AI" file,
+then the **week plan** (Excel template → import → Today card and calendar).
 
 ## What this is
 
@@ -32,12 +33,12 @@ Standing constraints, all enforced by tests:
 | | |
 |---|---|
 | Source of truth | `main`. Work happens on a `claude/...` branch, then merges to `main`. |
-| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). The AI export was built on `claude/project-thread-gzz3wl`. Another session used `claude/project-thread-dhxbg7`, merged as PR #1. |
+| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). The AI export was built on `claude/project-thread-gzz3wl`; the week plan on `claude/project-thread-kr2wuy`. Another session used `claude/project-thread-dhxbg7`, merged as PR #1. |
 | Android CI | `.github/workflows/android.yml` on **every push and PR, any branch**: unit tests, lint, `assembleDebug`, then **replaces the APK on the `latest-debug` release**. So the APK link always holds the last green push, from whichever branch. Also commits exported Room schemas back with `[skip ci]`. |
 | APK link (never changes) | https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk |
 | iOS CI | `.github/workflows/ios.yml` on push to `main` or manual dispatch only (a Mac minute costs 10×). Unsigned IPA to the `latest-ios` release: https://github.com/Selva461/Gym/releases/download/latest-ios/gym-unsigned.ipa, sideloaded with Sideloadly or AltStore (re-sign every 7 days on a free Apple ID). |
 | **iOS status** | **Blocked by GitHub billing**: "recent account payments have failed or your spending limit needs to be increased". Last good IPA is from `bf28299`. Every iOS change since (share sheet, water reminders, Tamil, …) has **never been compiled**. The user must fix Settings → Billing & plans. |
-| Android status | Green on `main` `1948ef9`; APK published 2026-10-22. |
+| Android status | Green on `main` `1948ef9`; APK published 2026-10-22. Week plan branch `claude/project-thread-kr2wuy` pushed 2026-11-06 for CI (check its run before merging). |
 
 To ship: commit on the branch, push (Android CI publishes the APK), merge to
 `main` (a fast-forward, or a squash if the branch history is messy), push `main`.
@@ -50,14 +51,38 @@ release writes return 403); CI does the publishing.
 |---|---|
 | Exercises | 486 across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | **1,248 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,309. 27 categories (newest: Alcohol). Newest file: `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
-| Database | **v13**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`. Exported schemas in `app/schemas/`. |
-| Tests | 253 (`gradle testDebugUnitTest`), none needing a device |
+| Database | **v14**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`; v14 `plan_day`, `plan_lift`, `plan_food` (week plan, `data/PlanEntities.kt`, own `PlanDao`). Exported schemas in `app/schemas/` (CI commits `14.json` back after the first green run). |
+| Tests | 275 (`gradle testDebugUnitTest`), none needing a device. New: `XlsxTest` (zip/deflate/XML vs the JDK and hostile input), `PlanImportTest` (incl. a fixture filled by openpyxl, `androidUnitTest/resources/`), `PlanCalendarTest`. |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 (CI) |
 
 Features, by screen (README → "What's in it" has the user-facing list):
 
 - **Today**: protein/calorie meters, protein-carbs-fat bars, water card,
-  weigh-in, this-week vs last-week card, first-run welcome (target calculator).
+  weigh-in, this-week vs last-week card, first-run welcome (target calculator),
+  **plan card** for the shown day (`screens/PlanCards.kt`): focus, every planned lift
+  with sets × reps · kg · rest, "Start <focus> session", meals with "Log breakfast"
+  (logs the foods that matched the catalogue), "Open week plan".
+- **Week plan** (route `plan`, from Today and Settings → Your data;
+  `screens/WeekPlanScreen.kt`): Teams-style week (Mon–Sun columns, today circled,
+  each day's focus as a coloured all-day tile, colour by `FocusKind`), selected day
+  as an hour timeline (workout at its planned time, meals at the plan's time or
+  `PlanCalendar.SLOT_TIMES`, overlaps side by side), full lists, clear week,
+  **Import plan** and **Get the Excel template** (Android file pickers,
+  `PlatformPlanFiles.android.kt`; iOS returns null so the buttons hide).
+  The round trip: `domain/plan/PlanTemplate.kt` writes the .xlsx (sheet "Read me" =
+  instructions for an AI, the user's targets, Tamil food examples; "Week", "Workout",
+  "Meals" to fill; "Exercises" and "Foods" = this phone's catalogue incl. custom
+  foods). `PlanSheets.kt` is the single source of column names (matched by header
+  text, aliases allowed). `PlanImport.kt` validates strictly (`PlanValues.kt`
+  parsers: ISO dates or Excel serials, HH:MM or Excel fractions, reps 8 / 8-12 / 45s /
+  AMRAP, ranges and length caps), skips bad rows with sheet + row number, notes
+  unknown exercises/foods (kept as written; unknown foods take kcal/protein from the
+  sheet), shows a preview, then `PlanRepository.replace` swaps exactly the dates in
+  the file in one transaction. Reading is hand-written and portable:
+  `core/zip/` (inflate, CRC, zip reader with size/entry caps, zip-bomb and duplicate
+  name refusal; stored-zip writer) and `core/xlsx/` (`MiniXml` refuses DOCTYPE/
+  entities, `Xlsx` reads cell values only, never formulas; writes inline strings so
+  text never becomes a formula). The plan is in the AI export too.
 - **Train**: splits, target per lift with warm-up ramp, last session's sets as
   chips, plate calculator (plate-loaded bars only), set types (working, warm-up,
   drop, failure) and RPE, notes per lift, swap (alternatives), supersets, rest
@@ -89,15 +114,22 @@ Features, by screen (README → "What's in it" has the user-facing list):
 
 Code map: `app/src/commonMain/kotlin/dev/avles/gym/` → `data/` (Room, seeds,
 dataset importer, settings), `domain/` (pure logic, all unit tested),
-`ui/` (one ViewModel `GymViewModel.kt` (at the 800-line cap: move pure logic to `domain/` before adding) + `UiState.kt`, `GymNav.kt`, `screens/`,
+`ui/` (`GymViewModel.kt` (at the 800-line cap: move pure logic to `domain/` before adding), `PlanViewModel.kt` for the week plan, + `UiState.kt`, `GymNav.kt`, `screens/`,
 `components/` with `Motion.kt` for every animation and haptic, `i18n/`),
-`core/` (dates, log). Platform seams in `androidMain` / `iosMain`.
+`core/` (dates, log, `zip/`, `xlsx/`), `domain/plan/` (template, import, calendar
+layout). Platform seams in `androidMain` / `iosMain`.
 
 ## Working in a fresh session
 
 The container starts without an Android SDK. These worked on 2026-10-22 (on
 2026-11-05 `dl.google.com` returned 403 through the proxy, so that session could not
-build locally and relied on Android CI to compile and test):
+build locally and relied on Android CI to compile and test; same on 2026-11-06. That
+session tested the pure-Kotlin parts (`core/zip`, `core/xlsx`, `domain/`, the plan tests,
+`AiExportTest`, `ArchitectureTest`) in a scratch Kotlin/JVM Gradle project outside the
+repo: plugin `kotlin("jvm") version "2.1.21"` from the Gradle plugin portal, deps from
+the googleapis Maven mirror, the repo's source dirs added as `srcDirs`, tiny stub
+`androidx.room` annotations and a copy of `GymSettings` in place of the Room/DataStore
+artifacts that only Google Maven serves. Compose/Room code was left to CI):
 
 ```sh
 # Android SDK (dl.google.com is reachable now)
@@ -194,9 +226,14 @@ fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
 
 1. **iOS billing** (user action): fix GitHub billing, then re-run `ios.yml` and
    fix whatever the never-compiled iOS code turns up.
-2. **Install**: Android from the APK link above. An install over a copy signed
+2. **Week plan on iOS**: the screens and Today card work, but import and template
+   download need a `UIDocumentPickerViewController` in `PlatformPlanFiles.ios.kt`
+   (returns null now, so the buttons hide). Ideas the user may want next: a "repeat
+   last week" button, starting a session with the planned lifts pre-listed (today it
+   starts a blank session named after the focus), and notifications at planned times.
+3. **Install**: Android from the APK link above. An install over a copy signed
    before `dd89f2c` needs an uninstall first (old CI key is gone).
-3. Backup/restore: **Android done** (Settings › Your data › Back up / Restore).
+4. Backup/restore: **Android done** (Settings › Your data › Back up / Restore).
    `data/Backup.kt` snapshots with `VACUUM INTO` and validates a file
    (schema version ≤ newest migration, core tables present);
    `PlatformBackup.android.kt` uses the system file pickers, keeps the replaced
@@ -204,7 +241,7 @@ fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
    Photos and settings are not in the file. **iOS returns null** (buttons
    hidden): needs a `UIDocumentPickerViewController` and a relaunch prompt.
    Open security questions in `SECURITY.md` (biometric lock, SQLCipher).
-4. Food requests come in batches by place: done so far are Tamil curries,
+5. Food requests come in batches by place: done so far are Tamil curries,
    staples, Indo-Chinese and grill counter, meals and restaurant chains,
    bakery, tea stall and juice shop, street and fast food, Kerala/Andhra/
    Hyderabadi/Arabian, packaged oats and protein foods, protein powders, and
@@ -214,44 +251,44 @@ fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
 ### Candidate additions (the user asked for all 17)
 
 Foods 1–11: **done** in `SeedFoodsWeek.kt`.
-1. **Aavin and Tamil Nadu dairy**: Aavin milk variants (toned, standardised,
+2. **Aavin and Tamil Nadu dairy**: Aavin milk variants (toned, standardised,
    full cream), Aavin curd, ghee, paneer, milkshakes, ice creams; Hatsun/Arun.
-2. **Packaged snack and biscuit brands**: Parle-G, Good Day, Marie Gold, Hide &
+3. **Packaged snack and biscuit brands**: Parle-G, Good Day, Marie Gold, Hide &
    Seek, Bourbon, Britannia bread, Lay's, Kurkure, Bingo, Haldiram's bhujia
    and namkeens, Too Yumm, Act II popcorn.
-3. **Cool drinks and energy drinks**: Coca-Cola, Pepsi, Thums Up, Sprite, 7Up,
+4. **Cool drinks and energy drinks**: Coca-Cola, Pepsi, Thums Up, Sprite, 7Up,
    Fanta, Mirinda, Bovonto (Tamil Nadu), Red Bull, Monster, Sting, Gatorade,
    Paper Boat, Real/Tropicana juices.
-4. **Alcohol** (energy mostly from ethanol, so add to `FoodChecks.ENERGY_EXEMPT`):
+5. **Alcohol** (energy mostly from ethanol, so add to `FoodChecks.ENERGY_EXEMPT`):
    beer variants, whisky, rum, vodka, gin, wine, per peg and per bottle.
-5. **Fish and seafood by species**: seer, mackerel (ayala), sardine, pomfret,
+6. **Fish and seafood by species**: seer, mackerel (ayala), sardine, pomfret,
    tuna, salmon, prawns, crab, squid, each as fry, curry and grill.
-6. **Millet dishes**: thinai pongal, samai upma, varagu and kuthiraivali rice,
+7. **Millet dishes**: thinai pongal, samai upma, varagu and kuthiraivali rice,
    kambu and ragi variants.
-7. **Home-style breakfast variants**: kara and pidi kozhukattai, adai
+8. **Home-style breakfast variants**: kara and pidi kozhukattai, adai
    varieties, idiyappam with kurma or coconut milk, paniyaram varieties.
-8. **Festival foods**: Diwali savouries, Karthigai pori and appam, Ramzan nombu
+9. **Festival foods**: Diwali savouries, Karthigai pori and appam, Ramzan nombu
    kanji, Christmas plum cake variants, Pongal set.
-9. **More supplements by brand**: pre-workouts, BCAA/EAA, creatine,
+10. **More supplements by brand**: pre-workouts, BCAA/EAA, creatine,
    electrolytes, fish oil, multivitamins (MuscleBlaze, ON, HealthKart, Wellbeing).
-10. **Per-100 g home dishes** for people who weigh cooked food: chicken curry,
+11. **Per-100 g home dishes** for people who weigh cooked food: chicken curry,
     dal, sambar, rice, chapati dough, egg curry.
-11. **Chain menus with published nutrition**: McDonald's India, KFC, Domino's,
+12. **Chain menus with published nutrition**: McDonald's India, KFC, Domino's,
     Subway, Burger King, Starbucks, A2B (Adyar Ananda Bhavan) sweets.
 
 Features 12–15: **done** (recipe builder, favourites, grams toggle, meal reminders).
-17 done on Android (see open item 3). 16 **declined for now**: the app has no
+17 done on Android (see open item 4). 16 **declined for now**: the app has no
 network or camera permission and no verified EAN codes for the seeded brands;
 adding a camera, a barcode library and guessed codes would cost more trust than
 it saves taps. Revisit if the user supplies codes from their own packs.
 
-12. Recipe builder: combine foods into a home recipe with servings.
-13. Favourite foods pinned to the top of Fuel.
-14. Grams toggle: log any food by weight as well as by its unit.
-15. Meal reminders (breakfast, lunch, dinner).
-16. Offline barcode scan for the seeded branded foods only (needs EAN codes and
+13. Recipe builder: combine foods into a home recipe with servings.
+14. Favourite foods pinned to the top of Fuel.
+15. Grams toggle: log any food by weight as well as by its unit.
+16. Meal reminders (breakfast, lunch, dinner).
+17. Offline barcode scan for the seeded branded foods only (needs EAN codes and
     a camera seam on both platforms).
-17. Backup and restore (deferred; see item 3 above).
+18. Backup and restore (deferred; see item 4 above).
 
 The fitness-parity backlog (items 1–26 from earlier sessions) is complete; item
 25 (backup/restore) is done on Android only.

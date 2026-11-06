@@ -15,9 +15,12 @@ import dev.avles.gym.ui.theme.GymTheme
 @Composable
 fun GymRoot(container: AppContainer) {
     val vm = viewModel {
-        GymViewModel(container.repository, container.settings, container.notifier)
+        GymViewModel(container.repository, container.settings, container.notifier, container.plans)
+    }
+    val plan = viewModel {
+        PlanViewModel(container.plans, container.repository, container.settings)
     }
     GymTheme {
-        GymNav(vm)
+        GymNav(vm, plan)
     }
 }

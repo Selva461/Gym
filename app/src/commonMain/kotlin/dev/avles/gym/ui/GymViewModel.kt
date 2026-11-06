@@ -13,6 +13,7 @@ import dev.avles.gym.data.GymRepository
 import dev.avles.gym.data.GymSettings
 import dev.avles.gym.data.Meals
 import dev.avles.gym.data.PickedImage
+import dev.avles.gym.data.PlanRepository
 import dev.avles.gym.data.SessionSummary
 import dev.avles.gym.data.ProgressPhoto
 import dev.avles.gym.data.SetRow
@@ -65,7 +66,8 @@ import kotlin.math.roundToInt
 class GymViewModel(
     private val repo: GymRepository,
     private val settingsStore: SettingsStore,
-    private val notifier: Notifier
+    private val notifier: Notifier,
+    private val plans: PlanRepository? = null
 ) : ViewModel() {
 
     private val _selectedDate = MutableStateFlow(Dates.today())
@@ -730,7 +732,7 @@ class GymViewModel(
         SETS("Gym: every set"), FOOD("Gym: food log"), WEIGHTS("Gym: body weight")
     }
 
-    private val exporter = Exporter(repo, settingsStore)
+    private val exporter = Exporter(repo, settingsStore, plans)
 
     /** Builds the text off the main thread; [share] gets (subject or file name, text) on it. */
     fun export(kind: ExportKind, share: (String, String) -> Unit) = viewModelScope.launch { share(kind.subject, exporter.csv(kind)) }

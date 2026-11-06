@@ -82,7 +82,9 @@ fun TodayScreen(
     onWelcomeTargets: (Energy.Targets) -> Unit = {},
     onDismissWelcome: () -> Unit = {},
     showWelcome: Boolean = false,
-    onRecordWeight: (Double) -> Unit = {}
+    onRecordWeight: (Double) -> Unit = {},
+    /** The week plan's card for this day (see PlanCards.kt), drawn above Fuel. */
+    planCard: @Composable () -> Unit = {}
 ) {
     var calculating by remember { mutableStateOf(false) }
     var weighing by remember { mutableStateOf(false) }
@@ -157,6 +159,7 @@ fun TodayScreen(
                 }
                 Spacer(Modifier.height(8.dp))
             }
+            planCard()
         }
 
         // --- Fuel -----------------------------------------------------

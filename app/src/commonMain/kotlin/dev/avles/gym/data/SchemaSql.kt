@@ -233,6 +233,60 @@ object SchemaSql {
 
     val V13_STATEMENTS = listOf(CREATE_CARDIO_ENTRY, INDEX_CARDIO_ENTRY_DATE)
 
+    // ---- v14: the week plan ---------------------------------------------------
+
+    const val CREATE_PLAN_DAY =
+        "CREATE TABLE IF NOT EXISTS `plan_day` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`dateEpochDay` INTEGER NOT NULL, " +
+            "`focus` TEXT NOT NULL, " +
+            "`workoutTime` TEXT NOT NULL, " +
+            "`notes` TEXT NOT NULL)"
+
+    const val INDEX_PLAN_DAY_DATE =
+        "CREATE UNIQUE INDEX IF NOT EXISTS `index_plan_day_dateEpochDay` ON `plan_day` (`dateEpochDay`)"
+
+    const val CREATE_PLAN_LIFT =
+        "CREATE TABLE IF NOT EXISTS `plan_lift` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`dateEpochDay` INTEGER NOT NULL, " +
+            "`position` INTEGER NOT NULL, " +
+            "`exerciseName` TEXT NOT NULL, " +
+            "`exerciseId` INTEGER, " +
+            "`sets` INTEGER NOT NULL, " +
+            "`repsLow` INTEGER NOT NULL, " +
+            "`repsHigh` INTEGER NOT NULL, " +
+            "`holdSeconds` INTEGER NOT NULL, " +
+            "`weightKg` REAL NOT NULL, " +
+            "`restSeconds` INTEGER NOT NULL, " +
+            "`notes` TEXT NOT NULL)"
+
+    const val INDEX_PLAN_LIFT_DATE =
+        "CREATE INDEX IF NOT EXISTS `index_plan_lift_dateEpochDay` ON `plan_lift` (`dateEpochDay`)"
+
+    const val CREATE_PLAN_FOOD =
+        "CREATE TABLE IF NOT EXISTS `plan_food` (" +
+            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+            "`dateEpochDay` INTEGER NOT NULL, " +
+            "`position` INTEGER NOT NULL, " +
+            "`meal` TEXT NOT NULL, " +
+            "`foodName` TEXT NOT NULL, " +
+            "`foodId` INTEGER, " +
+            "`quantity` REAL NOT NULL, " +
+            "`kcal` REAL NOT NULL, " +
+            "`proteinG` REAL NOT NULL, " +
+            "`time` TEXT NOT NULL, " +
+            "`notes` TEXT NOT NULL)"
+
+    const val INDEX_PLAN_FOOD_DATE =
+        "CREATE INDEX IF NOT EXISTS `index_plan_food_dateEpochDay` ON `plan_food` (`dateEpochDay`)"
+
+    val V14_STATEMENTS = listOf(
+        CREATE_PLAN_DAY, INDEX_PLAN_DAY_DATE,
+        CREATE_PLAN_LIFT, INDEX_PLAN_LIFT_DATE,
+        CREATE_PLAN_FOOD, INDEX_PLAN_FOOD_DATE
+    )
+
     /** Every statement the v5 migration runs, in order. */
     val V5_STATEMENTS = listOf(
         CREATE_PROGRESS_PHOTO,

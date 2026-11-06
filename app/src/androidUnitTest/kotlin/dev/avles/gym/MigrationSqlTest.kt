@@ -34,7 +34,7 @@ class MigrationSqlTest {
          * Kept in step with @Database(version = ...) by hand, and asserted below so
          * the two cannot drift apart silently.
          */
-        const val DB_VERSION = 13
+        const val DB_VERSION = 14
     }
 
     /**
@@ -280,6 +280,17 @@ class MigrationSqlTest {
     fun `the cardio table is created exactly as Room expects it`() {
         assertEquals(expectedCreateSql("cardio_entry"), SchemaSql.CREATE_CARDIO_ENTRY)
         assertEquals(expectedIndexSql("cardio_entry", "index_cardio_entry_dateEpochDay"), SchemaSql.INDEX_CARDIO_ENTRY_DATE)
+    }
+
+    /** Version 14 adds the week plan: a day, its lifts and its foods. */
+    @Test
+    fun `the plan tables are created exactly as Room expects them`() {
+        assertEquals(expectedCreateSql("plan_day"), SchemaSql.CREATE_PLAN_DAY)
+        assertEquals(expectedIndexSql("plan_day", "index_plan_day_dateEpochDay"), SchemaSql.INDEX_PLAN_DAY_DATE)
+        assertEquals(expectedCreateSql("plan_lift"), SchemaSql.CREATE_PLAN_LIFT)
+        assertEquals(expectedIndexSql("plan_lift", "index_plan_lift_dateEpochDay"), SchemaSql.INDEX_PLAN_LIFT_DATE)
+        assertEquals(expectedCreateSql("plan_food"), SchemaSql.CREATE_PLAN_FOOD)
+        assertEquals(expectedIndexSql("plan_food", "index_plan_food_dateEpochDay"), SchemaSql.INDEX_PLAN_FOOD_DATE)
     }
 
     @Test

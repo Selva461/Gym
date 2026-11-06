@@ -2,6 +2,7 @@ package dev.avles.gym.ui
 
 import dev.avles.gym.core.Dates
 import dev.avles.gym.data.GymRepository
+import dev.avles.gym.data.PlanRepository
 import dev.avles.gym.data.SettingsStore
 import dev.avles.gym.domain.AiExport
 import dev.avles.gym.domain.Export
@@ -15,7 +16,11 @@ import kotlinx.coroutines.withContext
  * taps here; formatting runs on [Dispatchers.Default] because a year of sets and
  * meals is megabytes of text and building it on the main thread would stutter.
  */
-internal class Exporter(private val repo: GymRepository, private val settings: SettingsStore) {
+internal class Exporter(
+    private val repo: GymRepository,
+    private val settings: SettingsStore,
+    private val plans: PlanRepository? = null
+) {
 
     suspend fun csv(kind: GymViewModel.ExportKind): String = when (kind) {
         GymViewModel.ExportKind.SETS -> repo.everySet().let { withContext(Dispatchers.Default) { Export.sets(it) } }
@@ -25,7 +30,8 @@ internal class Exporter(private val repo: GymRepository, private val settings: S
 
     /** The file name and the Markdown text of the whole log, prompt first. */
     suspend fun forAi(): Pair<String, String> {
-        val log = repo.fullLog(settings.settings.first())
+        val (days, lifts, foods) = plans?.everything() ?: Triple(emptyList(), emptyList(), emptyList())
+        val log = repo.fullLog(settings.settings.first()).copy(planDays = days, planLifts = lifts, planFoods = foods)
         val today = Dates.today()
         return AiExport.fileName(today) to withContext(Dispatchers.Default) { AiExport.build(log, today) }
     }
