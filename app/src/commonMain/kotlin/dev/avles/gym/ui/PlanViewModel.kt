@@ -81,9 +81,6 @@ class PlanViewModel(
         val input = PlanTemplate.Input(
             today = today,
             exercises = repo.exercises.first(),
-            foods = repo.foods.first().filter { it.category != QUICK_ADD_CATEGORY && it.name != WATER_NAME },
-            proteinTargetG = settings.settings.first().proteinTargetG,
-            kcalTarget = settings.settings.first().kcalTarget,
             weightKg = repo.weights.first().maxByOrNull { it.dateEpochDay }?.weightKg
         )
         return withContext(Dispatchers.Default) { PlanTemplate.build(input) }
@@ -97,7 +94,7 @@ class PlanViewModel(
         }
         _import.value = PlanImportState.Reading
         viewModelScope.launch {
-            val catalogue = PlanCatalogue(repo.exercises.first(), repo.foods.first())
+            val catalogue = PlanCatalogue(repo.exercises.first())
             val result = withContext(Dispatchers.Default) { PlanImport.read(bytes, catalogue, Dates.today()) }
             _import.value = when {
                 result.fatal != null -> PlanImportState.Done(result.fatal)
@@ -111,19 +108,42 @@ class PlanViewModel(
         }
     }
 
-    /** Saves the previewed plan, replacing the dates it covers, and jumps the calendar to its first week. */
-    fun confirmImport() {
+    /**
+     * Saves the previewed plan, replacing the dates it covers, and saves each split it
+     * defines under Train > Your splits (a split with the same name is updated, so
+     * importing again does not make duplicates). With [startToday] the whole plan is
+     * moved so its first day is today. The calendar then jumps to the plan's first week.
+     */
+    fun confirmImport(startToday: Boolean) {
         val preview = _import.value as? PlanImportState.Preview ?: return
-        val r = preview.result
+        val r = if (startToday) preview.result.startingOn(Dates.todayEpochDay()) else preview.result
         _import.value = PlanImportState.Reading
         viewModelScope.launch {
             val message = runCatching {
-                plans.replace(r.dates, r.days, r.lifts, r.foods)
-                "Imported ${r.summary()}." + if (r.skippedCount > 0) " ${r.skippedCount} row(s) were skipped." else ""
+                plans.replace(r.dates, r.days, r.lifts, emptyList())
+                val saved = saveSplits(r)
+                "Imported ${r.summary()}." +
+                    (if (saved > 0) " $saved ${if (saved == 1) "split is" else "splits are"} in Train > Your splits." else "") +
+                    if (r.skippedCount > 0) " ${r.skippedCount} row(s) were skipped." else ""
             }.getOrElse { "The plan could not be saved: ${it.message}" }
             r.dates.minOrNull()?.let { _weekStart.value = mondayOf(Dates.ofEpochDay(maxOf(it, Dates.todayEpochDay()))) }
             _import.value = PlanImportState.Done(message)
         }
+    }
+
+    /** Creates or updates one split per planned split day; returns how many were saved. */
+    private suspend fun saveSplits(r: PlanImportResult): Int {
+        val existing = repo.splits.first()
+        var next = existing.size
+        var saved = 0
+        r.splits.forEach { split ->
+            val ids = split.exerciseIds
+            if (ids.isEmpty()) return@forEach
+            val match = existing.firstOrNull { it.name.trim().equals(split.name.trim(), ignoreCase = true) }
+            repo.saveSplit(match?.id ?: 0L, split.name, match?.position ?: next++, ids)
+            saved++
+        }
+        return saved
     }
 
     fun dismissImport() { _import.value = PlanImportState.Idle }
@@ -146,10 +166,6 @@ class PlanViewModel(
     }
 
     private companion object {
-        /** Entries that are not foods anyone would plan: quick-add numbers and water glasses (see GymViewModel). */
-        const val QUICK_ADD_CATEGORY = "Quick add"
-        const val WATER_NAME = "Water"
-
         fun mondayOf(date: LocalDate): LocalDate = date.minus(DatePeriod(days = date.dayOfWeek.ordinal))
     }
 }

@@ -7,8 +7,6 @@ import dev.avles.gym.core.xlsx.SheetRow
 import dev.avles.gym.core.xlsx.SheetSpec
 import dev.avles.gym.core.xlsx.Xlsx
 import dev.avles.gym.data.Exercise
-import dev.avles.gym.data.FoodItem
-import dev.avles.gym.data.Meals
 import dev.avles.gym.data.SeedData
 import dev.avles.gym.domain.plan.PlanCatalogue
 import dev.avles.gym.domain.plan.PlanImport
@@ -25,8 +23,8 @@ import org.junit.Test
 import java.io.File
 
 /**
- * The plan import: what an AI-filled spreadsheet turns into, and how strictly it
- * is checked. A good row imports exactly; a bad row is skipped with its sheet and
+ * The plan import: what an AI-filled spreadsheet turns into (plan days and the
+ * splits they define), and how strictly it is checked. A good row imports exactly; a bad row is skipped with its sheet and
  * row number; nothing the file holds can make the import throw.
  */
 class PlanImportTest {
@@ -35,17 +33,14 @@ class PlanImportTest {
     private val squat = Exercise(id = 1, name = "Back squat", muscleGroup = "Quads")
     private val rdl = Exercise(id = 2, name = "Romanian deadlift", muscleGroup = "Hamstrings")
     private val plank = Exercise(id = 3, name = "Plank", muscleGroup = "Core", isBodyweight = true)
-    private val idli = FoodItem(id = 10, name = "Idli", unitLabel = "1 piece", kcal = 58.0, proteinG = 2.0, carbsG = 12.0, fatG = 0.2, category = "Tiffin", aliases = "Idly / Steamed rice cake")
-    private val sambar = FoodItem(id = 11, name = "Sambar", unitLabel = "1 cup", kcal = 130.0, proteinG = 6.0, carbsG = 18.0, fatG = 4.0, category = "Sides")
-    private val fishOil = FoodItem(id = 12, name = "Fish oil capsule", unitLabel = "1 capsule", kcal = 10.0, proteinG = 0.0, carbsG = 0.0, fatG = 1.0, category = "Supplement", isSupplement = true)
-    private val catalogue = PlanCatalogue(listOf(squat, rdl, plank), listOf(idli, sambar, fishOil))
+    private val bench = Exercise(id = 4, name = "Barbell bench press", muscleGroup = "Chest")
+    private val catalogue = PlanCatalogue(listOf(squat, rdl, plank, bench))
 
     private fun sheet(name: String, vararg rows: List<String>) =
         SheetData(name, rows.mapIndexed { i, cells -> SheetRow(i + 1, cells) })
 
     private val weekHeader = listOf("Date", "Day", "Focus", "Workout time", "Notes")
     private val workoutHeader = listOf("Date", "Order", "Exercise", "Sets", "Reps", "Weight (kg)", "Rest (sec)", "Notes")
-    private val mealsHeader = listOf("Date", "Meal", "Time", "Food", "Quantity", "Unit", "Calories", "Protein (g)", "Notes")
 
     @Test
     fun `a well filled plan imports exactly`() {
@@ -58,12 +53,7 @@ class PlanImportTest {
                 sheet("Workout", workoutHeader,
                     listOf("2026-11-09", "2", "romanian  deadlift", "3", "8–10", "50", "120", ""),
                     listOf("2026-11-09", "1", "Back Squat", "4", "6-8", "60 kg", "2:30", "Brace"),
-                    listOf("2026-11-09", "3", "Plank", "3", "45s", "", "60", "")),
-                sheet("Meals", mealsHeader,
-                    listOf("2026-11-09", "Dinner", "20:30", "Sambar", "1", "", "", "", ""),
-                    listOf("2026-11-09", "breakfast", "8:00", "idly", "4", "1 piece", "", "", ""),
-                    listOf("2026-11-09", "Breakfast", "", "Fish oil capsule", "2", "", "", "", ""),
-                    listOf("2026-11-09", "Snacks", "", "Sundal from the stall", "1", "", "190", "9", ""))
+                    listOf("2026-11-09", "3", "Plank", "3", "45s", "", "60", ""))
             ),
             catalogue, today
         )
@@ -78,16 +68,66 @@ class PlanImportTest {
         assertEquals(1L, s.exerciseId); assertEquals(4, s.sets); assertEquals(6, s.repsLow); assertEquals(8, s.repsHigh)
         assertEquals(60.0, s.weightKg, 0.0); assertEquals(150, s.restSeconds)
         assertEquals(45, result.lifts[2].holdSeconds)
+        assertTrue(result.problems.isEmpty())
 
-        val foods = result.foods
-        // Slot order, then sheet order; a supplement files itself under Supplements, last.
-        assertEquals(listOf("Idli", "Sundal from the stall", "Sambar", "Fish oil capsule"), foods.map { it.foodName })
-        assertEquals(Meals.SUPPLEMENT, foods[3].meal)
-        assertEquals(232.0, foods[0].kcal, 0.01) // 4 x 58, from the catalogue
-        assertEquals(190.0, foods[1].kcal, 0.01) // unknown food: taken from the sheet
-        assertNull(foods[1].foodId)
-        assertTrue(result.problems.none { it.skipped })
-        assertTrue(result.problems.any { it.message.contains("Sundal from the stall") })
+        // Legs has lifts, so it is a split; Push and Rest have none, so they are not.
+        assertEquals(listOf("Legs"), result.splits.map { it.name })
+        assertEquals(listOf(1L, 2L, 3L), result.splits.single().exerciseIds)
+    }
+
+    @Test
+    fun `a split's lifts are written once and every later day with that focus gets them`() {
+        val result = PlanImport.parse(
+            listOf(
+                sheet("Week", weekHeader,
+                    listOf("2026-11-09", "Mon", "Day 1 - Lower", "", ""),
+                    listOf("2026-11-10", "Tue", "Day 2 - Upper", "", ""),
+                    listOf("2026-11-11", "Wed", "Rest", "", ""),
+                    listOf("2026-11-12", "Thu", "day 1 - lower", "", ""),  // same split, different case
+                    listOf("2026-11-13", "Fri", "Day 2 - Upper", "", ""),
+                    listOf("2026-11-14", "Sat", "Day 3 - Unwritten", "", "")),
+                sheet("Workout", workoutHeader,
+                    listOf("2026-11-09", "1", "Back squat", "3", "6", "65", "180", ""),
+                    listOf("2026-11-09", "2", "Plank", "3", "45s", "", "60", ""),
+                    listOf("2026-11-10", "1", "Barbell bench press", "3", "8", "50", "120", ""),
+                    listOf("2026-11-10", "2", "Made-up machine", "3", "12", "", "60", ""),
+                    // A later day written out on purpose keeps its own lifts.
+                    listOf("2026-11-13", "1", "Romanian deadlift", "3", "8", "40", "120", ""))
+            ),
+            catalogue, today
+        )
+        assertEquals(listOf("Day 1 - Lower", "Day 2 - Upper"), result.splits.map { it.name })
+        assertEquals(listOf(1L, 3L), result.splits[0].exerciseIds)
+        assertEquals(listOf(4L), result.splits[1].exerciseIds) // the unknown lift cannot go in a split
+        val byDay = result.lifts.groupBy { it.dateEpochDay }
+        val thu = LocalDate(2026, 11, 12).epochDay
+        assertEquals(listOf("Back squat", "Plank"), byDay.getValue(thu).map { it.exerciseName })
+        assertEquals(65.0, byDay.getValue(thu)[0].weightKg, 0.0)
+        assertEquals(listOf("Romanian deadlift"), byDay.getValue(LocalDate(2026, 11, 13).epochDay).map { it.exerciseName })
+        assertNull(byDay[LocalDate(2026, 11, 11).epochDay])
+        assertNull(byDay[LocalDate(2026, 11, 14).epochDay])
+        assertEquals(6, result.days.size)
+    }
+
+    @Test
+    fun `start today moves every day by the same amount and keeps the rotation`() {
+        val result = PlanImport.parse(
+            listOf(
+                sheet("Week", weekHeader,
+                    listOf("2026-11-12", "Thu", "Lower", "", ""),
+                    listOf("2026-11-13", "Fri", "Rest", "", ""),
+                    listOf("2026-11-14", "Sat", "Lower", "", "")),
+                sheet("Workout", workoutHeader, listOf("2026-11-12", "1", "Back squat", "3", "6", "", "", ""))
+            ),
+            catalogue, today
+        )
+        val moved = result.startingOn(today.epochDay)
+        assertEquals((0L..2L).map { today.epochDay + it }, moved.days.map { it.dateEpochDay })
+        assertEquals(listOf("Lower", "Rest", "Lower"), moved.days.map { it.focus })
+        assertEquals(listOf(today.epochDay, today.epochDay + 2), moved.lifts.map { it.dateEpochDay })
+        assertEquals(today.epochDay, moved.firstDate)
+        assertEquals(result.splits.map { it.name }, moved.splits.map { it.name })
+        assertTrue(result.startingOn(result.firstDate!!) === result)
     }
 
     @Test
@@ -101,18 +141,12 @@ class PlanImportTest {
                     listOf("2026-11-09", "", "", "4", "6-8", "", "", ""),               // row 5: no name
                     listOf("2026-11-09", "", "Back squat", "4", "6-8", "heavy", "", ""),// row 6: weight unreadable
                     listOf("2031-01-01", "", "Back squat", "4", "6-8", "", "", ""),     // row 7: too far ahead
-                    listOf("2026-11-09", "", "Back squat", "4", "6-8", "", "", "")),    // row 8: fine
-                sheet("Meals", mealsHeader,
-                    listOf("2026-11-09", "Elevenses", "", "Idli", "2", "", "", "", ""), // row 2: unknown slot
-                    listOf("2026-11-09", "Lunch", "", "Idli", "0", "", "", "", ""),     // row 3: zero quantity
-                    listOf("2026-11-09", "Lunch", "", "Idli", "2", "", "", "", ""))     // row 4: fine
+                    listOf("2026-11-09", "", "Back squat", "4", "6-8", "", "", ""))     // row 8: fine
             ),
             catalogue, today
         )
         assertEquals(listOf(2, 3, 4, 5, 6, 7), result.problems.filter { it.skipped && it.sheet == "Workout" }.map { it.row })
-        assertEquals(listOf(2, 3), result.problems.filter { it.skipped && it.sheet == "Meals" }.map { it.row })
         assertEquals(1, result.lifts.size)
-        assertEquals(1, result.foods.size)
         assertTrue(result.problems.first().message.contains("YYYY-MM-DD"))
     }
 
@@ -136,20 +170,18 @@ class PlanImportTest {
 
     @Test
     fun `the template itself reads back, and an untouched template imports nothing`() {
-        val input = PlanTemplate.Input(today, listOf(squat, rdl, plank), listOf(idli, sambar, fishOil), 150.0, 2400.0, 72.5)
+        val input = PlanTemplate.Input(today, listOf(squat, rdl, plank), 72.5)
         val bytes = PlanTemplate.build(input)
         val sheets = Xlsx.read(bytes)
-        assertEquals(
-            listOf(PlanSheets.README, PlanSheets.WEEK, PlanSheets.WORKOUT, PlanSheets.MEALS, PlanSheets.EXERCISES, PlanSheets.FOODS),
-            sheets.map { it.name }
-        )
+        // Training only: no food sheets.
+        assertEquals(listOf(PlanSheets.README, PlanSheets.WEEK, PlanSheets.WORKOUT, PlanSheets.EXERCISES), sheets.map { it.name })
         val week = sheets.first { it.name == PlanSheets.WEEK }
         assertEquals(PlanSheets.Week.ALL.map { it.header }, week.rows[0].cells.take(5))
         assertEquals("2026-11-09", week.rows[1][0])
         assertEquals("Mon", week.rows[1][1])
         assertEquals(1 + PlanTemplate.DAYS_PREFILLED, week.rows.size)
-        assertEquals("Idli", sheets.first { it.name == PlanSheets.FOODS }.rows.drop(1).first { it[0] == "Idli" }[0])
-        assertTrue(sheets[0].rows.any { it[0].contains("150 g protein") })
+        assertEquals(30, PlanTemplate.DAYS_PREFILLED) // a month of split days
+        assertTrue(sheets[0].rows.any { it[0].contains("72.5 kg") })
 
         val untouched = PlanImport.read(bytes, catalogue, today)
         assertNull(untouched.fatal)
@@ -159,15 +191,13 @@ class PlanImportTest {
 
     @Test
     fun `a template filled in and saved again imports`() {
-        val input = PlanTemplate.Input(today, listOf(squat), listOf(idli), 150.0, 2400.0)
+        val input = PlanTemplate.Input(today, listOf(squat))
         val filled = PlanTemplate.sheets(input).map { spec ->
             when (spec.name) {
                 PlanSheets.WEEK -> SheetSpec(spec.name, listOf(spec.rows[0], listOf(Cell.Text("2026-11-09"), Cell.Text("Mon"), Cell.Text("Legs"))))
                 PlanSheets.WORKOUT -> SheetSpec(spec.name, listOf(spec.rows[0],
                     // A date Excel stored as a serial number, and reps as a plain number.
                     listOf(Cell.Number(46335.0), Cell.Text(""), Cell.Text("Back squat"), Cell.Number(5.0), Cell.Number(5.0), Cell.Number(80.0))))
-                PlanSheets.MEALS -> SheetSpec(spec.name, listOf(spec.rows[0],
-                    listOf(Cell.Text("2026-11-09"), Cell.Text("Breakfast"), Cell.Number(0.3333333), Cell.Text("Idli"), Cell.Number(3.0))))
                 else -> spec
             }
         }
@@ -176,7 +206,7 @@ class PlanImportTest {
         assertEquals("Legs", result.days.single().focus)
         assertEquals(today.epochDay, result.lifts.single().dateEpochDay)
         assertEquals(80.0, result.lifts.single().weightKg, 0.0)
-        assertEquals("08:00", result.foods.single().time)
+        assertEquals("Legs", result.splits.single().name)
         assertTrue(result.problems.toString(), result.problems.isEmpty())
     }
 
@@ -228,26 +258,27 @@ class PlanImportTest {
     }
 
     /**
-     * A file made the way another AI would make it: the app's template, filled in
-     * and saved by Python's openpyxl (shared strings, deflate, a real datetime cell),
-     * matched against the real built-in catalogue.
+     * A file made the way another AI would make it: the app's earlier template, filled
+     * in and saved by Python's openpyxl (shared strings, deflate, a real datetime cell),
+     * matched against the real built-in catalogue. Its Meals sheet is from before plans
+     * became training only, and is ignored.
      */
     @Test
     fun `a plan filled in by openpyxl imports against the real catalogue`() {
         val bytes = fixture("plan-filled-by-openpyxl.xlsx").readBytes()
-        val real = PlanCatalogue(SeedData.exercises(), SeedData.foods())
+        val real = PlanCatalogue(SeedData.exercises())
         val result = PlanImport.read(bytes, real, LocalDate(2026, 11, 6))
         assertNull(result.fatal)
         assertEquals(listOf("Legs", "Push", "Pull", "Rest", "Upper", "Lower", "Rest"), result.days.map { it.focus })
         assertEquals(10, result.lifts.size)
-        assertEquals(9, result.foods.size)
         assertEquals("Barbell bench press", result.lifts.first { it.dateEpochDay == LocalDate(2026, 11, 7).epochDay }.exerciseName)
-        val skipped = result.problems.filter { it.skipped }
-        assertEquals(listOf("Meals" to 11), skipped.map { it.sheet to it.row })
-        val notes = result.problems.filterNot { it.skipped }.map { it.message }
-        assertEquals(2, notes.size) // the made-up exercise and the made-up food
-        assertTrue(notes.any { it.contains("Face pull machine thing") })
-        assertTrue(notes.any { it.contains("Home-made paneer bhurji") })
+        assertEquals(listOf("Legs", "Push", "Pull"), result.splits.map { it.name })
+        // The made-up lift stays out of the split (seed exercises have no ids yet, so count matches).
+        assertEquals(2, result.splits[2].lifts.count { it.exerciseId != null })
+        assertTrue(result.problems.none { it.skipped })
+        val notes = result.problems.map { it.message }
+        assertEquals(1, notes.size)
+        assertTrue(notes.single().contains("Face pull machine thing"))
     }
 
     private fun fixture(name: String): File {

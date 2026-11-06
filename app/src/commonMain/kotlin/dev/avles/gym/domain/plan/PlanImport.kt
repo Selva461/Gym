@@ -7,10 +7,7 @@ import dev.avles.gym.core.xlsx.Xlsx
 import dev.avles.gym.core.xlsx.XmlException
 import dev.avles.gym.core.zip.ZipException
 import dev.avles.gym.data.Exercise
-import dev.avles.gym.data.FoodItem
-import dev.avles.gym.data.Meals
 import dev.avles.gym.data.PlanDay
-import dev.avles.gym.data.PlanFood
 import dev.avles.gym.data.PlanLift
 import dev.avles.gym.domain.plan.PlanSheets.Column
 import kotlinx.datetime.DatePeriod
@@ -23,51 +20,67 @@ data class PlanProblem(val sheet: String, val row: Int, val message: String, val
 }
 
 /**
- * What a plan file turned into: the rows ready to save, everything worth telling
- * the person, and [fatal] when the file could not be read at all. Every date in
- * [dates] is replaced as a whole when this is saved, so importing an edited week
- * again simply overwrites it.
+ * A split the plan defines: a day's focus and the lifts planned under it, taken
+ * from the first date that has that focus and lifts. Saved under Train > Your
+ * splits on import, so a session can be started from it.
+ */
+class PlanSplit(val name: String, val lifts: List<PlanLift>) {
+    /** The catalogue lifts, in order and once each; a split can only hold lifts the app knows. */
+    val exerciseIds: List<Long> get() = lifts.mapNotNull { it.exerciseId }.distinct()
+}
+
+/**
+ * What a plan file turned into: the rows ready to save, the splits it defines,
+ * everything worth telling the person, and [fatal] when the file could not be read
+ * at all. Every date in [dates] is replaced as a whole when this is saved, so
+ * importing an edited plan again simply overwrites it.
  */
 class PlanImportResult(
     val days: List<PlanDay>,
     val lifts: List<PlanLift>,
-    val foods: List<PlanFood>,
     val problems: List<PlanProblem>,
-    val fatal: String? = null
+    val fatal: String? = null,
+    val splits: List<PlanSplit> = emptyList()
 ) {
-    val dates: Set<Long> = (days.map { it.dateEpochDay } + lifts.map { it.dateEpochDay } + foods.map { it.dateEpochDay }).toSet()
+    val dates: Set<Long> = (days.map { it.dateEpochDay } + lifts.map { it.dateEpochDay }).toSet()
     val isEmpty: Boolean get() = dates.isEmpty()
     val skippedCount: Int get() = problems.count { it.skipped }
+    val firstDate: Long? get() = dates.minOrNull()
 
     fun summary(): String =
         "${dates.size} ${plural(dates.size, "day")}, ${lifts.size} ${plural(lifts.size, "exercise")}, " +
-            "${foods.size} ${plural(foods.size, "food")}"
+            "${splits.size} ${plural(splits.size, "split")}"
+
+    /**
+     * The same plan moved so that its first day is [start]: every date shifts by the
+     * same number of days, so a rotation keeps its order and its rest days. This is
+     * "Start today": a plan written for other dates begins now instead.
+     */
+    fun startingOn(start: Long): PlanImportResult {
+        val first = firstDate ?: return this
+        val by = start - first
+        if (by == 0L) return this
+        return PlanImportResult(
+            days = days.map { it.copy(dateEpochDay = it.dateEpochDay + by) },
+            lifts = lifts.map { it.copy(dateEpochDay = it.dateEpochDay + by) },
+            problems = problems,
+            fatal = fatal,
+            splits = splits
+        )
+    }
 
     private fun plural(n: Int, word: String) = if (n == 1) word else word + "s"
 
     companion object {
-        fun failed(message: String) = PlanImportResult(emptyList(), emptyList(), emptyList(), emptyList(), message)
+        fun failed(message: String) = PlanImportResult(emptyList(), emptyList(), emptyList(), message)
     }
 }
 
-/** The catalogue a plan is matched against: names and other names, reduced by [PlanSheets.nameKey]. */
-class PlanCatalogue(exercises: List<Exercise>, foods: List<FoodItem>) {
+/** The exercise catalogue a plan is matched against, by name reduced with [PlanSheets.nameKey]. */
+class PlanCatalogue(exercises: List<Exercise>) {
     private val exerciseByKey: Map<String, Exercise> = exercises.associateBy { PlanSheets.nameKey(it.name) }
-    private val foodByKey: Map<String, FoodItem>
-    private val foodByAlias: Map<String, FoodItem>
-
-    init {
-        foodByKey = foods.associateBy { PlanSheets.nameKey(it.name) }
-        val aliases = HashMap<String, FoodItem>()
-        foods.forEach { f ->
-            f.aliases.split('/', ',').map { PlanSheets.nameKey(it) }.filter { it.isNotEmpty() }
-                .forEach { if (it !in foodByKey) aliases.getOrPut(it) { f } }
-        }
-        foodByAlias = aliases
-    }
 
     fun exercise(name: String): Exercise? = exerciseByKey[PlanSheets.nameKey(name)]
-    fun food(name: String): FoodItem? = PlanSheets.nameKey(name).let { foodByKey[it] ?: foodByAlias[it] }
 }
 
 /**
@@ -84,7 +97,6 @@ object PlanImport {
 
     const val MAX_DAYS = 120
     const val MAX_LIFTS_PER_DAY = 40
-    const val MAX_FOODS_PER_DAY = 80
     private const val MAX_ROWS_PER_SHEET = 3_000
     private const val NAME_CHARS = 80
     private const val NOTE_CHARS = 300
@@ -107,17 +119,15 @@ object PlanImport {
         fun sheet(name: String) = sheets.firstOrNull { PlanSheets.headerKey(it.name) == PlanSheets.headerKey(name) }
         val week = sheet(PlanSheets.WEEK)
         val workout = sheet(PlanSheets.WORKOUT)
-        val meals = sheet(PlanSheets.MEALS)
-        if (week == null && workout == null && meals == null) {
+        if (week == null && workout == null) {
             return PlanImportResult.failed(
-                "This is not the plan template: it needs a sheet called Week, Workout or Meals. " +
+                "This is not the plan template: it needs a sheet called Week or Workout. " +
                     "Get the template from the Week plan screen and fill that in."
             )
         }
         val ctx = Context(catalogue, today)
         week?.let { ctx.readWeek(it) }
         workout?.let { ctx.readWorkout(it) }
-        meals?.let { ctx.readMeals(it) }
         return ctx.finish()
     }
 
@@ -125,7 +135,6 @@ object PlanImport {
         val problems = ArrayList<PlanProblem>()
         val days = LinkedHashMap<Long, PlanDay>()
         val lifts = ArrayList<Triple<Int, Int, PlanLift>>() // order, row, lift
-        val foods = ArrayList<Pair<Int, PlanFood>>() // row, food
         val earliest = today.plus(DatePeriod(days = -PAST_DAYS)).epochDay
         val latest = today.plus(DatePeriod(days = FUTURE_DAYS)).epochDay
 
@@ -242,80 +251,41 @@ object PlanImport {
             }
         }
 
-        fun readMeals(sheet: SheetData) {
-            val c = PlanSheets.MealsSheet
-            val (cols, rows) = header(sheet, c.ALL) ?: return
-            rows.forEach { row ->
-                val day = date(sheet.name, row, cols[c.DATE]) ?: return@forEach
-                val rawMeal = cell(row, cols[c.MEAL])
-                val meal = PlanSheets.MEAL_WORDS[PlanSheets.headerKey(rawMeal)]
-                if (meal == null) {
-                    skip(sheet.name, row.number, "Meal must be one of ${PlanSheets.MEAL_SLOTS.joinToString()} (got \"$rawMeal\")"); return@forEach
-                }
-                val name = PlanValues.clean(cell(row, cols[c.FOOD]))
-                if (name.isEmpty()) { skip(sheet.name, row.number, "no food name"); return@forEach }
-                if (name.length > NAME_CHARS) { skip(sheet.name, row.number, "the food name is longer than $NAME_CHARS characters"); return@forEach }
-                val rawQty = cell(row, cols[c.QUANTITY])
-                val qty = PlanValues.decimal(rawQty, 0.05, 50.0)
-                if (qty == null) { skip(sheet.name, row.number, "Quantity must be a number from 0.05 to 50 (got \"$rawQty\")"); return@forEach }
-                val rawTime = cell(row, cols[c.TIME])
-                val time = PlanValues.time(rawTime)
-                if (rawTime.isNotBlank() && time == null) note(sheet.name, row.number, "\"$rawTime\" is not a time like 13:00, so the meal's usual time is used")
-                if (foods.count { it.second.dateEpochDay == day } >= MAX_FOODS_PER_DAY) {
-                    skip(sheet.name, row.number, "at most $MAX_FOODS_PER_DAY foods a day"); return@forEach
-                }
-                val match = catalogue.food(name)
-                val kcal: Double
-                val protein: Double
-                if (match != null) {
-                    kcal = match.kcal * qty
-                    protein = match.proteinG * qty
-                } else {
-                    val k = cell(row, cols[c.KCAL]).let { if (it.isBlank()) null else PlanValues.decimal(it, 0.0, 5000.0) }
-                    val p = cell(row, cols[c.PROTEIN]).let { if (it.isBlank()) null else PlanValues.decimal(it, 0.0, 400.0) }
-                    kcal = k ?: 0.0
-                    protein = p ?: 0.0
-                    note(sheet.name, row.number, "\"$name\" is not in the app's food list; it was kept as written" +
-                        if (k == null || p == null) " without full calories and protein" else " with the calories and protein given")
-                }
-                ensureDay(day)
-                foods += row.number to PlanFood(
-                    dateEpochDay = day,
-                    position = 0,
-                    meal = if (match?.isSupplement == true) Meals.SUPPLEMENT else meal,
-                    foodName = match?.name ?: name,
-                    foodId = match?.id,
-                    quantity = qty,
-                    kcal = kcal,
-                    proteinG = protein,
-                    time = time.orEmpty(),
-                    notes = PlanValues.clean(cell(row, cols[c.NOTES])).take(NOTE_CHARS)
-                )
-            }
-        }
-
         fun finish(): PlanImportResult {
-            val orderedLifts = lifts
+            val liftsByDay = lifts
                 .sortedWith(compareBy({ it.third.dateEpochDay }, { it.first }, { it.second }))
                 .groupBy { it.third.dateEpochDay }
-                .flatMap { (_, list) -> list.mapIndexed { i, t -> t.third.copy(position = i) } }
-            val slotOrder = PlanSheets.MEAL_SLOTS
-            val orderedFoods = foods
-                .sortedWith(compareBy({ it.second.dateEpochDay }, { slotOrder.indexOf(it.second.meal) }, { it.first }))
-                .groupBy { it.second.dateEpochDay }
-                .flatMap { (_, list) -> list.mapIndexed { i, p -> p.second.copy(position = i) } }
+                .mapValues { (_, list) -> list.mapIndexed { i, t -> t.third.copy(position = i) } }
+                .toMutableMap()
+            val orderedDays = days.values.sortedBy { it.dateEpochDay }
+
+            // Each focus with lifts is a split, defined by the first date that has it.
+            val splits = LinkedHashMap<String, PlanSplit>()
+            orderedDays.forEach { d ->
+                val dayLifts = liftsByDay[d.dateEpochDay].orEmpty()
+                val key = PlanSheets.nameKey(d.focus)
+                if (key.isNotEmpty() && dayLifts.isNotEmpty() && key !in splits) splits[key] = PlanSplit(d.focus, dayLifts)
+            }
+            // A day that names a split but has no Workout rows of its own gets that split's
+            // lifts, so a month only needs each split's exercises written once.
+            orderedDays.forEach { d ->
+                if (liftsByDay[d.dateEpochDay].isNullOrEmpty()) {
+                    splits[PlanSheets.nameKey(d.focus)]?.let { split ->
+                        liftsByDay[d.dateEpochDay] = split.lifts.map { it.copy(dateEpochDay = d.dateEpochDay) }
+                    }
+                }
+            }
             return PlanImportResult(
-                days = days.values.sortedBy { it.dateEpochDay },
-                lifts = orderedLifts,
-                foods = orderedFoods,
-                problems = problems.sortedWith(compareBy({ sheetOrder(it.sheet) }, { it.row }))
+                days = orderedDays,
+                lifts = liftsByDay.keys.sorted().flatMap { liftsByDay.getValue(it) },
+                problems = problems.sortedWith(compareBy({ sheetOrder(it.sheet) }, { it.row })),
+                splits = splits.values.toList()
             )
         }
 
         private fun sheetOrder(name: String) = when (PlanSheets.headerKey(name)) {
             PlanSheets.headerKey(PlanSheets.WEEK) -> 0
-            PlanSheets.headerKey(PlanSheets.WORKOUT) -> 1
-            else -> 2
+            else -> 1
         }
 
         fun cell(row: SheetRow, col: Int?): String = if (col == null) "" else row[col]

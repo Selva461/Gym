@@ -62,7 +62,7 @@ fun TodayPlanCard(
         SectionHeading(if (isToday) "Today's plan" else "Plan for this day", trailing = "nothing planned", accent = Faint)
         Spacer(Modifier.height(6.dp))
         Text(
-            "Plan the week with Claude in Excel and import it, and today's workout and food show here.",
+            "Plan your split days with Claude in Excel and import them, and today's workout shows here.",
             style = MaterialTheme.typography.labelSmall, color = Faint
         )
         TextButton(onClick = onOpenWeek) { Text("Open week plan", color = Brass) }
@@ -133,7 +133,7 @@ fun TodayPlanCard(
 
 /** What the import found, before anything is saved; and the outcome afterwards. */
 @Composable
-fun PlanImportDialog(state: PlanImportState, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+fun PlanImportDialog(state: PlanImportState, onConfirm: (startToday: Boolean) -> Unit, onDismiss: () -> Unit) {
     when (state) {
         PlanImportState.Idle -> Unit
         PlanImportState.Reading -> AlertDialog(
@@ -155,8 +155,20 @@ fun PlanImportDialog(state: PlanImportState, onConfirm: () -> Unit, onDismiss: (
             containerColor = Slate,
             title = { Text("Import this plan?", color = Bone) },
             text = { PreviewBody(state.result) },
-            confirmButton = { TextButton(onClick = onConfirm) { Text("Import", color = Sage) } },
-            dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Mute) } }
+            confirmButton = {
+                // "Start today" moves the whole plan so its first day is today; the
+                // other button keeps the dates written in the file.
+                val startsToday = state.result.firstDate == Dates.todayEpochDay()
+                Column(horizontalAlignment = Alignment.End) {
+                    TextButton(onClick = { onConfirm(true) }) { Text(if (startsToday) "Import" else "Start today", color = Sage) }
+                    if (!startsToday) {
+                        TextButton(onClick = { onConfirm(false) }) {
+                            Text("Keep the file's dates (from ${state.result.firstDate?.let { Dates.dayAndMonth(Dates.ofEpochDay(it)) }})", color = Brass)
+                        }
+                    }
+                    TextButton(onClick = onDismiss) { Text("Cancel", color = Mute) }
+                }
+            }
         )
     }
 }
@@ -169,10 +181,19 @@ private fun PreviewBody(r: PlanImportResult) {
         Text(r.summary(), style = MaterialTheme.typography.titleSmall, color = Bone)
         if (first != null && last != null) {
             Text(
-                "${Dates.dayAndMonth(Dates.ofEpochDay(first))} to ${Dates.dayAndMonth(Dates.ofEpochDay(last))}. " +
-                    "Any plan already on these days is replaced; nothing you logged is touched.",
+                "In the file: ${Dates.dayAndMonth(Dates.ofEpochDay(first))} to ${Dates.dayAndMonth(Dates.ofEpochDay(last))}. " +
+                    "Any plan already on the days it lands on is replaced; nothing you logged is touched.",
                 style = MaterialTheme.typography.labelSmall, color = Mute
             )
+        }
+        val splits = r.splits.filter { it.exerciseIds.isNotEmpty() }
+        if (splits.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text("Saved to Train > Your splits", style = MaterialTheme.typography.labelMedium, color = Brass)
+            splits.forEach {
+                Text("• ${it.name} (${it.exerciseIds.size} lifts)", style = MaterialTheme.typography.labelSmall, color = focusColor(it.name))
+            }
+            Spacer(Modifier.height(6.dp))
         }
         r.days.filter { it.focus.isNotEmpty() }.take(14).forEach {
             Text(

@@ -90,10 +90,11 @@ excluded from iCloud backup, as they are left out of Android's cloud backup.
 
 ```
 Today      protein first, then calories, carbs and fat against targets, water, a week strip,
-           and today's planned workout and meals (one tap to start or log them)
-Week plan  a week calendar of your split (Legs, Push, Pull...) with each day's workout and
-           meals on an hour-by-hour timeline; plans come from an Excel template you (or an
-           AI such as Claude) fill in and import, checked row by row (Android)
+           and today's planned workout (one tap to start it from its split)
+Week plan  a week calendar of your split days (Legs, Push, Pull...) with each day's workout
+           on an hour-by-hour timeline; a month of split days comes from an Excel template
+           you (or an AI such as Claude) fill in and import, checked row by row. Each split
+           day becomes a split under Train, and "Start today" begins the plan today (Android)
 Train      split → lift → kg × reps, a target for every lift with its warm-up ramp, last
            time's sets one tap away, plate calculator, drop sets, sets to failure and RPE,
            a note per lift, swaps and supersets, rest that fits the lift and can be

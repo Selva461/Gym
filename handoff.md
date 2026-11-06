@@ -4,7 +4,9 @@
 It is kept current by rule: every commit that changes code, data, the build or
 the plan also updates this file (see `CLAUDE.md`). Last updated with the
 protein powder brands and the list of further additions, then the "Export everything for AI" file,
-then the **week plan** (Excel template → import → Today card and calendar).
+then the **week plan** (Excel template → import → Today card and calendar), then
+**training-only plans that create splits, with "Start today"** (branch
+`claude/plan-splits-start-today`, built on the week-plan branch).
 
 ## What this is
 
@@ -52,7 +54,7 @@ release writes return 403); CI does the publishing.
 | Exercises | 486 across 13 muscle groups; 140 with bundled demonstrations |
 | Foods | **1,248 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,309. 27 categories (newest: Alcohol). Newest file: `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
 | Database | **v14**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`; v14 `plan_day`, `plan_lift`, `plan_food` (week plan, `data/PlanEntities.kt`, own `PlanDao`). Exported schemas in `app/schemas/` (CI commits `14.json` back after the first green run). |
-| Tests | 275 (`gradle testDebugUnitTest`), none needing a device. New: `XlsxTest` (zip/deflate/XML vs the JDK and hostile input), `PlanImportTest` (incl. a fixture filled by openpyxl, `androidUnitTest/resources/`), `PlanCalendarTest`. |
+| Tests | 277 (`gradle testDebugUnitTest`), none needing a device. New: `XlsxTest` (zip/deflate/XML vs the JDK and hostile input), `PlanImportTest` (incl. a fixture filled by openpyxl, `androidUnitTest/resources/`; splits, fill-forward, start today), `PlanCalendarTest`. |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 (CI) |
 
 Features, by screen (README → "What's in it" has the user-facing list):
@@ -69,15 +71,25 @@ Features, by screen (README → "What's in it" has the user-facing list):
   `PlanCalendar.SLOT_TIMES`, overlaps side by side), full lists, clear week,
   **Import plan** and **Get the Excel template** (Android file pickers,
   `PlatformPlanFiles.android.kt`; iOS returns null so the buttons hide).
-  The round trip: `domain/plan/PlanTemplate.kt` writes the .xlsx (sheet "Read me" =
-  instructions for an AI, the user's targets, Tamil food examples; "Week", "Workout",
-  "Meals" to fill; "Exercises" and "Foods" = this phone's catalogue incl. custom
-  foods). `PlanSheets.kt` is the single source of column names (matched by header
+  **Plans are training only** (the user asked for food to be removed and the import
+  kept simple): `domain/plan/PlanTemplate.kt` writes the .xlsx (sheet "Read me" =
+  instructions for an AI; "Week" prefilled with 30 dates for a month of split days;
+  "Workout" with each split's lifts written once; "Exercises" = this phone's
+  catalogue). A Meals sheet in an older file is ignored. On import every Focus
+  that has lifts becomes a `PlanSplit` (first date wins) and later days with the
+  same Focus and no Workout rows get its lifts. Confirming saves the plan and
+  creates or updates (by name, case-insensitive) one split per `PlanSplit` under
+  Train > Your splits (catalogue lifts only). The preview offers **Start today**
+  (`PlanImportResult.startingOn`: every date shifted so the first is today, the
+  rotation and rest days kept) or keeping the file's dates. Today's "Start
+  <focus> session" starts from the split of that name, so its lifts come with it.
+  The user's filled month file (4-day rotation) is in their project files, not the repo.
+  Plan food tables (`plan_food`) and their display stay for old imports; nothing writes them now. `PlanSheets.kt` is the single source of column names (matched by header
   text, aliases allowed). `PlanImport.kt` validates strictly (`PlanValues.kt`
   parsers: ISO dates or Excel serials, HH:MM or Excel fractions, reps 8 / 8-12 / 45s /
   AMRAP, ranges and length caps), skips bad rows with sheet + row number, notes
   unknown exercises/foods (kept as written; unknown foods take kcal/protein from the
-  sheet), shows a preview, then `PlanRepository.replace` swaps exactly the dates in
+  sheet; food is no longer read), shows a preview, then `PlanRepository.replace` swaps exactly the dates in
   the file in one transaction. Reading is hand-written and portable:
   `core/zip/` (inflate, CRC, zip reader with size/entry caps, zip-bomb and duplicate
   name refusal; stored-zip writer) and `core/xlsx/` (`MiniXml` refuses DOCTYPE/
@@ -228,9 +240,13 @@ fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
    fix whatever the never-compiled iOS code turns up.
 2. **Week plan on iOS**: the screens and Today card work, but import and template
    download need a `UIDocumentPickerViewController` in `PlatformPlanFiles.ios.kt`
-   (returns null now, so the buttons hide). Ideas the user may want next: a "repeat
-   last week" button, starting a session with the planned lifts pre-listed (today it
-   starts a blank session named after the focus), and notifications at planned times.
+   (returns null now, so the buttons hide). Ideas the user may want next: a "next
+   in rotation" pick on Train (from the last session's split, so a missed day does
+   not shift the plan; today the fix is re-import with Start today), sets/reps/kg
+   from the plan as targets inside the session, and notifications at planned times.
+   Local builds: `dl.google.com` was blocked on 2026-11-06 (no Android SDK), so that
+   session compiled and ran the pure-Kotlin plan tests with a downloaded `kotlinc`
+   plus stub Room annotations, and left the UI compile to CI.
 3. **Install**: Android from the APK link above. An install over a copy signed
    before `dd89f2c` needs an uninstall first (old CI key is gone).
 4. Backup/restore: **Android done** (Settings › Your data › Back up / Restore).

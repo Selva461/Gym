@@ -135,8 +135,8 @@ fun WeekPlanScreen(
 
         if (week.all { it.isEmpty }) {
             EmptyNote(
-                "Nothing planned this week. Get the Excel template, give it to Claude to plan your " +
-                    "training and meals, then import the filled file here."
+                "Nothing planned this week. Get the Excel template, give it to Claude to plan your split " +
+                    "days for the month, then import the filled file here and choose Start today."
             )
         }
         if (selected != null) DayDetail(selected, unitOf) { openBlock = it }

@@ -246,7 +246,12 @@ fun GymNav(vm: GymViewModel, planVm: PlanViewModel) {
                             logged = day.rows,
                             unitOf = unitOf,
                             onOpenWeek = { go("plan") },
-                            onStartWorkout = { label -> vm.startSession(label); go("train") },
+                            onStartWorkout = { label ->
+                                // Start from the split of the same name when there is one, so its lifts come with it.
+                                val split = splits.firstOrNull { it.name.trim().equals(label.trim(), ignoreCase = true) }
+                                if (split != null) vm.startSessionFrom(split) else vm.startSession(label)
+                                go("train")
+                            },
                             onLogFoods = { planVm.logPlanned(it) }
                         )
                     }
