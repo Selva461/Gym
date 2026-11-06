@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 data class GymSettings(
@@ -44,10 +45,20 @@ data class GymSettings(
     /** Foods starred in the quantity dialog, pinned at the top of Fuel. */
     val favouriteFoodIds: Set<Long> = emptySet(),
     /** A nudge at breakfast, lunch and dinner. Off unless asked for. */
-    val mealReminders: Boolean = false
+    val mealReminders: Boolean = false,
+    /**
+     * Who demonstrates lifts, by [dev.avles.gym.anim.Avatar.id]. Blank until chosen,
+     * which means "match [isFemale]"; an id that no longer exists falls back safely.
+     */
+    val demoAvatarId: String = ""
 )
 
 class SettingsStore(private val store: DataStore<Preferences>) {
+
+    private companion object {
+        /** Ids are short words; anything longer is not one of ours and is cut. */
+        const val MAX_ID_LENGTH = 40
+    }
 
     private object Keys {
         val protein = doublePreferencesKey("protein_target_g")
@@ -69,6 +80,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val language = stringPreferencesKey("language")
         val favourites = stringPreferencesKey("favourite_foods")
         val mealReminders = intPreferencesKey("meal_reminders")
+        val demoAvatar = stringPreferencesKey("demo_avatar")
     }
 
     val settings: Flow<GymSettings> = store.data.map { p ->
@@ -91,9 +103,13 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             waterReminders = (p[Keys.waterReminders] ?: 0) == 1,
             language = p[Keys.language] ?: "en",
             favouriteFoodIds = (p[Keys.favourites] ?: "").split(',').mapNotNull { it.toLongOrNull() }.toSet(),
-            mealReminders = (p[Keys.mealReminders] ?: 0) == 1
+            mealReminders = (p[Keys.mealReminders] ?: 0) == 1,
+            demoAvatarId = (p[Keys.demoAvatar] ?: "").take(MAX_ID_LENGTH)
         )
     }
+
+    /** Changes some settings and keeps the rest exactly as they are saved now. */
+    suspend fun update(change: (GymSettings) -> GymSettings) = save(change(settings.first()))
 
     suspend fun save(s: GymSettings) {
         store.edit { p ->
@@ -116,6 +132,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             p[Keys.language] = s.language
             p[Keys.favourites] = s.favouriteFoodIds.joinToString(",")
             p[Keys.mealReminders] = if (s.mealReminders) 1 else 0
+            p[Keys.demoAvatar] = s.demoAvatarId.take(MAX_ID_LENGTH)
         }
     }
 }

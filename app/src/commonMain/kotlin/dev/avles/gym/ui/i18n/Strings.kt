@@ -13,6 +13,7 @@ object Strings {
     private val TA = mapOf(
         "Today" to "இன்று",
         "Train" to "பயிற்சி",
+        "Learn" to "கற்றல்",
         "Fuel" to "உணவு",
         "Progress" to "முன்னேற்றம்",
         "Settings" to "அமைப்புகள்",

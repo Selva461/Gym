@@ -18,19 +18,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import dev.avles.gym.anim.Demos
+import dev.avles.gym.anim.StepKind
 import dev.avles.gym.data.Exercise
 import dev.avles.gym.data.PickedImage
 import dev.avles.gym.domain.ExerciseGuide
 import dev.avles.gym.domain.Variations
 import dev.avles.gym.ui.components.Hairline
-import dev.avles.gym.ui.components.ExerciseDemo
+import dev.avles.gym.ui.components.Figure3D
+import dev.avles.gym.ui.components.LocalDemoAvatar
+import dev.avles.gym.domain.anatomy.BodyBuild
 import dev.avles.gym.ui.components.MuscleMap
-import dev.avles.gym.ui.components.hasExerciseDemo
 import dev.avles.gym.ui.components.PhotoImage
 import dev.avles.gym.ui.components.rememberImagePicker
 import dev.avles.gym.ui.theme.Bone
@@ -43,9 +47,10 @@ import dev.avles.gym.ui.theme.Raised
 /**
  * What a lift is, how it moves, and what it works.
  *
- * Everything here is computed from the exercise row by [ExerciseGuide] — there is no
+ * Everything here is computed from the exercise row: the text by [ExerciseGuide] and
+ * the moving demonstrator by [Demos] from the same pattern and equipment. There is no
  * per-exercise content to load, no image to ship and no network call, which is why
- * it works for all 394 seeded lifts and for anything invented on the phone
+ * it works for all 486 seeded lifts and for anything invented on the phone
  * afterwards.
  *
  * The order is the order you need it in standing at the rack: what it works, how to
@@ -62,6 +67,7 @@ fun ExerciseReferenceDialog(
     onRemovePhoto: (() -> Unit)? = null
 ) {
     val guide = ExerciseGuide.of(exercise)
+    val motion = remember(exercise.name, exercise.muscleGroup, exercise.isBodyweight) { Demos.of(exercise, guide) }
 
     // The system photo picker, which needs no permission: it runs outside this
     // process and returns exactly the one image chosen. READ_MEDIA_IMAGES would
@@ -84,21 +90,22 @@ fun ExerciseReferenceDialog(
                     .heightIn(max = 460.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                // A bundled demonstration, where one exists: start position and end
-                // position, alternating. Public-domain artwork, which is why it could
-                // be shipped at all — the app has no network permission and will not
-                // carry somebody else's licensed animation.
-                if (photoPath == null && hasExerciseDemo(exercise.name)) {
-                    ExerciseDemo(
-                        exerciseName = exercise.name,
+                // The demonstrator doing the whole movement at normal speed. The Learn
+                // tab has the same figure walking through it a step at a time.
+                if (photoPath == null && motion != null) {
+                    Figure3D(
+                        motion = motion,
+                        step = motion.steps.firstOrNull { it.kind == StepKind.FULL } ?: motion.steps.last(),
+                        avatar = LocalDemoAvatar.current,
+                        playing = true,
+                        description = "Animated demonstration of ${exercise.name}",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 190.dp, max = 230.dp)
+                            .height(230.dp)
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Start and finish of the movement. Public domain artwork from " +
-                            "the Free Exercise DB.",
+                        "Drag to turn it all the way round. Learn walks through it step by step.",
                         style = MaterialTheme.typography.labelSmall,
                         color = Faint
                     )
@@ -140,87 +147,98 @@ fun ExerciseReferenceDialog(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                MuscleMap(
-                    primary = guide.primary,
-                    secondary = guide.secondary,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                ReferenceSection("Set up", guide.setup)
-                ReferenceSection("The movement", guide.execution)
-
-                if (guide.cues.isNotEmpty()) {
-                    Spacer(Modifier.height(16.dp))
-                    Hairline()
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        "While you lift",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Faint
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    // Cues are what you repeat to yourself mid-set, so they are set as
-                    // short standalone phrases rather than another bulleted paragraph.
-                    guide.cues.forEach { cue ->
-                        Text(
-                            text = "“$cue”",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Brass,
-                            modifier = Modifier.padding(bottom = 3.dp)
-                        )
-                    }
-                }
-
-                ReferenceSection("What goes wrong", guide.mistakes, bulletColor = Coral)
-
-                if (guide.variations.isNotEmpty()) {
-                    Spacer(Modifier.height(16.dp))
-                    Hairline()
-                    Spacer(Modifier.height(12.dp))
-                    Text("Ways to vary it", style = MaterialTheme.typography.labelSmall, color = Faint)
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        "Logged per set. Each one keeps its own history and its own " +
-                            "records, so a close grip never sets the target for a wide one.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Faint
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    guide.variations.forEach { axis ->
-                        Row(Modifier.padding(bottom = 4.dp)) {
-                            Text(
-                                text = axis.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Mute,
-                                modifier = Modifier.width(96.dp)
-                            )
-                            Text(
-                                text = axis.options.joinToString("  ·  "),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Bone
-                            )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-                Hairline()
-                Spacer(Modifier.height(10.dp))
-                // Said plainly rather than buried. The guide is derived from the
-                // movement pattern, which makes it right about the mechanics and
-                // silent about you — and the reader should know which is which.
-                Text(
-                    "Written from the movement pattern, not for your body. It is " +
-                        "right about which way the weight goes and what usually " +
-                        "goes wrong; it has never seen you lift.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Faint
-                )
+                ExerciseGuideSections(guide)
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Close", color = Brass) }
         }
+    )
+}
+
+/**
+ * The written guide: the muscle map, then set-up, movement, cues, mistakes and
+ * variations, and the honest note on where it comes from. Shared by the reference
+ * dialog in a session and the lift's page in Learn, so both always say the same.
+ */
+@Composable
+fun ExerciseGuideSections(guide: ExerciseGuide, build: BodyBuild = LocalDemoAvatar.current.anatomy) {
+    MuscleMap(
+        primary = guide.primary,
+        secondary = guide.secondary,
+        modifier = Modifier.fillMaxWidth(),
+        build = build
+    )
+
+    ReferenceSection("Set up", guide.setup)
+    ReferenceSection("The movement", guide.execution)
+
+    if (guide.cues.isNotEmpty()) {
+        Spacer(Modifier.height(16.dp))
+        Hairline()
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "While you lift",
+            style = MaterialTheme.typography.labelSmall,
+            color = Faint
+        )
+        Spacer(Modifier.height(6.dp))
+        // Cues are what you repeat to yourself mid-set, so they are set as
+        // short standalone phrases rather than another bulleted paragraph.
+        guide.cues.forEach { cue ->
+            Text(
+                text = "“$cue”",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Brass,
+                modifier = Modifier.padding(bottom = 3.dp)
+            )
+        }
+    }
+
+    ReferenceSection("What goes wrong", guide.mistakes, bulletColor = Coral)
+
+    if (guide.variations.isNotEmpty()) {
+        Spacer(Modifier.height(16.dp))
+        Hairline()
+        Spacer(Modifier.height(12.dp))
+        Text("Ways to vary it", style = MaterialTheme.typography.labelSmall, color = Faint)
+        Spacer(Modifier.height(2.dp))
+        Text(
+            "Logged per set. Each one keeps its own history and its own " +
+                "records, so a close grip never sets the target for a wide one.",
+            style = MaterialTheme.typography.labelSmall,
+            color = Faint
+        )
+        Spacer(Modifier.height(8.dp))
+        guide.variations.forEach { axis ->
+            Row(Modifier.padding(bottom = 4.dp)) {
+                Text(
+                    text = axis.name,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Mute,
+                    modifier = Modifier.width(96.dp)
+                )
+                Text(
+                    text = axis.options.joinToString("  ·  "),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Bone
+                )
+            }
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+    Hairline()
+    Spacer(Modifier.height(10.dp))
+    // Said plainly rather than buried. The guide is derived from the
+    // movement pattern, which makes it right about the mechanics and
+    // silent about you — and the reader should know which is which.
+    Text(
+        "Written from the movement pattern, not for your body. It is " +
+            "right about which way the weight goes and what usually " +
+            "goes wrong; it has never seen you lift.",
+        style = MaterialTheme.typography.labelSmall,
+        color = Faint
     )
 }
 

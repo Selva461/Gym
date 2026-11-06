@@ -6,7 +6,11 @@ the plan also updates this file (see `CLAUDE.md`). Last updated with the
 protein powder brands and the list of further additions, then the "Export everything for AI" file,
 then the **week plan** (Excel template → import → Today card and calendar), then
 **training-only plans that create splits, with "Start today"** (branch
-`claude/plan-splits-start-today`, built on the week-plan branch).
+`claude/plan-splits-start-today`), then the 3D demonstrator, Learn tab and anatomical
+muscle map (`claude/project-thread-0bjsg1` → `claude/project-thread-qfq2m3`, PR #2)
+**combined with the week-plan line on `claude/project-thread-uxskjg`** (2026-11-06),
+so one APK carries all of it. None of these is on `main` yet: the user is to try the
+combined APK, then `claude/project-thread-uxskjg` merges to `main` (it contains both lines).
 
 ## What this is
 
@@ -35,12 +39,12 @@ Standing constraints, all enforced by tests:
 | | |
 |---|---|
 | Source of truth | `main`. Work happens on a `claude/...` branch, then merges to `main`. |
-| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). The AI export was built on `claude/project-thread-gzz3wl`; the week plan on `claude/project-thread-kr2wuy`. Another session used `claude/project-thread-dhxbg7`, merged as PR #1. |
+| Working branch | `claude/gym-app-audit-982uq6` (kept merged with `main`). The AI export was built on `claude/project-thread-gzz3wl`; the week plan on `claude/project-thread-kr2wuy`, then `claude/plan-splits-start-today`. `claude/project-thread-0bjsg1` (demos pass 2 + kitchen foods, 3D demonstrator, Learn tab) and `claude/project-thread-qfq2m3` (muscle map, PR #2, built on `0bjsg1`). **`claude/project-thread-uxskjg` merges `plan-splits-start-today` and `qfq2m3`**: it is the one to merge to `main`. Another session used `claude/project-thread-dhxbg7`, merged as PR #1. |
 | Android CI | `.github/workflows/android.yml` on **every push and PR, any branch**: unit tests, lint, `assembleDebug`, then **replaces the APK on the `latest-debug` release**. So the APK link always holds the last green push, from whichever branch. Also commits exported Room schemas back with `[skip ci]`. |
 | APK link (never changes) | https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk |
 | iOS CI | `.github/workflows/ios.yml` on push to `main` or manual dispatch only (a Mac minute costs 10×). Unsigned IPA to the `latest-ios` release: https://github.com/Selva461/Gym/releases/download/latest-ios/gym-unsigned.ipa, sideloaded with Sideloadly or AltStore (re-sign every 7 days on a free Apple ID). |
 | **iOS status** | **Blocked by GitHub billing**: "recent account payments have failed or your spending limit needs to be increased". Last good IPA is from `bf28299`. Every iOS change since (share sheet, water reminders, Tamil, …) has **never been compiled**. The user must fix Settings → Billing & plans. |
-| Android status | Green on `main` `1948ef9`; APK published 2026-10-22. Week plan branch `claude/project-thread-kr2wuy` green in CI (run 42148048298, 14.json committed back); its APK published 2026-11-06. Merge to `main` once the user has tried it on the phone. |
+| Android status | Green on `main` `1948ef9`; APK published 2026-10-22. Week plan branch `claude/project-thread-kr2wuy` green in CI (run 42148048298, 14.json committed back); its APK published 2026-11-06. Combined branch `claude/project-thread-uxskjg` (week plan + 3D + muscle map) pushed 2026-11-06; merge it to `main` once the user has tried that APK. |
 
 To ship: commit on the branch, push (Android CI publishes the APK), merge to
 `main` (a fast-forward, or a squash if the branch history is messy), push `main`.
@@ -51,10 +55,10 @@ release writes return 403); CI does the publishing.
 
 | | |
 |---|---|
-| Exercises | 486 across 13 muscle groups; 140 with bundled demonstrations |
-| Foods | **1,248 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,309. 27 categories (newest: Alcohol). Newest file: `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
-| Database | **v14**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`; v14 `plan_day`, `plan_lift`, `plan_food` (week plan, `data/PlanEntities.kt`, own `PlanDao`). Exported schemas in `app/schemas/` (CI commits `14.json` back after the first green run). |
-| Tests | 277 (`gradle testDebugUnitTest`), none needing a device. New: `XlsxTest` (zip/deflate/XML vs the JDK and hostile input), `PlanImportTest` (incl. a fixture filled by openpyxl, `androidUnitTest/resources/`; splits, fill-forward, start today), `PlanCalendarTest`. |
+| Exercises | 486 across 13 muscle groups; **every one has a 3D demonstrator** (`anim/`, see below). The 273 two-frame photo demos (~6.4 MB) are still bundled but no longer shown |
+| Foods | **1,313 built in** + 61 imported from the Indian Food Nutrition Dataset v2 (bundled CSV) = 1,374. 27 categories (newest: Alcohol). Newest file: `SeedFoodsKitchen.kt` (65: raw dals, flours, rice and millets, raw chicken and fish per 100 g; thuvaiyal and podi, keerai, Chettinad sweets, nungu and seasonal fruit, panakam, paneer bhurji, meal maker curry, Karnataka dishes). Before it `SeedFoodsWeek.kt` (186: Aavin/TN dairy, biscuit/chip/chocolate brands, cool and energy drinks, alcohol, fish by species, millets, breakfast and festival foods, supplement brands, per-100 g home dishes, chain menus). |
+| Database | **v14**. v7 food `aliases`/`source`; v8 `exercise.isAssisted`; v9 `body_measurement`; v10 `set_entry.kind`/`rpe`; v11 `exercise.notes`; v12 `saved_meal`, `saved_meal_item`; v13 `cardio_entry`; v14 `plan_day`, `plan_lift`, `plan_food` (week plan, `data/PlanEntities.kt`, own `PlanDao`). Exported schemas in `app/schemas/`. The 3D/muscle-map line adds no schema change. |
+| Tests | About 296 on the combined branch (277 on the week-plan line + `MuscleMapTest`, `DemonstratorTest`, `ExerciseDemosTest` from the 3D line), none needing a device. Week plan: `XlsxTest`, `PlanImportTest` (incl. an openpyxl fixture, `androidUnitTest/resources/`), `PlanCalendarTest`. 3D line: `MuscleMapTest` (every `Muscle` has a region, mirror symmetric, in bounds), `DemonstratorTest` (every lift has a reachable motion, limb lengths kept, both avatars render), `ExerciseDemosTest` (old photo stems) |
 | Toolchain | Kotlin 2.1.21, KSP 2.1.21-2.0.2, Compose Multiplatform 1.8.2, AGP 8.10.1, Gradle 8.11.1 (CI) |
 
 Features, by screen (README → "What's in it" has the user-facing list):
@@ -100,6 +104,13 @@ Features, by screen (README → "What's in it" has the user-facing list):
   drop, failure) and RPE, notes per lift, swap (alternatives), supersets, rest
   timer that fits the lift (±15 s), session clock, lift history with rep-max
   table, workout summary card with records and calories, cardio log.
+- **Learn** (tab added 2026-10-25): search every lift by name, group, equipment or
+  muscle; a lift's page has the 3D demonstrator (drag to turn 360°, pinch to
+  zoom, double-tap to reset) walking through set up, grip, start position, the
+  rep slowly, beginner's points, full movement (auto-advances while playing),
+  a Male/Female switch saved as `GymSettings.demoAvatarId`, then the written
+  guide (`ExerciseGuideSections`, shared with the session reference dialog,
+  which plays the full movement).
 - **Fuel**: search/browse with Tamil aliases, favourites (star in the quantity
   dialog, stored as ids in settings), recent and usual foods, saved meals, quick
   add, recipe builder (`RecipeBuilder.kt` + `domain/Recipes.kt`: a custom food in
@@ -127,9 +138,72 @@ Features, by screen (README → "What's in it" has the user-facing list):
 Code map: `app/src/commonMain/kotlin/dev/avles/gym/` → `data/` (Room, seeds,
 dataset importer, settings), `domain/` (pure logic, all unit tested),
 `ui/` (`GymViewModel.kt` (at the 800-line cap: move pure logic to `domain/` before adding), `PlanViewModel.kt` for the week plan, + `UiState.kt`, `GymNav.kt`, `screens/`,
-`components/` with `Motion.kt` for every animation and haptic, `i18n/`),
+`components/` with `Motion.kt` for every animation and haptic and `Figure3D.kt`
+for the demonstrator, `i18n/`), `anim/` (the demonstrator engine, below),
 `core/` (dates, log, `zip/`, `xlsx/`), `domain/plan/` (template, import, calendar
-layout). Platform seams in `androidMain` / `iosMain`.
+layout), `domain/anatomy/` (muscle map). Platform seams in `androidMain` / `iosMain`.
+
+## The 3D demonstrator (`anim/`)
+
+Pure Kotlin, no Compose or Android imports (ArchitectureTest enforces it), so it
+runs off the main thread and in JVM tests.
+
+- **Coordinates**: metres, Y up, floor y = 0, the figure faces +Z, its left is +X.
+- **Rig.kt**: `Body` proportions; `Pose` (pelvis, pitch/roll/twist, hand and foot
+  targets, elbow/knee poles); `Skeleton.solve` does two-bone IK and keeps the feet
+  on the floor.
+- **Avatar.kt**: an avatar is data (`Shape`, `Hair`, `Outfit`, skin). Presets
+  `MALE`, `FEMALE` (ordinary healthy builds, no six-packs, faceless, plain gym
+  clothes: the user's call, 2026-10-25). `Shape.validated()` clamps every value, so a
+  future custom-avatar screen cannot produce a broken mesh. `Avatar.chosen(id, isFemale)`
+  resolves the saved choice.
+- **Sculpt.kt / BodyMesh.kt**: the body is SDF blobs per bone, meshed by surface
+  nets (~11k vertices, ~0.5 s on a laptop JVM, cached per avatar, build it off the
+  main thread with `BodyMesh.of`; `ready()` while drawing), skinned with linear
+  blend skinning over 13 bones, coloured by `Wardrobe`.
+- **Render.kt**: `Prim`s → `Draw` paint commands sorted back to front, with an
+  orbit `Camera`. `Figure3D.kt` paints them (skin as `Vertices` batches; flat
+  triangles on Android < 10, where the hardware canvas cannot draw vertices).
+- **Moves*.kt**: the movement library. `Moves.of(spec)` dispatches on the guide's
+  pattern, then names pick the variation; `Demos.of(exercise)` is the entry point
+  from the catalogue. `MoveKit.kt` has the shared vocabulary (`Kit.steps` for the six
+  steps, `Kit.flow` for multi-position reps, `Kit.hangY`/`pelvisToReach` for reach).
+- **Rule**: a new seeded lift needs its movement in the same commit. Usually its
+  pattern's default is right; if not, add a keyword branch in the right `Moves*.kt`.
+  `DemonstratorTest` must stay green.
+
+How the 486 were checked: a throwaway JVM harness (not in the repo) compiled `anim/`
+plus `ExerciseGuide.kt` and the seed files with a stub `Exercise`, solved every pose
+(the same checks `DemonstratorTest` now makes), and rendered two-pose thumbnails of
+every lift with Java2D for eyeballing, 12 per sheet. Every sheet was looked at; lifts
+that showed the wrong movement were fixed (face pull, cable high row, pike push-up,
+Z press, reverse hyper, glute-ham raise, cable RDL, seated good morning, muscle-up,
+dumbbell squeeze press, glute-bridge arms). Rebuilding it takes ten minutes:
+`kotlin("jvm")` project whose `sourceSets.main` adds `anim/` and those files, a
+`paint()` that maps each `Draw` to a `Graphics2D` fill.
+
+## The muscle map (`domain/anatomy/`)
+
+The front/back body diagram on every lift's guide (`ui/components/MuscleMap.kt`).
+Replaced the old rounded-rectangle patches on 2026-10-25 after the user called them
+crude and not even symmetric.
+
+- **Geometry is pure data** in `domain/anatomy/`: `AtlasBase.kt` (silhouette, shared
+  by both views), `AtlasFront.kt`, `AtlasBack.kt`. Points are on the viewer's left
+  half of a 200 × 420 box (midline x = 100) and mirrored, so symmetry is by
+  construction. `pair()` draws a shape on both sides, `span()` joins a half to its
+  mirror (abs, traps, torso), `detail()` is anatomy with no `Muscle` (tibialis,
+  rotator cuff): drawn, never lit. Several regions may share a `Muscle` (three
+  quads, three ab segments, two triceps heads). List order is draw order.
+- **`BodyAtlas.figure(view, build)`** mirrors, warps and smooths (closed Catmull-Rom
+  → cubics) and caches. `BodyBuild` is data: a width profile over height for trunk
+  and legs, a factor for arms and head, clamped to 0.7–1.3. `Avatar.anatomy` picks
+  it, so the map follows the demonstrator the user chose; a custom avatar gets a map
+  by giving it a `BodyBuild`.
+- **Adding a muscle**: add it to `Muscle`, add its region(s), `MuscleMapTest` fails
+  until you do. Preview without building: `python3 tools/muscle-map-preview.py
+  out.svg DELT_FRONT +TRICEPS` (reads the same Kotlin tables; render the SVG with
+  Playwright or any browser).
 
 ## Working in a fresh session
 
@@ -142,6 +216,8 @@ repo: plugin `kotlin("jvm") version "2.1.21"` from the Gradle plugin portal, dep
 the googleapis Maven mirror, the repo's source dirs added as `srcDirs`, tiny stub
 `androidx.room` annotations and a copy of `GymSettings` in place of the Room/DataStore
 artifacts that only Google Maven serves. Compose/Room code was left to CI):
+On 2026-10-25 the cloud environment blocked `dl.google.com` outright; the user can
+allow that host under Project settings → Cloud environment → Network access.
 
 ```sh
 # Android SDK (dl.google.com is reachable now)
@@ -235,6 +311,28 @@ fe, mg, zn, va, vc, vd, b12, fol, o3, supp)` and an `all()` that
   not an import.
 
 ## Open items and next steps
+
+0. **3D demonstrator** (asked 2026-10-25: "forget the GIFs, a 3D character I can
+   turn 360 degrees, male and female, step by step, a section to search any
+   exercise"). Done, see the section above. Not yet seen on a phone: the first CI
+   build of it is the first compile (no SDK in the session). Next: watch for frame
+   rate on a cheap phone (frames are computed on `Dispatchers.Default`, capped at
+   ~30 fps while playing, nothing recomputed while paused); delete the unused
+   photo demos (`composeResources/files/demo/`, `ExerciseDemos.kt`,
+   `ExerciseDemo.kt`, `ExerciseDemosTest`, CREDITS section) once the user is happy;
+   custom avatars (a screen editing `Shape`/`Outfit`, saved as data) when asked.
+   Older history of the photo demos follows.
+   **Exercise demos** (asked 2026-10-25: "GIFs for every workout"). Web GIFs are
+   licensed products and stay out (CREDITS.md). Pass 2 matched 133 more lifts to
+   Free Exercise DB by hand, every pair of frames looked at against the name, so
+   273 of 486 have one; the rest have no public-domain picture that is the same
+   movement. A decision card asked the user to choose: (a) public domain plus
+   original animated figures drawn in code per movement pattern for the other
+   213, (b) public domain only, (c) the user buys a licence. Recommended (a).
+   How pass 2 was made: download `dist/exercises.json` from
+   github.com/yuhonas/free-exercise-db, map name to DB name by hand, fetch
+   `exercises/<id>/0.jpg` and `1.jpg`, resize to 420 px wide, WebP q72, stem =
+   slug of the first app name using that DB entry, then regenerate `BY_NAME`.
 
 1. **iOS billing** (user action): fix GitHub billing, then re-run `ios.yml` and
    fix whatever the never-compiled iOS code turns up.

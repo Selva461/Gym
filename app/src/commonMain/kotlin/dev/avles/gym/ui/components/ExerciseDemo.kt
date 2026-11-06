@@ -36,8 +36,8 @@ import org.jetbrains.compose.resources.decodeToImageBitmap
  *
  * Two frames rather than a GIF, because that is what almost every exercise GIF
  * actually is once you strip the tweening — and two WebP stills cost about 25 KB
- * where the animated version of the same thing costs ten times that. All 140
- * bundled lifts together are roughly 3.6 MB, which is what made shipping them
+ * where the animated version of the same thing costs ten times that. All 273
+ * bundled lifts together are roughly 6.4 MB, which is what made shipping them
  * possible at all: the app has no network permission and never will, so anything
  * it shows has to already be inside the app.
  *
