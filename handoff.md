@@ -38,7 +38,7 @@ Standing constraints, all enforced by tests:
 | APK link (never changes) | https://github.com/Selva461/Gym/releases/download/latest-debug/gym-debug.apk |
 | iOS CI | `.github/workflows/ios.yml` on push to `main` or manual dispatch only (a Mac minute costs 10×). Unsigned IPA to the `latest-ios` release: https://github.com/Selva461/Gym/releases/download/latest-ios/gym-unsigned.ipa, sideloaded with Sideloadly or AltStore (re-sign every 7 days on a free Apple ID). |
 | **iOS status** | **Blocked by GitHub billing**: "recent account payments have failed or your spending limit needs to be increased". Last good IPA is from `bf28299`. Every iOS change since (share sheet, water reminders, Tamil, …) has **never been compiled**. The user must fix Settings → Billing & plans. |
-| Android status | Green on `main` `1948ef9`; APK published 2026-10-22. Week plan branch `claude/project-thread-kr2wuy` pushed 2026-11-06 for CI (check its run before merging). |
+| Android status | Green on `main` `1948ef9`; APK published 2026-10-22. Week plan branch `claude/project-thread-kr2wuy` green in CI (run 42148048298, 14.json committed back); its APK published 2026-11-06. Merge to `main` once the user has tried it on the phone. |
 
 To ship: commit on the branch, push (Android CI publishes the APK), merge to
 `main` (a fast-forward, or a squash if the branch history is messy), push `main`.
